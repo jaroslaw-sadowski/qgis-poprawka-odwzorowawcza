@@ -156,26 +156,37 @@ def calculate_area_from_pgk(
     u = (x_gk_northing - 5_800_000.0) * 2.0e-6
     v = y_gk_easting * 2.0e-6
 
-    sigma_cm_per_km = SIGMA0_CM_PER_KM + M0 * v**2 * (
-        Q1 + Q2 * u + Q3 * u**2 + Q4 * v**2
-    )
-    scale_m = sigma_cm_per_km * 1.0e-5 + 1.0
-
-    correction_m2 = po_m2 * (scale_m**2 - 1.0)
-    legal_area_m2_raw = po_m2 - correction_m2
-    legal_area_ha_raw = legal_area_m2_raw / HECTARE_IN_M2
-
     for name, value in (
         ("x_gk_northing", x_gk_northing),
         ("y_gk_easting", y_gk_easting),
         ("u", u),
         ("v", v),
+    ):
+        _require_finite(value, name)
+
+    try:
+        sigma_cm_per_km = SIGMA0_CM_PER_KM + M0 * v**2 * (
+            Q1 + Q2 * u + Q3 * u**2 + Q4 * v**2
+        )
+        scale_m = sigma_cm_per_km * 1.0e-5 + 1.0
+        correction_m2 = po_m2 * (scale_m**2 - 1.0)
+        legal_area_m2_raw = po_m2 - correction_m2
+    except OverflowError as error:
+        raise NonFiniteValueError(
+            "projection correction overflowed for the supplied coordinates"
+        ) from error
+    legal_area_ha_raw = legal_area_m2_raw / HECTARE_IN_M2
+
+    for name, value in (
         ("sigma_cm_per_km", sigma_cm_per_km),
         ("scale_m", scale_m),
         ("correction_m2", correction_m2),
         ("legal_area_m2_raw", legal_area_m2_raw),
+        ("legal_area_ha_raw", legal_area_ha_raw),
     ):
         _require_finite(value, name)
+    if legal_area_m2_raw <= 0:
+        raise InvalidAreaError("corrected legal area must be greater than zero")
 
     return AreaCalculationResult(
         po_m2=po_m2,

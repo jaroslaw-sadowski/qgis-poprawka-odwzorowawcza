@@ -154,3 +154,24 @@ def test_zone_prefix_is_validated_after_transform() -> None:
             QgsCoordinateReferenceSystem("EPSG:2178"),
             QgsCoordinateTransformContext(),
         )
+
+
+def test_multipart_and_interior_rings_are_reported() -> None:
+    source = QgsGeometry.fromWkt(
+        "MULTIPOLYGON (((7500000 5800000,7500200 5800000,"
+        "7500200 5800200,7500000 5800200,7500000 5800000),"
+        "(7500050 5800050,7500050 5800100,7500100 5800100,"
+        "7500100 5800050,7500050 5800050)),"
+        "((7500300 5800300,7500400 5800300,7500400 5800400,"
+        "7500300 5800400,7500300 5800300)))"
+    )
+
+    result = prepare_geometry(
+        source,
+        QgsCoordinateReferenceSystem("EPSG:2178"),
+        QgsCoordinateTransformContext(),
+    )
+
+    assert result.report.validity_before is True
+    assert "multipart_geometry" in result.report.warnings
+    assert "interior_rings_included" in result.report.warnings

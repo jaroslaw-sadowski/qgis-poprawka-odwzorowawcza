@@ -45,8 +45,8 @@ class EgibAreaPlugin:
             )
             action.setObjectName("egibSelectedParcelAction")
             action.triggered.connect(self.run)
-            self.iface.addPluginToMenu(self.MENU_NAME, action)
-            self.iface.addToolBarIcon(action)
+            self.iface.addPluginToVectorMenu(self.MENU_NAME, action)
+            self.iface.addVectorToolBarIcon(action)
             self.action = action
 
     def unload(self) -> None:
@@ -54,8 +54,8 @@ class EgibAreaPlugin:
 
         if self.action is not None:
             action = self.action
-            self.iface.removePluginMenu(self.MENU_NAME, action)
-            self.iface.removeToolBarIcon(action)
+            self.iface.removePluginVectorMenu(self.MENU_NAME, action)
+            self.iface.removeVectorToolBarIcon(action)
             action.triggered.disconnect(self.run)
             action.deleteLater()
             self.action = None

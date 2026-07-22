@@ -1,12 +1,14 @@
 import configparser
 import importlib
 from pathlib import Path
+from zipfile import ZipFile
 
 from qgis.core import QgsApplication, QgsFeature, QgsGeometry, QgsVectorLayer
 from qgis.PyQt.QtWidgets import QWidget
 
 import plugin as plugin_module
 from plugin import EgibAreaPlugin
+from scripts.build_plugin_zip import PLUGIN_PACKAGE_NAME, build_plugin_zip
 
 
 class FakeIface:
@@ -24,16 +26,16 @@ class FakeIface:
     def activeLayer(self):
         return self.layer
 
-    def addPluginToMenu(self, menu_name, action) -> None:
+    def addPluginToVectorMenu(self, menu_name, action) -> None:
         self.menu_actions.append((menu_name, action))
 
-    def addToolBarIcon(self, action) -> None:
+    def addVectorToolBarIcon(self, action) -> None:
         self.toolbar_actions.append(action)
 
-    def removePluginMenu(self, menu_name, action) -> None:
+    def removePluginVectorMenu(self, menu_name, action) -> None:
         self.removed_menu_actions.append((menu_name, action))
 
-    def removeToolBarIcon(self, action) -> None:
+    def removeVectorToolBarIcon(self, action) -> None:
         self.removed_toolbar_actions.append(action)
 
 
@@ -128,4 +130,18 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert metadata["qgisminimumversion"] == "3.44"
     assert metadata["qgismaximumversion"] == "3.99"
     assert metadata["hasprocessingprovider"] == "yes"
+    assert metadata["email"] == "jaroslaw-sadowski@users.noreply.github.com"
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
+
+
+def test_built_zip_imports_as_qgis_plugin_package(tmp_path, monkeypatch) -> None:
+    repository_root = Path(__file__).resolve().parents[2]
+    archive_path = build_plugin_zip(repository_root, tmp_path / "plugin.zip")
+    with ZipFile(archive_path) as archive:
+        archive.extractall(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    package = importlib.import_module(PLUGIN_PACKAGE_NAME)
+    instance = package.classFactory(FakeIface())
+
+    assert instance.__class__.__name__ == "EgibAreaPlugin"

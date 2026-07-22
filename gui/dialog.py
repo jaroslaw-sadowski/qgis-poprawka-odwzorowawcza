@@ -56,6 +56,10 @@ _WARNING_LABELS = {
         "Usunięto powtarzające się współrzędne punktów przy obliczaniu PGK."
     ),
     "geometry_invalid_before_repair": "Geometria była niepoprawna według GEOS.",
+    "multipart_geometry": "Geometria zawiera więcej niż jedną część.",
+    "interior_rings_included": (
+        "Pierścienie wewnętrzne uwzględniono jako granice przy obliczaniu PGK."
+    ),
     "geometry_repaired": "Obliczenia wykorzystują naprawioną kopię geometrii.",
     "repair_changed_boundary_vertices": (
         "Naprawa zmieniła zbiór wierzchołków granicy."

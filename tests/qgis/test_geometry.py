@@ -90,3 +90,15 @@ def test_curved_rings_are_not_silently_segmentized() -> None:
 
     with pytest.raises(CurvedGeometryError):
         extract_boundary_points(geometry)
+
+
+def test_boundary_point_extraction_preserves_legal_axis_mapping() -> None:
+    geometry = QgsGeometry.fromWkt(
+        "POLYGON ((7500100 5800200,7500300 5800200,7500300 5800600,"
+        "7500100 5800600,7500100 5800200))"
+    )
+
+    points = extract_boundary_points(geometry)
+
+    assert {point.northing_x for point in points} == {5_800_200.0, 5_800_600.0}
+    assert {point.easting_y for point in points} == {7_500_100.0, 7_500_300.0}

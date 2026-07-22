@@ -134,3 +134,21 @@ def test_non_finite_area_is_rejected(invalid_area: float) -> None:
 
     with pytest.raises(NonFiniteValueError):
         calculate_area_from_pgk(po_m2=invalid_area, pgk=pgk, epsg=2178)
+
+
+def test_coordinate_overflow_is_reported_as_domain_error() -> None:
+    pgk = Pl2000BoundaryPoint(1.0e308, 7_500_000.0)
+
+    with pytest.raises(NonFiniteValueError, match="overflowed"):
+        calculate_area_from_pgk(po_m2=10_000.0, pgk=pgk, epsg=2178)
+
+
+def test_non_positive_corrected_area_is_rejected() -> None:
+    x_gk_northing = 5_800_000.0 + 3_000.0 / 2.0e-6
+    pgk = Pl2000BoundaryPoint(
+        northing_x=x_gk_northing * M0,
+        easting_y=7_999_999.0,
+    )
+
+    with pytest.raises(InvalidAreaError, match="corrected legal area"):
+        calculate_area_from_pgk(po_m2=10_000.0, pgk=pgk, epsg=2178)

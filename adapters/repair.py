@@ -129,6 +129,7 @@ def _repair_geometry(geometry: QgsGeometry, repair_mode: RepairMode) -> _RepairR
 
     original_geometry = QgsGeometry(geometry)
     original_snapshot = geometry_snapshot(original_geometry)
+    input_warnings = _geometry_input_warnings(original_snapshot)
     validity_before = original_geometry.isGeosValid()
     if validity_before:
         report = _build_report(
@@ -137,7 +138,7 @@ def _repair_geometry(geometry: QgsGeometry, repair_mode: RepairMode) -> _RepairR
             repair_method=RepairMethod.NONE,
             original=original_snapshot,
             repaired=original_snapshot,
-            warnings=(),
+            warnings=input_warnings,
         )
         return _RepairResult(
             geometry=QgsGeometry(original_geometry),
@@ -145,7 +146,7 @@ def _repair_geometry(geometry: QgsGeometry, repair_mode: RepairMode) -> _RepairR
             report=report,
         )
 
-    warnings = ["geometry_invalid_before_repair"]
+    warnings = list(input_warnings) + ["geometry_invalid_before_repair"]
     last_candidate_snapshot: Optional[GeometrySnapshot] = None
     attempts = (
         (RepairMethod.STRUCTURE, Qgis.MakeValidMethod.Structure),
@@ -242,6 +243,15 @@ def _geometry_change_warnings(
         warnings.append("repair_changed_ring_count")
     if original.area_m2 != repaired.area_m2:
         warnings.append("repair_changed_area")
+    return tuple(warnings)
+
+
+def _geometry_input_warnings(snapshot: GeometrySnapshot) -> Tuple[str, ...]:
+    warnings = []
+    if snapshot.part_count > 1:
+        warnings.append("multipart_geometry")
+    if snapshot.ring_count > snapshot.part_count:
+        warnings.append("interior_rings_included")
     return tuple(warnings)
 
 
