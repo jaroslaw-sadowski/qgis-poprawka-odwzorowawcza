@@ -127,7 +127,7 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     parser.read(metadata_path, encoding="utf-8")
 
     metadata = parser["general"]
-    assert metadata["qgisminimumversion"] == "3.44"
+    assert metadata["qgisminimumversion"] == "3.40"
     assert metadata["qgismaximumversion"] == "3.99"
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "jaroslaw-sadowski@users.noreply.github.com"
