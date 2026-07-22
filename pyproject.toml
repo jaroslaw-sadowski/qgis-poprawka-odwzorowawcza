@@ -1,6 +1,7 @@
 [tool.pytest.ini_options]
-testpaths = ["tests/unit"]
+testpaths = ["tests/unit", "tests/qgis"]
 pythonpath = ["."]
+addopts = ["--import-mode=importlib"]
 
 [tool.ruff]
 target-version = "py39"
