@@ -5,7 +5,10 @@ from typing import Optional
 
 from qgis.core import QgsCoordinateReferenceSystem
 
-from core import epsg_for_zone, zone_for_epsg
+if "." in __package__:
+    from ..core import epsg_for_zone, zone_for_epsg
+else:
+    from core import epsg_for_zone, zone_for_epsg
 
 
 class ZoneSelectionError(ValueError):

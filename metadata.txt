@@ -1,0 +1,13 @@
+[general]
+name=Poprawka odwzorowawcza EGiB
+description=Obliczanie pola działki ewidencyjnej z poprawką odwzorowawczą PL-2000
+about=Oblicza ustawowe pole powierzchni zaznaczonej działki oraz wielu działek w Processing, z diagnostyką i opcjonalną naprawą geometrii.
+version=0.1.0
+qgisMinimumVersion=3.44
+qgisMaximumVersion=3.99
+author=Jarosław Sadowski
+repository=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
+tracker=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/issues
+category=Vector
+hasProcessingProvider=yes
+experimental=True

@@ -12,7 +12,10 @@ from qgis.core import (
     QgsNotSupportedException,
 )
 
-from core import Pl2000BoundaryPoint, validate_easting_zone
+if "." in __package__:
+    from ..core import Pl2000BoundaryPoint, validate_easting_zone
+else:
+    from core import Pl2000BoundaryPoint, validate_easting_zone
 
 from .geometry import (
     GeometryInputError,

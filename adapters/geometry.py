@@ -14,7 +14,10 @@ from qgis.core import (
     QgsGeometry,
 )
 
-from core import Pl2000BoundaryPoint, pl2000_point_from_qgis_coordinates
+if "." in __package__:
+    from ..core import Pl2000BoundaryPoint, pl2000_point_from_qgis_coordinates
+else:
+    from core import Pl2000BoundaryPoint, pl2000_point_from_qgis_coordinates
 
 from .zones import resolve_target_pl2000_crs
 

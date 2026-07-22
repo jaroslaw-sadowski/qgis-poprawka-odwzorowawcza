@@ -21,24 +21,44 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from adapters import (
-    GeometryInputError,
-    GeometryRepairError,
-    GeometryRepairReport,
-    GeometryTransformError,
-    RepairMethod,
-    RepairMode,
-    ZoneSelectionError,
-    prepare_geometry,
-    resolve_target_pl2000_crs,
-)
-from compat import (
-    FIELD_TYPE_BOOL,
-    FIELD_TYPE_DOUBLE,
-    FIELD_TYPE_INT,
-    FIELD_TYPE_STRING,
-)
-from core import AreaCalculationError, AreaCalculationResult, calculate_area
+if "." in __package__:
+    from ..adapters import (
+        GeometryInputError,
+        GeometryRepairError,
+        GeometryRepairReport,
+        GeometryTransformError,
+        RepairMethod,
+        RepairMode,
+        ZoneSelectionError,
+        prepare_geometry,
+        resolve_target_pl2000_crs,
+    )
+    from ..compat import (
+        FIELD_TYPE_BOOL,
+        FIELD_TYPE_DOUBLE,
+        FIELD_TYPE_INT,
+        FIELD_TYPE_STRING,
+    )
+    from ..core import AreaCalculationError, AreaCalculationResult, calculate_area
+else:
+    from adapters import (
+        GeometryInputError,
+        GeometryRepairError,
+        GeometryRepairReport,
+        GeometryTransformError,
+        RepairMethod,
+        RepairMode,
+        ZoneSelectionError,
+        prepare_geometry,
+        resolve_target_pl2000_crs,
+    )
+    from compat import (
+        FIELD_TYPE_BOOL,
+        FIELD_TYPE_DOUBLE,
+        FIELD_TYPE_INT,
+        FIELD_TYPE_STRING,
+    )
+    from core import AreaCalculationError, AreaCalculationResult, calculate_area
 
 
 class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
