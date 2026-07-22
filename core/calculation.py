@@ -113,7 +113,9 @@ def calculate_pgk(
 
     points = unique_boundary_points(boundary_points)
     if not points:
-        raise EmptyBoundaryPointsError("at least one boundary point is required")
+        raise EmptyBoundaryPointsError(
+            "at least one boundary point is required"
+        )
 
     point_count = len(points)
     return Pl2000BoundaryPoint(
@@ -150,7 +152,8 @@ def calculate_area_from_pgk(
 
     x_gk_northing = pgk.northing_x / M0
     y_gk_easting = (
-        pgk.easting_y - (zone * ZONE_PREFIX_DIVISOR + FALSE_EASTING_WITHIN_ZONE_M)
+        pgk.easting_y
+        - (zone * ZONE_PREFIX_DIVISOR + FALSE_EASTING_WITHIN_ZONE_M)
     ) / M0
 
     u = (x_gk_northing - 5_800_000.0) * 2.0e-6
@@ -186,7 +189,9 @@ def calculate_area_from_pgk(
     ):
         _require_finite(value, name)
     if legal_area_m2_raw <= 0:
-        raise InvalidAreaError("corrected legal area must be greater than zero")
+        raise InvalidAreaError(
+            "corrected legal area must be greater than zero"
+        )
 
     return AreaCalculationResult(
         po_m2=po_m2,
@@ -219,7 +224,9 @@ def calculate_area(
     supplied_points = tuple(boundary_points)
     points = unique_boundary_points(supplied_points)
     if not points:
-        raise EmptyBoundaryPointsError("at least one boundary point is required")
+        raise EmptyBoundaryPointsError(
+            "at least one boundary point is required"
+        )
 
     zone = zone_for_epsg(epsg)
     for point in points:

@@ -123,7 +123,9 @@ def prepare_geometry(
     )
 
 
-def _repair_geometry(geometry: QgsGeometry, repair_mode: RepairMode) -> _RepairResult:
+def _repair_geometry(
+    geometry: QgsGeometry, repair_mode: RepairMode
+) -> _RepairResult:
     if not isinstance(repair_mode, RepairMode):
         raise TypeError("repair_mode must be a RepairMode value")
 
@@ -162,12 +164,16 @@ def _repair_geometry(geometry: QgsGeometry, repair_mode: RepairMode) -> _RepairR
 
         rejection_reason = _candidate_rejection_reason(candidate)
         if rejection_reason is not None:
-            warnings.append(f"{repair_method.value}_failed: {rejection_reason}")
+            warnings.append(
+                f"{repair_method.value}_failed: {rejection_reason}"
+            )
             last_candidate_snapshot = _snapshot_if_polygon(candidate)
             continue
 
         repaired_snapshot = geometry_snapshot(candidate)
-        warnings.extend(_geometry_change_warnings(original_snapshot, repaired_snapshot))
+        warnings.extend(
+            _geometry_change_warnings(original_snapshot, repaired_snapshot)
+        )
         if repair_mode is RepairMode.STRICT:
             warnings.append("strict_mode_blocks_statutory_result")
 
@@ -200,7 +206,9 @@ def _repair_geometry(geometry: QgsGeometry, repair_mode: RepairMode) -> _RepairR
     )
 
 
-def _make_valid(geometry: QgsGeometry, method: Qgis.MakeValidMethod) -> QgsGeometry:
+def _make_valid(
+    geometry: QgsGeometry, method: Qgis.MakeValidMethod
+) -> QgsGeometry:
     """Call the QGIS 3.44-compatible two-argument makeValid overload."""
 
     return geometry.makeValid(method, False)
@@ -277,8 +285,12 @@ def _build_report(
         original_area_m2=original.area_m2,
         repaired_area_m2=repaired.area_m2,
         area_difference_m2=repaired.area_m2 - original.area_m2,
-        vertices_added=len(repaired.vertex_coordinates - original.vertex_coordinates),
-        vertices_removed=len(original.vertex_coordinates - repaired.vertex_coordinates),
+        vertices_added=len(
+            repaired.vertex_coordinates - original.vertex_coordinates
+        ),
+        vertices_removed=len(
+            original.vertex_coordinates - repaired.vertex_coordinates
+        ),
         warnings=warnings,
     )
 

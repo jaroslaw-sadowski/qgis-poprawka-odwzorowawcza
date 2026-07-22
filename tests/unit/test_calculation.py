@@ -90,8 +90,12 @@ def test_formula_is_symmetric_on_both_sides_of_central_meridian() -> None:
     east_result = calculate_area_from_pgk(po_m2=10_000.0, pgk=east, epsg=2178)
 
     assert west_result.v == pytest.approx(-east_result.v)
-    assert west_result.sigma_cm_per_km == pytest.approx(east_result.sigma_cm_per_km)
-    assert west_result.legal_area_m2_raw == pytest.approx(east_result.legal_area_m2_raw)
+    assert west_result.sigma_cm_per_km == pytest.approx(
+        east_result.sigma_cm_per_km
+    )
+    assert west_result.legal_area_m2_raw == pytest.approx(
+        east_result.legal_area_m2_raw
+    )
 
 
 def test_pgk_uses_unique_boundary_points() -> None:

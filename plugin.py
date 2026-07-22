@@ -35,13 +35,19 @@ class EgibAreaPlugin:
         if self.provider is None:
             provider = EgibAreaProvider()
             if not QgsApplication.processingRegistry().addProvider(provider):
-                raise RuntimeError("Nie można zarejestrować providera Processing.")
+                raise RuntimeError(
+                    "Nie można zarejestrować providera Processing."
+                )
             self.provider = provider
 
         if self.action is None:
-            icon_path = Path(__file__).resolve().parent / "resources" / "icon.svg"
+            icon_path = (
+                Path(__file__).resolve().parent / "resources" / "icon.svg"
+            )
             action = QAction(
-                QIcon(str(icon_path)), self.ACTION_TEXT, self.iface.mainWindow()
+                QIcon(str(icon_path)),
+                self.ACTION_TEXT,
+                self.iface.mainWindow(),
             )
             action.setObjectName("egibSelectedParcelAction")
             action.triggered.connect(self.run)

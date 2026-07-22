@@ -55,7 +55,9 @@ def _run_algorithm(
         catchExceptions=False,
     )
     assert ok is True
-    output = QgsProcessingUtils.mapLayerFromString(results[algorithm.OUTPUT], context)
+    output = QgsProcessingUtils.mapLayerFromString(
+        results[algorithm.OUTPUT], context
+    )
     assert output is not None
     return output, context
 
@@ -83,7 +85,9 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
         "7500250 5800250,7500200 5800250,7500200 5800200)))",
     )
     input_fields = layer.fields().names()
-    input_wkbs = [bytes(feature.geometry().asWkb()) for feature in layer.getFeatures()]
+    input_wkbs = [
+        bytes(feature.geometry().asWkb()) for feature in layer.getFeatures()
+    ]
 
     output, _context = _run_algorithm(layer)
 
@@ -157,7 +161,9 @@ def test_feature_without_geometry_is_reported_and_batch_continues() -> None:
     layer.dataProvider().addFeature(empty_feature)
 
     output, _context = _run_algorithm(layer)
-    results = {feature["parcel_id"]: feature for feature in output.getFeatures()}
+    results = {
+        feature["parcel_id"]: feature for feature in output.getFeatures()
+    }
 
     assert output.featureCount() == 2
     assert results[1]["egib_status"] == "ok"
@@ -173,7 +179,9 @@ def test_reserved_output_field_collision_is_rejected() -> None:
         "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
         "7500050 5800050,7499950 5800050,7499950 5799950)))"
     )
-    layer.dataProvider().addAttributes([QgsField("egib_status", FIELD_TYPE_STRING)])
+    layer.dataProvider().addAttributes(
+        [QgsField("egib_status", FIELD_TYPE_STRING)]
+    )
     layer.updateFields()
 
     with pytest.raises(QgsProcessingException, match="egib_status"):

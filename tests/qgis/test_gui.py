@@ -7,7 +7,9 @@ from adapters import RepairMethod
 from gui import SelectedParcelDialog
 
 
-def _layer_with_geometry(wkt: str, *, crs: str = "EPSG:2178") -> QgsVectorLayer:
+def _layer_with_geometry(
+    wkt: str, *, crs: str = "EPSG:2178"
+) -> QgsVectorLayer:
     layer = QgsVectorLayer(f"MultiPolygon?crs={crs}", "Działki", "memory")
     feature = QgsFeature(layer.fields())
     feature.setGeometry(QgsGeometry.fromWkt(wkt))
@@ -24,7 +26,7 @@ def _dialog(layer: QgsVectorLayer) -> SelectedParcelDialog:
     )
 
 
-def test_dialog_calculates_selected_pl2000_parcel_without_editing_source() -> None:
+def test_dialog_calculates_without_editing_source() -> None:
     layer = _layer_with_geometry(
         "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
         "7500050 5800050,7499950 5800050,7499950 5799950)))"
@@ -32,7 +34,9 @@ def test_dialog_calculates_selected_pl2000_parcel_without_editing_source() -> No
     source_wkb = bytes(next(layer.getFeatures()).geometry().asWkb())
     dialog = _dialog(layer)
 
-    assert dialog.windowTitle() == "Poprawka odwzorowawcza — zaznaczona działka"
+    assert (
+        dialog.windowTitle() == "Poprawka odwzorowawcza — zaznaczona działka"
+    )
     assert dialog.zone_combo.isEnabled() is False
     assert "strefa 7" in dialog.zone_combo.currentText()
 
@@ -40,7 +44,9 @@ def test_dialog_calculates_selected_pl2000_parcel_without_editing_source() -> No
 
     assert dialog.last_result is not None
     assert dialog.last_result.calculation is not None
-    assert dialog.last_result.calculation.legal_area_ha_rounded == Decimal("1.0002")
+    assert dialog.last_result.calculation.legal_area_ha_rounded == Decimal(
+        "1.0002"
+    )
     text = dialog.result_text.toPlainText()
     assert "Pole ewidencyjne: 1,0002 ha" in text
     assert "PGK — prawne X (północna)" in text
@@ -61,8 +67,13 @@ def test_dialog_strict_mode_blocks_result_after_repair() -> None:
 
     assert dialog.last_result is not None
     assert dialog.last_result.calculation is None
-    assert dialog.last_result.preparation.report.repair_method is RepairMethod.STRUCTURE
-    assert "Tryb STRICT zablokował wynik ustawowy" in dialog.status_label.text()
+    assert (
+        dialog.last_result.preparation.report.repair_method
+        is RepairMethod.STRUCTURE
+    )
+    assert (
+        "Tryb STRICT zablokował wynik ustawowy" in dialog.status_label.text()
+    )
     assert "Nie wyznaczono" in dialog.result_text.toPlainText()
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
@@ -80,7 +91,9 @@ def test_dialog_auto_repair_marks_repaired_calculation() -> None:
     assert dialog.last_result is not None
     assert dialog.last_result.calculation is not None
     assert "naprawionej kopii" in dialog.status_label.text()
-    assert "Naprawa zmieniła zbiór wierzchołków" in (dialog.result_text.toPlainText())
+    assert "Naprawa zmieniła zbiór wierzchołków" in (
+        dialog.result_text.toPlainText()
+    )
 
 
 def test_dialog_requires_confirmed_zone_for_other_crs(monkeypatch) -> None:
@@ -102,7 +115,9 @@ def test_dialog_requires_confirmed_zone_for_other_crs(monkeypatch) -> None:
     dialog.calculate_button.click()
 
     assert dialog.last_result is None
-    assert warnings == ["Wybierz strefę PL-2000 i potwierdź ją przed obliczeniem."]
+    assert warnings == [
+        "Wybierz strefę PL-2000 i potwierdź ją przed obliczeniem."
+    ]
 
     dialog.zone_combo.setCurrentIndex(3)
     dialog.calculate_button.click()

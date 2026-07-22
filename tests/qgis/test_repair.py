@@ -26,7 +26,8 @@ def _bow_tie() -> QgsGeometry:
 
 def test_valid_geometry_is_not_changed_or_repaired() -> None:
     source = QgsGeometry.fromWkt(
-        "POLYGON ((7500000 5800000, 7500100 5800000, 7500100 5800100, 7500000 5800000))"
+        "POLYGON ((7500000 5800000, 7500100 5800000, "
+        "7500100 5800100, 7500000 5800000))"
     )
     source_wkb = bytes(source.asWkb())
 
@@ -145,7 +146,8 @@ def test_failure_of_both_methods_raises_error_with_report(monkeypatch) -> None:
 
 def test_zone_prefix_is_validated_after_transform() -> None:
     wrong_prefix = QgsGeometry.fromWkt(
-        "POLYGON ((6500000 5800000, 6500100 5800000, 6500100 5800100, 6500000 5800000))"
+        "POLYGON ((6500000 5800000, 6500100 5800000, "
+        "6500100 5800100, 6500000 5800000))"
     )
 
     with pytest.raises(ZoneMismatchError):

@@ -35,9 +35,13 @@ def runtime_files(source_root: Path) -> Sequence[Path]:
     ]
     if missing_directories:
         missing_names = ", ".join(str(path) for path in missing_directories)
-        raise FileNotFoundError(f"missing runtime plugin directories: {missing_names}")
+        raise FileNotFoundError(
+            f"missing runtime plugin directories: {missing_names}"
+        )
 
-    files = [source_root / relative_path for relative_path in RUNTIME_ROOT_FILES]
+    files = [
+        source_root / relative_path for relative_path in RUNTIME_ROOT_FILES
+    ]
     for directory_name in RUNTIME_DIRECTORIES:
         directory = source_root / directory_name
         files.extend(
@@ -51,7 +55,9 @@ def runtime_files(source_root: Path) -> Sequence[Path]:
     missing = [path for path in files if not path.is_file()]
     if missing:
         missing_names = ", ".join(str(path) for path in missing)
-        raise FileNotFoundError(f"missing runtime plugin files: {missing_names}")
+        raise FileNotFoundError(
+            f"missing runtime plugin files: {missing_names}"
+        )
     return tuple(sorted(set(files), key=lambda path: path.as_posix()))
 
 
@@ -65,7 +71,9 @@ def build_plugin_zip(source_root: Path, output_path: Path) -> Path:
     with ZipFile(output_path, "w") as archive:
         for source_path in runtime_files(source_root):
             relative_path = source_path.relative_to(source_root)
-            archive_path = PurePosixPath(PLUGIN_PACKAGE_NAME, *relative_path.parts)
+            archive_path = PurePosixPath(
+                PLUGIN_PACKAGE_NAME, *relative_path.parts
+            )
             _write_file(archive, source_path, archive_path)
     return output_path
 
@@ -91,7 +99,9 @@ def _write_file(
     archive.writestr(info, source_path.read_bytes())
 
 
-def _parse_arguments(arguments: Optional[Iterable[str]] = None) -> argparse.Namespace:
+def _parse_arguments(
+    arguments: Optional[Iterable[str]] = None,
+) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output",

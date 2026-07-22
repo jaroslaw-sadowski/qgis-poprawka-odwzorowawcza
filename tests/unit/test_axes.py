@@ -13,8 +13,12 @@ def test_qgis_axes_are_mapped_to_polish_geodetic_convention() -> None:
     assert point.easting_y == 7_500_125.25
 
 
-@pytest.mark.parametrize("invalid_value", [float("nan"), float("inf"), -float("inf")])
-def test_qgis_axis_mapping_rejects_non_finite_values(invalid_value: float) -> None:
+@pytest.mark.parametrize(
+    "invalid_value", [float("nan"), float("inf"), -float("inf")]
+)
+def test_qgis_axis_mapping_rejects_non_finite_values(
+    invalid_value: float,
+) -> None:
     with pytest.raises(NonFiniteValueError):
         pl2000_point_from_qgis_coordinates(
             qgis_easting=invalid_value,

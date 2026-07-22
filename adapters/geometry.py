@@ -81,12 +81,14 @@ def transform_geometry_to_pl2000(
             operation_result = transformed.transform(coordinate_transform)
         except QgsCsException as error:
             raise GeometryTransformError(
-                f"failed to transform geometry to EPSG:{selection.epsg}: {error}"
+                "failed to transform geometry to "
+                f"EPSG:{selection.epsg}: {error}"
             ) from error
 
         if operation_result != Qgis.GeometryOperationResult.Success:
             raise GeometryTransformError(
-                f"geometry transform returned a non-success result: {operation_result}"
+                "geometry transform returned a non-success result: "
+                f"{operation_result}"
             )
 
     _validate_polygon_geometry(transformed)
@@ -134,7 +136,9 @@ def geometry_snapshot(geometry: QgsGeometry) -> GeometrySnapshot:
         for ring in rings:
             points = _effective_ring_points(ring)
             vertex_count += len(points)
-            vertex_coordinates.update((point.x(), point.y()) for point in points)
+            vertex_coordinates.update(
+                (point.x(), point.y()) for point in points
+            )
 
     return GeometrySnapshot(
         part_count=part_count,

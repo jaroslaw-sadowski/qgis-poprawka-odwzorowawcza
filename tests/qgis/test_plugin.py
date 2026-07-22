@@ -72,12 +72,18 @@ def test_plugin_registers_action_provider_and_unloads(monkeypatch) -> None:
         assert plugin.action.icon().isNull() is False
         assert iface.menu_actions == [(plugin.MENU_NAME, plugin.action)]
         assert iface.toolbar_actions == [plugin.action]
-        assert registry.algorithmById("egib_area:calculate_egib_area") is not None
+        assert (
+            registry.algorithmById("egib_area:calculate_egib_area") is not None
+        )
 
         iface.layer = _selected_layer()
         plugin.action.trigger()
         assert len(opened_dialogs) == 1
-        assert opened_dialogs[0].windowTitle().startswith("Poprawka odwzorowawcza")
+        assert (
+            opened_dialogs[0]
+            .windowTitle()
+            .startswith("Poprawka odwzorowawcza")
+        )
         assert plugin.dialog is None
     finally:
         action = plugin.action
@@ -107,7 +113,9 @@ def test_plugin_action_warns_when_selection_is_missing(monkeypatch) -> None:
 
     plugin.run()
 
-    assert messages == ["Zaznacz dokładnie jedną działkę na aktywnej warstwie."]
+    assert messages == [
+        "Zaznacz dokładnie jedną działkę na aktywnej warstwie."
+    ]
 
 
 def test_qgis_class_factory_imports_plugin_as_a_package(monkeypatch) -> None:
@@ -134,7 +142,9 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
 
 
-def test_built_zip_imports_as_qgis_plugin_package(tmp_path, monkeypatch) -> None:
+def test_built_zip_imports_as_qgis_plugin_package(
+    tmp_path, monkeypatch
+) -> None:
     repository_root = Path(__file__).resolve().parents[2]
     archive_path = build_plugin_zip(repository_root, tmp_path / "plugin.zip")
     with ZipFile(archive_path) as archive:

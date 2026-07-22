@@ -39,7 +39,11 @@ if "." in __package__:
         FIELD_TYPE_INT,
         FIELD_TYPE_STRING,
     )
-    from ..core import AreaCalculationError, AreaCalculationResult, calculate_area
+    from ..core import (
+        AreaCalculationError,
+        AreaCalculationResult,
+        calculate_area,
+    )
 else:
     from adapters import (
         GeometryInputError,
@@ -58,7 +62,11 @@ else:
         FIELD_TYPE_INT,
         FIELD_TYPE_STRING,
     )
-    from core import AreaCalculationError, AreaCalculationResult, calculate_area
+    from core import (
+        AreaCalculationError,
+        AreaCalculationResult,
+        calculate_area,
+    )
 
 
 class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
@@ -230,7 +238,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 )
 
             if feature_count > 0:
-                feedback.setProgress((feature_index + 1) * 100.0 / feature_count)
+                feedback.setProgress(
+                    (feature_index + 1) * 100.0 / feature_count
+                )
 
         return {self.OUTPUT: destination_id}
 
@@ -324,7 +334,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
         if collisions:
             names = ", ".join(sorted(collisions))
             raise QgsProcessingException(
-                self.tr(f"Warstwa wejściowa zawiera zarezerwowane pola: {names}")
+                self.tr(
+                    f"Warstwa wejściowa zawiera zarezerwowane pola: {names}"
+                )
             )
 
         fields = QgsFields(source_fields)
@@ -449,12 +461,16 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
         parameters: dict,
         context: QgsProcessingContext,
     ) -> RepairMode:
-        mode_index = self.parameterAsEnum(parameters, self.REPAIR_MODE, context)
+        mode_index = self.parameterAsEnum(
+            parameters, self.REPAIR_MODE, context
+        )
         if mode_index == 0:
             return RepairMode.STRICT
         if mode_index == 1:
             return RepairMode.AUTO_REPAIR
-        raise QgsProcessingException(self.tr("Nieprawidłowy tryb naprawy geometrii."))
+        raise QgsProcessingException(
+            self.tr("Nieprawidłowy tryb naprawy geometrii.")
+        )
 
     @staticmethod
     def _joined_warnings(*warning_groups: Iterable[str]) -> str:
@@ -467,4 +483,6 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
 
     @staticmethod
     def tr(message: str) -> str:
-        return QCoreApplication.translate("CalculateEgibAreaAlgorithm", message)
+        return QCoreApplication.translate(
+            "CalculateEgibAreaAlgorithm", message
+        )

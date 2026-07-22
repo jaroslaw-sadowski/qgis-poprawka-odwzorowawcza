@@ -34,7 +34,11 @@ if "." in __package__:
         ZoneSelectionError,
         prepare_geometry,
     )
-    from ..core import AreaCalculationError, AreaCalculationResult, calculate_area
+    from ..core import (
+        AreaCalculationError,
+        AreaCalculationResult,
+        calculate_area,
+    )
 else:
     from adapters import (
         GeometryInputError,
@@ -46,7 +50,11 @@ else:
         ZoneSelectionError,
         prepare_geometry,
     )
-    from core import AreaCalculationError, AreaCalculationResult, calculate_area
+    from core import (
+        AreaCalculationError,
+        AreaCalculationResult,
+        calculate_area,
+    )
 
 
 _PL2000_ZONE_BY_EPSG = {2176: 5, 2177: 6, 2178: 7, 2179: 8}
@@ -55,7 +63,9 @@ _WARNING_LABELS = {
     "duplicate_boundary_points_removed": (
         "Usunięto powtarzające się współrzędne punktów przy obliczaniu PGK."
     ),
-    "geometry_invalid_before_repair": "Geometria była niepoprawna według GEOS.",
+    "geometry_invalid_before_repair": (
+        "Geometria była niepoprawna według GEOS."
+    ),
     "multipart_geometry": "Geometria zawiera więcej niż jedną część.",
     "interior_rings_included": (
         "Pierścienie wewnętrzne uwzględniono jako granice przy obliczaniu PGK."
@@ -107,7 +117,7 @@ def calculate_selected_parcel(
     selected_zone: Optional[int],
     repair_mode: RepairMode,
 ) -> SelectedParcelResult:
-    """Calculate one feature through the same non-mutating adapter as Processing."""
+    """Calculate one feature without mutating its source layer."""
 
     preparation = prepare_geometry(
         feature.geometry(),
@@ -227,11 +237,13 @@ class SelectedParcelDialog(QDialog):
             )
 
     def calculate(self) -> None:
-        """Calculate and render the selected feature without editing its layer."""
+        """Calculate and render the feature without editing its layer."""
 
         selected_zone = self.zone_combo.currentData()
         if self.zone_combo.isEnabled() and selected_zone is None:
-            self._show_error("Wybierz strefę PL-2000 i potwierdź ją przed obliczeniem.")
+            self._show_error(
+                "Wybierz strefę PL-2000 i potwierdź ją przed obliczeniem."
+            )
             return
 
         repair_mode = RepairMode(self.repair_mode_combo.currentData())
@@ -250,14 +262,17 @@ class SelectedParcelDialog(QDialog):
             GeometryTransformError,
             ZoneSelectionError,
         ) as error:
-            self._show_error(f"Nie można obliczyć powierzchni.\n\nSzczegóły: {error}")
+            self._show_error(
+                f"Nie można obliczyć powierzchni.\n\nSzczegóły: {error}"
+            )
             return
 
         self.last_result = result
         self.result_text.setPlainText(_format_result(result))
         if result.calculation is None:
             self.status_label.setText(
-                "Geometria wymagała naprawy. Tryb STRICT zablokował wynik ustawowy."
+                "Geometria wymagała naprawy. Tryb STRICT zablokował "
+                "wynik ustawowy."
             )
         elif result.preparation.report.repair_method is RepairMethod.NONE:
             self.status_label.setText("Obliczenie zakończone poprawnie.")
@@ -299,7 +314,8 @@ def _format_result(result: SelectedParcelResult) -> str:
             f"Pole z geometrii Po: {_format_number(calculation.po_m2, 4)} m²",
             "Poprawka odwzorowawcza: "
             f"{_format_number(calculation.correction_m2, 8)} m²",
-            f"Pole po korekcie: {_format_number(calculation.legal_area_m2_raw, 8)} m²",
+            "Pole po korekcie: "
+            f"{_format_number(calculation.legal_area_m2_raw, 8)} m²",
             "Pole ewidencyjne: "
             f"{str(calculation.legal_area_ha_rounded).replace('.', ',')} ha",
             "PGK — prawne X (północna): "
@@ -316,12 +332,17 @@ def _format_result(result: SelectedParcelResult) -> str:
         + (
             "",
             "STREFA I GEOMETRIA",
-            f"Strefa PL-2000: {preparation.zone} (EPSG:{preparation.target_epsg})",
-            f"Poprawna według GEOS przed naprawą: {_yes_no(report.validity_before)}",
-            f"Poprawna według GEOS po naprawie: {_yes_no(report.validity_after)}",
+            f"Strefa PL-2000: {preparation.zone} "
+            f"(EPSG:{preparation.target_epsg})",
+            "Poprawna według GEOS przed naprawą: "
+            f"{_yes_no(report.validity_before)}",
+            "Poprawna według GEOS po naprawie: "
+            f"{_yes_no(report.validity_after)}",
             f"Metoda naprawy: {_REPAIR_METHOD_LABELS[report.repair_method]}",
-            f"Części: {report.original_part_count} → {report.repaired_part_count}",
-            f"Pierścienie: {report.original_ring_count} → {report.repaired_ring_count}",
+            f"Części: {report.original_part_count} → "
+            f"{report.repaired_part_count}",
+            f"Pierścienie: {report.original_ring_count} → "
+            f"{report.repaired_ring_count}",
             f"Wierzchołki: {report.original_vertex_count} → "
             f"{report.repaired_vertex_count}",
             f"Wierzchołki dodane/usunięte: {report.vertices_added}/"

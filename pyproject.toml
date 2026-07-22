@@ -5,8 +5,20 @@ addopts = ["--import-mode=importlib"]
 
 [tool.ruff]
 target-version = "py39"
-line-length = 88
+line-length = 79
+# The legacy QGIS action contains [%...%] placeholders which become Python
+# only after substitution by QGIS.
 exclude = ["legacy"]
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I", "B"]
+select = ["E", "W", "F", "I", "B", "N"]
+# The Git repository directory contains hyphens, while the installable plugin
+# ZIP deliberately uses the valid qgis_poprawka_odwzorowawcza package name.
+ignore = ["N999"]
+
+[tool.ruff.lint.per-file-ignores]
+# These camelCase entry points and overrides are required by the QGIS API.
+"__init__.py" = ["N802"]
+"plugin.py" = ["N802"]
+"processing_provider/*.py" = ["N802"]
+"tests/qgis/test_plugin.py" = ["N802"]

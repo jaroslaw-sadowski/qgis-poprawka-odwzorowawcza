@@ -9,7 +9,9 @@ from adapters import ZoneSelectionError, resolve_target_pl2000_crs
     [(2176, 5), (2177, 6), (2178, 7), (2179, 8)],
 )
 def test_pl2000_source_crs_has_priority(epsg: int, expected_zone: int) -> None:
-    result = resolve_target_pl2000_crs(QgsCoordinateReferenceSystem(f"EPSG:{epsg}"))
+    result = resolve_target_pl2000_crs(
+        QgsCoordinateReferenceSystem(f"EPSG:{epsg}")
+    )
 
     assert result.epsg == epsg
     assert result.zone == expected_zone

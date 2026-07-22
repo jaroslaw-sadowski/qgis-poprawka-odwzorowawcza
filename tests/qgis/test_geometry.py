@@ -39,7 +39,8 @@ def test_transform_to_selected_pl2000_zone_does_not_modify_source() -> None:
 
 def test_geometry_already_in_pl2000_is_still_copied() -> None:
     source = QgsGeometry.fromWkt(
-        "POLYGON ((7500000 5800000, 7500100 5800000, 7500100 5800100, 7500000 5800000))"
+        "POLYGON ((7500000 5800000, 7500100 5800000, "
+        "7500100 5800100, 7500000 5800000))"
     )
 
     result = transform_geometry_to_pl2000(
@@ -60,7 +61,9 @@ def test_geometry_already_in_pl2000_is_still_copied() -> None:
         QgsGeometry.fromWkt("LINESTRING (0 0, 1 1)"),
     ],
 )
-def test_null_empty_and_non_polygonal_geometries_are_rejected(geometry) -> None:
+def test_null_empty_and_non_polygonal_geometries_are_rejected(
+    geometry,
+) -> None:
     with pytest.raises(GeometryInputError):
         transform_geometry_to_pl2000(
             geometry,
@@ -69,7 +72,7 @@ def test_null_empty_and_non_polygonal_geometries_are_rejected(geometry) -> None:
         )
 
 
-def test_snapshot_counts_parts_rings_and_vertices_without_closing_points() -> None:
+def test_snapshot_counts_geometry_structure() -> None:
     geometry = QgsGeometry.fromWkt(
         "MULTIPOLYGON (((0 0,10 0,10 10,0 0)),"
         "((20 20,30 20,30 30,20 20),(22 22,23 22,23 23,22 22)))"
