@@ -11,6 +11,7 @@ from qgis.core import (
     QgsFeature,
     QgsVectorLayer,
 )
+from qgis.PyQt.QtCore import QEvent
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QComboBox,
@@ -23,6 +24,7 @@ from qgis.PyQt.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTextBrowser,
+    QToolTip,
     QVBoxLayout,
     QWidget,
 )
@@ -91,10 +93,6 @@ _WARNING_LABELS = {
     "structure_failed": "Metoda Structure nie naprawiła geometrii.",
     "linework_not_supported": "Metoda Linework nie jest obsługiwana.",
     "linework_failed": "Metoda Linework nie naprawiła geometrii.",
-    "strict_mode_blocks_statutory_result": (
-        "Zgodnie z wybraną opcją nie wyznaczono wyniku po naprawie "
-        "geometrii."
-    ),
 }
 
 _REPAIR_METHOD_LABELS = {
@@ -104,16 +102,144 @@ _REPAIR_METHOD_LABELS = {
     RepairMethod.FAILED: "nieudana",
 }
 
-_REPAIR_OPTION_NO_RESULT = "Wykryj błędy, ale nie licz po naprawie geometrii"
+_REPAIR_OPTION_SOURCE = (
+    "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
+)
 _REPAIR_OPTION_AUTO = "Wykryj błędy i spróbuj naprawić geometrię"
-_REPAIR_HINT_NO_RESULT = (
-    "Jeżeli geometria będzie wymagała naprawy, wynik powierzchni nie "
-    "zostanie wyznaczony."
-)
-_REPAIR_HINT_AUTO = (
-    "Uwaga: naprawa może zmienić geometrię poligonu używaną do "
-    "obliczenia. Warstwa źródłowa pozostanie bez zmian."
-)
+
+_EVENT_TYPE_ENUM = getattr(QEvent, "Type", QEvent)
+_TOOLTIP_EVENT_TYPE = getattr(_EVENT_TYPE_ENUM, "ToolTip")
+
+_WARNING_DETAILS = {
+    "duplicate_boundary_points_removed": (
+        "Powtarzające się pary współrzędnych zostały usunięte przed "
+        "obliczeniem średniej arytmetycznej. Każdy unikalny punkt graniczny "
+        "wpływa więc na położenie P_GK tylko jeden raz."
+    ),
+    "geometry_invalid_before_repair": (
+        "Kontrola GEOS wykryła błąd topologiczny, na przykład "
+        "samoprzecięcie albo nieprawidłowe ułożenie pierścieni. Dalszy wynik "
+        "zależy od wybranej metody obsługi geometrii."
+    ),
+    "multipart_geometry": (
+        "Obiekt składa się z kilku części poligonowych. Pole obejmuje "
+        "wszystkie części, a P_GK jest wyznaczany z punktów granicznych "
+        "każdej z nich."
+    ),
+    "interior_rings_included": (
+        "Obiekt zawiera otwory. Punkty ich pierścieni są punktami granicy "
+        "poligonu i zostały uwzględnione przy wyznaczaniu P_GK. Może to "
+        "wpłynąć na położenie przybliżonego środka ciężkości."
+    ),
+    "geometry_repaired": (
+        "Do obliczenia użyto kopii geometrii naprawionej przez QGIS/GEOS. "
+        "Geometria na warstwie źródłowej nie została zmieniona."
+    ),
+    "repair_changed_boundary_vertices": (
+        "Naprawa dodała lub usunęła współrzędne na granicy poligonu. Pole "
+        "P₀ obliczono z naprawionej kopii, natomiast P_GK nadal pochodzi z "
+        "punktów geometrii sprzed naprawy."
+    ),
+    "repair_changed_part_count": (
+        "Po naprawie poligon ma inną liczbę części. Zmiana dotyczy wyłącznie "
+        "kopii używanej do obliczenia i warstwy wynikowej."
+    ),
+    "repair_changed_ring_count": (
+        "Po naprawie zmieniła się liczba pierścieni zewnętrznych lub "
+        "wewnętrznych. Może to oznaczać zmianę topologii poligonu."
+    ),
+    "repair_changed_area": (
+        "Pole naprawionej kopii różni się od pola geometrii wejściowej. "
+        "Dokładną różnicę pokazano w sekcji diagnostycznej."
+    ),
+    "structure_not_supported": (
+        "Bieżąca wersja QGIS/GEOS nie obsługuje metody Structure. Wtyczka "
+        "przechodzi do próby metodą Linework."
+    ),
+    "structure_failed": (
+        "Metoda Structure nie utworzyła poprawnej geometrii poligonowej. "
+        "Wtyczka przechodzi do próby metodą Linework."
+    ),
+    "linework_not_supported": (
+        "Bieżąca wersja QGIS/GEOS nie obsługuje metody Linework."
+    ),
+    "linework_failed": (
+        "Metoda Linework nie utworzyła poprawnej geometrii poligonowej."
+    ),
+}
+
+_PARAMETER_DETAILS = {
+    "param:pgk-x": (
+        "P_GK — X₂₀₀₀",
+        "Współrzędna X w układzie PL-2000 punktu określającego przybliżony "
+        "środek ciężkości działki. P_GK jest średnią arytmetyczną "
+        "współrzędnych unikalnych punktów granicznych.",
+    ),
+    "param:pgk-y": (
+        "P_GK — Y₂₀₀₀",
+        "Współrzędna Y w układzie PL-2000 punktu określającego przybliżony "
+        "środek ciężkości działki. Zawiera prefiks pasa odwzorowawczego.",
+    ),
+    "param:x-gk": (
+        "X_GK",
+        "Niemodyfikowana współrzędna X punktu P_GK w odwzorowaniu "
+        "Gaussa–Krügera, obliczona jako X₂₀₀₀ / m₀.",
+    ),
+    "param:y-gk": (
+        "Y_GK",
+        "Niemodyfikowana współrzędna Y punktu P_GK w odwzorowaniu "
+        "Gaussa–Krügera, po odjęciu prefiksu pasa i przesunięcia 500 000 m.",
+    ),
+    "param:u": (
+        "u",
+        "Argument wielomianu: u = (X_GK − 5 800 000,0) · 2,0 · 10⁻⁶.",
+    ),
+    "param:v": (
+        "v",
+        "Argument wielomianu: v = Y_GK · 2,0 · 10⁻⁶.",
+    ),
+    "param:sigma": (
+        "σ",
+        "Elementarne zniekształcenie liniowe w punkcie P_GK, wyrażone "
+        "w centymetrach na kilometr.",
+    ),
+    "param:m": (
+        "m",
+        "Skala zniekształcenia liniowego w punkcie P_GK: "
+        "m = σ · 10⁻⁵ + 1.",
+    ),
+    "param:m2": (
+        "m²",
+        "Skala zniekształcenia powierzchniowego, równa kwadratowi skali "
+        "zniekształcenia liniowego m.",
+    ),
+    "param:n": (
+        "N",
+        "Numer pasa odwzorowawczego układu PL-2000, wynikający z wybranej "
+        "strefy i prefiksu współrzędnej Y₂₀₀₀.",
+    ),
+}
+
+
+class TechnicalReportBrowser(QTextBrowser):
+    """Read-only report with contextual help for symbols and warnings."""
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self._hover_help = {}
+
+    def set_hover_help(self, hover_help: dict) -> None:
+        self._hover_help = dict(hover_help)
+
+    def viewportEvent(self, event: object) -> bool:
+        if event.type() == _TOOLTIP_EVENT_TYPE:
+            help_key = self.anchorAt(event.pos())
+            help_text = self._hover_help.get(help_key)
+            if help_text:
+                QToolTip.showText(event.globalPos(), help_text, self)
+                return True
+            QToolTip.hideText()
+        return super().viewportEvent(event)
 
 
 @dataclass(frozen=True)
@@ -183,28 +309,28 @@ class SelectedParcelDialog(QDialog):
             Path(__file__).resolve().parents[1] / "resources" / "icon.svg"
         )
         self.setWindowIcon(QIcon(str(icon_path)))
-        self.setMinimumSize(720, 620)
-        self.resize(820, 720)
+        self.setMinimumSize(680, 480)
+        self.resize(840, 600)
         self._colors = _theme_colors(self)
         self._build_ui()
         self.setStyleSheet(_dialog_stylesheet(self._colors))
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(14)
+        layout.setContentsMargins(14, 11, 14, 11)
+        layout.setSpacing(8)
 
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(12)
+        header_layout.setSpacing(8)
 
         icon_label = QLabel()
         icon_label.setObjectName("dialogIcon")
-        icon_label.setPixmap(self.windowIcon().pixmap(42, 42))
-        icon_label.setFixedSize(46, 46)
+        icon_label.setPixmap(self.windowIcon().pixmap(28, 28))
+        icon_label.setFixedSize(30, 30)
         header_layout.addWidget(icon_label)
 
         heading_layout = QVBoxLayout()
-        heading_layout.setSpacing(1)
+        heading_layout.setSpacing(0)
         title_label = QLabel("Korekta pola powierzchni działki")
         title_label.setObjectName("dialogTitle")
         subtitle_label = QLabel(
@@ -220,35 +346,39 @@ class SelectedParcelDialog(QDialog):
         selection_card = QFrame()
         selection_card.setObjectName("selectionCard")
         selection_layout = QHBoxLayout(selection_card)
-        selection_layout.setContentsMargins(14, 10, 14, 10)
-        selection_layout.setSpacing(12)
+        selection_layout.setContentsMargins(10, 6, 10, 6)
+        selection_layout.setSpacing(8)
 
-        layer_layout = QVBoxLayout()
-        layer_layout.setSpacing(1)
         layer_caption = QLabel("WYBRANY OBIEKT")
         layer_caption.setObjectName("eyebrowLabel")
-        layer_name = QLabel(self._layer.name())
-        layer_name.setObjectName("selectionPrimary")
-        layer_name.setWordWrap(True)
-        layer_layout.addWidget(layer_caption)
-        layer_layout.addWidget(layer_name)
-        selection_layout.addLayout(layer_layout, 1)
+        selection_layout.addWidget(layer_caption)
 
-        selection_meta = QLabel(
-            f"ID: {self._feature.id()}\n"
-            f"CRS: {self._layer.crs().authid() or 'brak identyfikatora'}"
+        layer_name = QLabel(
+            f"<b>Warstwa:</b> {escape(self._layer.name())}"
         )
-        selection_meta.setObjectName("selectionMeta")
-        selection_meta.setWordWrap(True)
-        selection_layout.addWidget(selection_meta)
+        layer_name.setObjectName("selectionField")
+        layer_name.setToolTip(self._layer.name())
+        selection_layout.addWidget(layer_name, 1)
+
+        authid = self._layer.crs().authid()
+        epsg = authid.partition(":")[2] if ":" in authid else authid
+        epsg_label = QLabel(
+            f"<b>EPSG:</b> {escape(epsg or 'brak')}"
+        )
+        epsg_label.setObjectName("selectionField")
+        selection_layout.addWidget(epsg_label)
+
+        object_label = QLabel(f"<b>Obiekt:</b> {self._feature.id()}")
+        object_label.setObjectName("selectionField")
+        selection_layout.addWidget(object_label)
         layout.addWidget(selection_card)
 
         settings_group = QGroupBox("Ustawienia obliczenia")
         settings_group.setObjectName("settingsGroup")
         settings_layout = QFormLayout(settings_group)
-        settings_layout.setContentsMargins(16, 20, 16, 14)
-        settings_layout.setHorizontalSpacing(18)
-        settings_layout.setVerticalSpacing(10)
+        settings_layout.setContentsMargins(11, 14, 11, 8)
+        settings_layout.setHorizontalSpacing(12)
+        settings_layout.setVerticalSpacing(5)
 
         self.zone_combo = QComboBox()
         self.zone_combo.setObjectName("zoneCombo")
@@ -258,31 +388,23 @@ class SelectedParcelDialog(QDialog):
         self.repair_mode_combo = QComboBox()
         self.repair_mode_combo.setObjectName("repairModeCombo")
         self.repair_mode_combo.addItem(
-            _REPAIR_OPTION_NO_RESULT,
-            RepairMode.STRICT.value,
+            _REPAIR_OPTION_SOURCE,
+            RepairMode.SOURCE_GEOMETRY.value,
         )
         self.repair_mode_combo.addItem(
             _REPAIR_OPTION_AUTO,
             RepairMode.AUTO_REPAIR.value,
         )
-        self.repair_mode_combo.setToolTip(
-            f"{_REPAIR_OPTION_NO_RESULT}. {_REPAIR_HINT_NO_RESULT}\n\n"
-            f"{_REPAIR_OPTION_AUTO}. {_REPAIR_HINT_AUTO}"
-        )
+        self.repair_mode_combo.setToolTip(_repair_options_tooltip())
         settings_layout.addRow("Obsługa geometrii", self.repair_mode_combo)
-
-        self.repair_hint = QLabel()
-        self.repair_hint.setObjectName("repairHint")
-        self.repair_hint.setWordWrap(True)
-        settings_layout.addRow("", self.repair_hint)
         layout.addWidget(settings_group)
 
         status_card = QFrame()
         status_card.setObjectName("statusCard")
         status_card.setProperty("state", "ready")
         status_layout = QHBoxLayout(status_card)
-        status_layout.setContentsMargins(14, 9, 14, 9)
-        status_layout.setSpacing(10)
+        status_layout.setContentsMargins(10, 5, 10, 5)
+        status_layout.setSpacing(7)
         self.status_indicator = QLabel("●")
         self.status_indicator.setObjectName("statusIndicator")
         status_layout.addWidget(self.status_indicator)
@@ -293,7 +415,7 @@ class SelectedParcelDialog(QDialog):
         layout.addWidget(status_card)
         self.status_card = status_card
 
-        self.result_text = QTextBrowser()
+        self.result_text = TechnicalReportBrowser()
         self.result_text.setObjectName("resultText")
         self.result_text.setReadOnly(True)
         self.result_text.setOpenExternalLinks(False)
@@ -301,7 +423,7 @@ class SelectedParcelDialog(QDialog):
         layout.addWidget(self.result_text, 1)
 
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)
+        button_layout.setSpacing(7)
         button_layout.addStretch(1)
         self.close_button = QPushButton("Zamknij")
         self.close_button.setObjectName("closeButton")
@@ -314,22 +436,9 @@ class SelectedParcelDialog(QDialog):
         button_layout.addWidget(self.calculate_button)
         layout.addLayout(button_layout)
 
-        self.repair_mode_combo.currentIndexChanged.connect(
-            self._update_repair_hint
-        )
         self.calculate_button.clicked.connect(self.calculate)
         self.close_button.clicked.connect(self.reject)
-        self._update_repair_hint()
         self._set_status("Gotowy do obliczenia.", "ready")
-
-    def _update_repair_hint(self) -> None:
-        repair_mode = RepairMode(self.repair_mode_combo.currentData())
-        hint = (
-            _REPAIR_HINT_AUTO
-            if repair_mode is RepairMode.AUTO_REPAIR
-            else _REPAIR_HINT_NO_RESULT
-        )
-        self.repair_hint.setText(hint)
 
     def _set_status(self, message: str, state: str) -> None:
         self.status_label.setText(message)
@@ -388,11 +497,16 @@ class SelectedParcelDialog(QDialog):
             return
 
         self.last_result = result
+        self.result_text.set_hover_help(_report_hover_help(result))
         self.result_text.setHtml(_format_result_html(result, self._colors))
         if result.calculation is None:
             self._set_status(
-                "Wykryto błędy geometrii. Zgodnie z wybraną opcją nie "
-                "wyznaczono wyniku po naprawie.",
+                "Nie wyznaczono wyniku powierzchni.",
+                "warning",
+            )
+        elif repair_mode is RepairMode.SOURCE_GEOMETRY:
+            self._set_status(
+                "Obliczenie wykonano bez kontroli poprawności geometrii.",
                 "warning",
             )
         elif result.preparation.report.repair_method is RepairMethod.NONE:
@@ -465,48 +579,69 @@ def _format_result_html(
             ),
         )
         result_content = (
-            '<table class="result-table" cellspacing="0" cellpadding="0">'
+            '<table class="result-table" width="100%" '
+            'cellspacing="0" cellpadding="0">'
             f"{''.join(result_rows)}"
             "</table>"
         )
 
     parameter_content = ""
     if calculation is not None:
-        parameter_rows = (
-            _parameter_row(
+        parameter_items = (
+            _parameter_cells(
+                "param:pgk-x",
                 "P<sub>GK</sub> — X₂₀₀₀",
                 _format_number(calculation.pgk_x_northing, 3),
                 "m",
             ),
-            _parameter_row(
+            _parameter_cells(
+                "param:pgk-y",
                 "P<sub>GK</sub> — Y₂₀₀₀",
                 _format_number(calculation.pgk_y_easting, 3),
                 "m",
             ),
-            _parameter_row(
+            _parameter_cells(
+                "param:x-gk",
                 "X<sub>GK</sub>",
                 _format_number(calculation.x_gk_northing, 3),
                 "m",
             ),
-            _parameter_row(
+            _parameter_cells(
+                "param:y-gk",
                 "Y<sub>GK</sub>",
                 _format_number(calculation.y_gk_easting, 3),
                 "m",
             ),
-            _parameter_row("u", _format_number(calculation.u, 8)),
-            _parameter_row("v", _format_number(calculation.v, 8)),
-            _parameter_row(
+            _parameter_cells(
+                "param:u",
+                "u",
+                _format_number(calculation.u, 8),
+            ),
+            _parameter_cells(
+                "param:v",
+                "v",
+                _format_number(calculation.v, 8),
+            ),
+            _parameter_cells(
+                "param:sigma",
                 "σ",
                 _format_number(calculation.sigma_cm_per_km, 8),
                 "cm/km",
             ),
-            _parameter_row(
+            _parameter_cells(
+                "param:m",
                 "m",
                 _format_number(calculation.scale_m, 10),
             ),
-            _parameter_row(
+            _parameter_cells(
+                "param:m2",
                 "m²",
                 _format_number(calculation.scale_m**2, 10),
+            ),
+            _parameter_cells(
+                "param:n",
+                "N",
+                str(calculation.zone),
             ),
         )
         parameter_content = (
@@ -520,71 +655,76 @@ def _format_result_html(
             "(q₁ + q₂ · u + q₃ · u² + q₄ · v²)"
             "</div>"
             '<div class="parameter-intro">'
-            "P<sub>GK</sub> — punkt określający przybliżony środek "
-            "ciężkości działki ewidencyjnej, obliczony jako średnia "
-            "arytmetyczna współrzędnych punktów granicznych działki "
-            "ewidencyjnej."
+            "Najedź na symbol parametru, aby zobaczyć jego pełną definicję."
             "</div>"
-            '<table class="parameter-table" cellspacing="0" cellpadding="0">'
-            f"{''.join(parameter_rows)}"
+            '<table class="parameter-table" width="100%" '
+            'cellspacing="0" cellpadding="0">'
+            f"{_wide_grid_rows(parameter_items)}"
             "</table>"
         )
 
-    geometry_rows = (
-        _diagnostic_row(
+    repair_method_label = _REPAIR_METHOD_LABELS[report.repair_method]
+    if report.validity_before is None:
+        repair_method_label = "nie wykonywano"
+
+    geometry_items = (
+        _diagnostic_cells(
             "Strefa układu PL-2000",
             f"{preparation.zone} (EPSG:{preparation.target_epsg})",
         ),
-        _diagnostic_row(
-            "Poprawność GEOS przed naprawą",
+        _diagnostic_cells(
+            "Kontrola GEOS przed naprawą",
             _yes_no(report.validity_before),
         ),
-        _diagnostic_row(
-            "Poprawność GEOS po naprawie",
+        _diagnostic_cells(
+            "Kontrola GEOS po naprawie",
             _yes_no(report.validity_after),
         ),
-        _diagnostic_row(
+        _diagnostic_cells(
             "Metoda naprawy",
-            _REPAIR_METHOD_LABELS[report.repair_method],
+            repair_method_label,
         ),
-        _diagnostic_row(
+        _diagnostic_cells(
             "Części geometrii",
             f"{report.original_part_count} → {report.repaired_part_count}",
         ),
-        _diagnostic_row(
+        _diagnostic_cells(
             "Pierścienie",
             f"{report.original_ring_count} → {report.repaired_ring_count}",
         ),
-        _diagnostic_row(
+        _diagnostic_cells(
             "Wierzchołki",
             f"{report.original_vertex_count} → "
             f"{report.repaired_vertex_count}",
         ),
-        _diagnostic_row(
+        _diagnostic_cells(
             "Wierzchołki dodane / usunięte",
             f"{report.vertices_added} / {report.vertices_removed}",
         ),
-        _diagnostic_row(
+        _diagnostic_cells(
             "Pole geometrii przed / po",
             f"{_format_number(report.original_area_m2, 2)} / "
             f"{_format_number(report.repaired_area_m2, 2)} m²",
         ),
-        _diagnostic_row(
+        _diagnostic_cells(
             "Różnica pola po naprawie",
             f"{_format_number(report.area_difference_m2, 2)} m²",
         ),
     )
     geometry_content = (
         '<div class="section-title">STREFA I GEOMETRIA</div>'
-        '<table class="diagnostic-table" cellspacing="0" cellpadding="0">'
-        f"{''.join(geometry_rows)}"
+        '<table class="diagnostic-table single" width="100%" '
+        'cellspacing="0" cellpadding="0">'
+        f"{_single_grid_rows(geometry_items)}"
         "</table>"
     )
 
-    warnings = tuple(_warning_label(warning) for warning in result.warnings)
-    if warnings:
+    if result.warnings:
         warning_items = "".join(
-            f"<li>{escape(warning)}</li>" for warning in warnings
+            '<li><a class="help-link" '
+            f'href="warning:{warning_index}">'
+            f"{escape(_warning_label(warning))}</a></li>"
+            for warning_index, warning in enumerate(result.warnings)
         )
         warning_content = (
             '<div class="section-title warning-heading">UWAGI</div>'
@@ -596,11 +736,21 @@ def _format_result_html(
             '<div class="no-warnings">Brak uwag do obliczenia.</div>'
         )
 
+    if parameter_content:
+        details_content = (
+            '<table class="details-layout" width="100%" '
+            'cellspacing="0" cellpadding="0"><tr>'
+            f'<td class="details-column left">{parameter_content}</td>'
+            f'<td class="details-column">{geometry_content}</td>'
+            "</tr></table>"
+        )
+    else:
+        details_content = geometry_content
+
     body = (
         '<div class="section-title first">WYNIK OBLICZENIA</div>'
         f"{result_content}"
-        f"{parameter_content}"
-        f"{geometry_content}"
+        f"{details_content}"
         f"{warning_content}"
     )
     return _html_document(body, colors)
@@ -623,23 +773,42 @@ def _result_row(
     )
 
 
-def _parameter_row(symbol: str, value: str, unit: str = "") -> str:
+def _parameter_cells(
+    help_key: str,
+    symbol: str,
+    value: str,
+    unit: str = "",
+) -> str:
     formatted_unit = f" {escape(unit)}" if unit else ""
     return (
-        "<tr>"
-        f'<td class="parameter-symbol">{symbol}</td>'
+        '<td class="parameter-symbol">'
+        f'<a class="help-link" href="{help_key}">{symbol}</a></td>'
         f'<td class="parameter-value">{value}{formatted_unit}</td>'
-        "</tr>"
     )
 
 
-def _diagnostic_row(label: str, value: str) -> str:
+def _diagnostic_cells(label: str, value: str) -> str:
     return (
-        "<tr>"
         f'<td class="diagnostic-label">{escape(label)}</td>'
         f'<td class="diagnostic-value">{escape(value)}</td>'
-        "</tr>"
     )
+
+
+def _wide_grid_rows(items: Tuple[str, ...]) -> str:
+    rows = []
+    for index in range(0, len(items), 2):
+        left = items[index]
+        right = (
+            items[index + 1]
+            if index + 1 < len(items)
+            else '<td colspan="2"></td>'
+        )
+        rows.append(f"<tr>{left}{right}</tr>")
+    return "".join(rows)
+
+
+def _single_grid_rows(items: Tuple[str, ...]) -> str:
+    return "".join(f"<tr>{item}</tr>" for item in items)
 
 
 def _empty_result_html(colors: dict) -> str:
@@ -661,17 +830,17 @@ def _html_document(body: str, colors: dict) -> str:
           body {{
             color: {colors["text"]};
             background-color: {colors["surface"]};
-            font-family: "Segoe UI", "Noto Sans", "DejaVu Sans",
-              "Helvetica Neue", Arial, sans-serif;
-            font-size: 10pt;
-            margin: 14px;
+            font-family: "DejaVu Sans Mono", Consolas, Menlo,
+              "Liberation Mono", monospace;
+            font-size: 8.5pt;
+            margin: 8px;
           }}
           .section-title {{
             color: {colors["muted"]};
-            font-size: 8.5pt;
+            font-size: 7.5pt;
             font-weight: 700;
-            margin-top: 22px;
-            margin-bottom: 8px;
+            margin-top: 12px;
+            margin-bottom: 5px;
           }}
           .section-title.first {{
             margin-top: 0;
@@ -682,27 +851,38 @@ def _html_document(body: str, colors: dict) -> str:
           }}
           td {{
             border-bottom: 1px solid {colors["border"]};
-            padding: 8px 7px;
+            padding: 4px 5px;
             vertical-align: middle;
+          }}
+          .details-column {{
+            border-bottom: 0;
+            padding: 0 0 0 8px;
+            vertical-align: top;
+            width: 50%;
+          }}
+          .details-column.left {{
+            border-right: 1px solid {colors["border"]};
+            padding-left: 0;
+            padding-right: 8px;
           }}
           .result-symbol {{
             color: {colors["accent"]};
-            font-family: "Cambria Math", "STIX Two Math",
-              "DejaVu Serif", serif;
-            font-size: 12pt;
+            font-family: "DejaVu Sans Mono", Consolas, Menlo,
+              "Liberation Mono", monospace;
+            font-size: 9.5pt;
             font-weight: 700;
             white-space: nowrap;
-            width: 25%;
+            width: 24%;
           }}
           .result-description {{
             color: {colors["muted"]};
-            font-size: 8.7pt;
-            width: 48%;
+            font-size: 7.5pt;
+            width: 49%;
           }}
           .result-value {{
-            font-family: "Cascadia Mono", "SFMono-Regular",
-              "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
-            font-size: 10.5pt;
+            font-family: "DejaVu Sans Mono", Consolas, Menlo,
+              "Liberation Mono", monospace;
+            font-size: 9pt;
             font-weight: 700;
             text-align: right;
             white-space: nowrap;
@@ -714,10 +894,10 @@ def _html_document(body: str, colors: dict) -> str:
           .formula {{
             color: {colors["accent"]};
             background-color: {colors["accent_soft"]};
-            font-family: "Cambria Math", "STIX Two Math",
-              "DejaVu Serif", serif;
-            font-size: 10.5pt;
-            padding: 10px 12px;
+            font-family: "DejaVu Sans Mono", Consolas, Menlo,
+              "Liberation Mono", monospace;
+            font-size: 8.5pt;
+            padding: 6px 8px;
           }}
           .formula-separator {{
             color: {colors["muted"]};
@@ -726,27 +906,38 @@ def _html_document(body: str, colors: dict) -> str:
           }}
           .parameter-intro {{
             color: {colors["muted"]};
-            font-size: 8.7pt;
-            margin-top: 8px;
-            margin-bottom: 4px;
+            font-size: 7.5pt;
+            margin-top: 5px;
+            margin-bottom: 2px;
           }}
           .parameter-table, .diagnostic-table {{
             margin-top: 5px;
           }}
           .parameter-symbol, .diagnostic-label {{
             color: {colors["muted"]};
-            width: 62%;
+            width: 18%;
           }}
           .parameter-symbol {{
-            font-family: "Cambria Math", "STIX Two Math",
-              "DejaVu Serif", serif;
-            font-size: 10.5pt;
+            font-family: "DejaVu Sans Mono", Consolas, Menlo,
+              "Liberation Mono", monospace;
+            font-size: 8.5pt;
           }}
           .parameter-value, .diagnostic-value {{
-            font-family: "Cascadia Mono", "SFMono-Regular",
-              "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
+            font-family: "DejaVu Sans Mono", Consolas, Menlo,
+              "Liberation Mono", monospace;
             text-align: right;
             white-space: nowrap;
+            width: 32%;
+          }}
+          .diagnostic-table.single .diagnostic-label {{
+            width: 64%;
+          }}
+          .diagnostic-table.single .diagnostic-value {{
+            width: 36%;
+          }}
+          a.help-link {{
+            color: {colors["accent"]};
+            text-decoration: none;
           }}
           .warnings {{
             color: {colors["warning"]};
@@ -774,15 +965,15 @@ def _html_document(body: str, colors: dict) -> str:
           .welcome {{
             color: {colors["muted"]};
             text-align: center;
-            margin-top: 55px;
+            margin-top: 30px;
           }}
           .welcome-mark {{
             color: {colors["accent"]};
-            font-family: "Cambria Math", "STIX Two Math",
-              "DejaVu Serif", serif;
-            font-size: 19pt;
+            font-family: "DejaVu Sans Mono", Consolas, Menlo,
+              "Liberation Mono", monospace;
+            font-size: 14pt;
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 7px;
           }}
         </style>
       </head>
@@ -799,6 +990,63 @@ def _warning_label(warning: str) -> str:
     return label
 
 
+def _report_hover_help(result: SelectedParcelResult) -> dict:
+    hover_help = {
+        help_key: _tooltip_html(title, description)
+        for help_key, (title, description) in _PARAMETER_DETAILS.items()
+    }
+    for warning_index, warning in enumerate(result.warnings):
+        warning_code, separator, details = warning.partition(": ")
+        description = _WARNING_DETAILS.get(
+            warning_code,
+            "Wtyczka zgłosiła dodatkową informację diagnostyczną dla "
+            "tego obliczenia.",
+        )
+        if separator:
+            description = f"{description} Szczegóły techniczne: {details}"
+        hover_help[f"warning:{warning_index}"] = _tooltip_html(
+            "Wyjaśnienie uwagi",
+            description,
+        )
+    return hover_help
+
+
+def _repair_options_tooltip() -> str:
+    source_description = (
+        "Wtyczka pomija kontrolę GEOS i nie uruchamia makeValid(). "
+        "P₀ jest obliczane z kopii geometrii obiektu źródłowego po "
+        "transformacji do PL-2000. Błędy topologiczne mogą więc wpłynąć "
+        "na wiarygodność pola. Nadal sprawdzane są podstawowe warunki "
+        "techniczne: obecność poligonu, strefa PL-2000 oraz skończoność "
+        "i dodatniość wyniku. "
+        "Warstwa źródłowa nie jest modyfikowana."
+    )
+    repair_description = (
+        "Wtyczka sprawdza geometrię za pomocą GEOS. Jeżeli wykryje błąd, "
+        "próbuje naprawić kopię metodą Structure, a następnie Linework. "
+        "Naprawa może zmienić pole, granicę, liczbę części lub pierścieni. "
+        "P_GK nadal pochodzi z punktów sprzed naprawy, a warstwa źródłowa "
+        "pozostaje bez zmian."
+    )
+    return (
+        '<html><div style="width:430px">'
+        f"<b>{escape(_REPAIR_OPTION_SOURCE)}</b><br>"
+        f"{escape(source_description)}"
+        '<br><br><span style="color:#176b8b">'
+        f"<b>{escape(_REPAIR_OPTION_AUTO)}</b></span><br>"
+        f"{escape(repair_description)}"
+        "</div></html>"
+    )
+
+
+def _tooltip_html(title: str, description: str) -> str:
+    return (
+        '<html><div style="width:380px">'
+        f"<b>{escape(title)}</b><br>{escape(description)}"
+        "</div></html>"
+    )
+
+
 def _format_number(value: float, decimal_places: int) -> str:
     return f"{value:.{decimal_places}f}".replace(".", ",")
 
@@ -807,7 +1055,9 @@ def _format_decimal(value: object) -> str:
     return str(value).replace(".", ",")
 
 
-def _yes_no(value: bool) -> str:
+def _yes_no(value: Optional[bool]) -> str:
+    if value is None:
+        return "nie sprawdzano"
     return "tak" if value else "nie"
 
 
@@ -855,53 +1105,42 @@ def _dialog_stylesheet(colors: dict) -> str:
     QDialog#selectedParcelDialog {{
         background-color: {colors["window"]};
         color: {colors["text"]};
-        font-family: "Segoe UI", "Noto Sans", "DejaVu Sans",
-            "Helvetica Neue", Arial, sans-serif;
-        font-size: 10pt;
+        font-family: "DejaVu Sans Mono", Consolas, Menlo,
+            "Liberation Mono", monospace;
+        font-size: 8.5pt;
     }}
     QLabel {{
         background: transparent;
         color: {colors["text"]};
     }}
     QLabel#dialogTitle {{
-        font-size: 17pt;
-        font-weight: 700;
-    }}
-    QLabel#dialogSubtitle, QLabel#selectionMeta, QLabel#repairHint {{
-        color: {colors["muted"]};
+        font-size: 12pt;
+        font-weight: 600;
     }}
     QLabel#dialogSubtitle {{
-        font-size: 9.5pt;
+        color: {colors["muted"]};
+        font-size: 7.5pt;
     }}
     QLabel#eyebrowLabel {{
         color: {colors["accent"]};
-        font-size: 8pt;
+        font-size: 7pt;
         font-weight: 700;
     }}
-    QLabel#selectionPrimary {{
-        font-size: 11pt;
-        font-weight: 600;
-    }}
-    QLabel#selectionMeta {{
-        font-family: "Cascadia Mono", "SFMono-Regular",
-            "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
-        font-size: 8.5pt;
-    }}
-    QLabel#repairHint {{
-        font-size: 8.5pt;
-        padding-bottom: 2px;
+    QLabel#selectionField {{
+        color: {colors["text"]};
+        font-size: 8pt;
     }}
     QFrame#selectionCard, QGroupBox#settingsGroup,
     QTextBrowser#resultText {{
         background-color: {colors["surface"]};
         border: 1px solid {colors["border"]};
-        border-radius: 9px;
+        border-radius: 6px;
     }}
     QGroupBox#settingsGroup {{
         color: {colors["text"]};
         font-weight: 600;
-        margin-top: 10px;
-        padding-top: 8px;
+        margin-top: 7px;
+        padding-top: 4px;
     }}
     QGroupBox#settingsGroup::title {{
         subcontrol-origin: margin;
@@ -912,9 +1151,9 @@ def _dialog_stylesheet(colors: dict) -> str:
         color: {colors["text"]};
         background-color: {colors["surface_alt"]};
         border: 1px solid {colors["border"]};
-        border-radius: 6px;
-        min-height: 24px;
-        padding: 6px 34px 6px 10px;
+        border-radius: 4px;
+        min-height: 20px;
+        padding: 3px 30px 3px 7px;
         selection-background-color: {colors["accent"]};
         selection-color: #ffffff;
     }}
@@ -941,7 +1180,7 @@ def _dialog_stylesheet(colors: dict) -> str:
     QFrame#statusCard {{
         background-color: {colors["surface_alt"]};
         border: 1px solid {colors["border"]};
-        border-radius: 7px;
+        border-radius: 5px;
     }}
     QFrame#statusCard[state="success"] {{
         background-color: {colors["success_soft"]};
@@ -957,6 +1196,7 @@ def _dialog_stylesheet(colors: dict) -> str:
     }}
     QLabel#statusLabel {{
         font-weight: 600;
+        font-size: 8pt;
     }}
     QLabel#statusIndicator {{
         color: {colors["accent"]};
@@ -972,14 +1212,14 @@ def _dialog_stylesheet(colors: dict) -> str:
         color: {colors["error"]};
     }}
     QTextBrowser#resultText {{
-        padding: 3px;
+        padding: 2px;
         selection-background-color: {colors["accent"]};
         selection-color: #ffffff;
     }}
     QPushButton {{
-        min-height: 24px;
-        padding: 7px 18px;
-        border-radius: 6px;
+        min-height: 20px;
+        padding: 4px 12px;
+        border-radius: 4px;
         font-weight: 600;
     }}
     QPushButton[role="primary"] {{
@@ -1015,5 +1255,14 @@ def _dialog_stylesheet(colors: dict) -> str:
     }}
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
         height: 0;
+    }}
+    QToolTip {{
+        color: {colors["text"]};
+        background-color: {colors["surface"]};
+        border: 1px solid {colors["accent"]};
+        padding: 7px;
+        font-family: "DejaVu Sans Mono", Consolas, Menlo,
+            "Liberation Mono", monospace;
+        font-size: 8pt;
     }}
     """

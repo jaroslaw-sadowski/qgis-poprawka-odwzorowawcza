@@ -42,10 +42,24 @@ def test_dialog_calculates_without_editing_source() -> None:
     assert "strefa 7" in dialog.zone_combo.currentText()
     assert (
         dialog.repair_mode_combo.currentText()
-        == "Wykryj błędy, ale nie licz po naprawie geometrii"
+        == "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
     )
-    assert "Segoe UI" in dialog.styleSheet()
+    assert "DejaVu Sans Mono" in dialog.styleSheet()
+    assert "Consolas" in dialog.styleSheet()
+    assert "Menlo" in dialog.styleSheet()
+    assert dialog.width() == 840
+    assert dialog.height() == 600
     assert dialog.calculate_button.isDefault() is True
+    selection_text = " ".join(
+        label.text() for label in dialog.findChildren(dialog_module.QLabel)
+    )
+    assert "Warstwa:" in selection_text
+    assert "EPSG:" in selection_text
+    assert "Obiekt:" in selection_text
+    repair_tooltip = dialog.repair_mode_combo.toolTip()
+    assert "pomija kontrolę GEOS" in repair_tooltip
+    assert "nie uruchamia makeValid()" in repair_tooltip
+    assert "próbuje naprawić kopię" in repair_tooltip
 
     dialog.calculate_button.click()
 
@@ -67,13 +81,14 @@ def test_dialog_calculates_without_editing_source() -> None:
     assert "7 (EPSG:2178)" in text
     assert "σ = σ₀ + m₀ · v²" in text
     assert "10001,539" not in text
+    assert "param:sigma" in dialog.result_text._hover_help
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
 
-def test_dialog_strict_mode_blocks_result_after_repair() -> None:
+def test_dialog_source_mode_calculates_without_geometry_check() -> None:
     layer = _layer_with_geometry(
-        "MULTIPOLYGON (((7500000 5800000,7500100 5800100,"
-        "7500000 5800100,7500100 5800000,7500000 5800000)))"
+        "MULTIPOLYGON (((7500000 5800000,7500200 5800200,"
+        "7500000 5800200,7500100 5800000,7500000 5800000)))"
     )
     source_wkb = bytes(next(layer.getFeatures()).geometry().asWkb())
     dialog = _dialog(layer)
@@ -81,15 +96,15 @@ def test_dialog_strict_mode_blocks_result_after_repair() -> None:
     dialog.calculate_button.click()
 
     assert dialog.last_result is not None
-    assert dialog.last_result.calculation is None
+    assert dialog.last_result.calculation is not None
     assert (
         dialog.last_result.preparation.report.repair_method
-        is RepairMethod.STRUCTURE
+        is RepairMethod.NONE
     )
-    assert (
-        "nie wyznaczono wyniku po naprawie" in dialog.status_label.text()
-    )
-    assert "Nie wyznaczono wyniku" in dialog.result_text.toPlainText()
+    assert dialog.last_result.preparation.report.validity_before is None
+    assert dialog.last_result.preparation.report.validity_after is None
+    assert "bez kontroli poprawności geometrii" in dialog.status_label.text()
+    assert "nie sprawdzano" in dialog.result_text.toPlainText()
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
 
@@ -105,11 +120,8 @@ def test_dialog_auto_repair_marks_repaired_calculation() -> None:
         dialog.repair_mode_combo.currentText()
         == "Wykryj błędy i spróbuj naprawić geometrię"
     )
-    assert "może zmienić geometrię poligonu" in dialog.repair_hint.text()
-    assert (
-        "Warstwa źródłowa pozostanie bez zmian"
-        in dialog.repair_hint.text()
-    )
+    assert "Naprawa może zmienić pole" in dialog.repair_mode_combo.toolTip()
+    assert "warstwa źródłowa" in dialog.repair_mode_combo.toolTip()
 
     dialog.calculate_button.click()
 
@@ -119,6 +131,32 @@ def test_dialog_auto_repair_marks_repaired_calculation() -> None:
     assert "Naprawa zmieniła zbiór wierzchołków" in (
         dialog.result_text.toPlainText()
     )
+    assert any(
+        "Geometria na warstwie źródłowej nie została zmieniona" in tooltip
+        for help_key, tooltip in dialog.result_text._hover_help.items()
+        if help_key.startswith("warning:")
+    )
+
+
+def test_interior_ring_warning_has_extended_hover_help() -> None:
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499900 5799900,7500100 5799900,"
+        "7500100 5800100,7499900 5800100,7499900 5799900),"
+        "(7499975 5799975,7499975 5800025,7500025 5800025,"
+        "7500025 5799975,7499975 5799975))))"
+    )
+    dialog = _dialog(layer)
+
+    dialog.calculate_button.click()
+
+    assert "Pierścienie wewnętrzne" in dialog.result_text.toPlainText()
+    warning_help = [
+        tooltip
+        for help_key, tooltip in dialog.result_text._hover_help.items()
+        if help_key.startswith("warning:")
+    ]
+    assert any("Obiekt zawiera otwory" in tooltip for tooltip in warning_help)
+    assert any("P_GK" in tooltip for tooltip in warning_help)
 
 
 def test_dialog_requires_confirmed_zone_for_other_crs(monkeypatch) -> None:

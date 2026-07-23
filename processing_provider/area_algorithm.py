@@ -87,7 +87,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
     ZONE_BY_INDEX = {1: 5, 2: 6, 3: 7, 4: 8}
 
     REPAIR_OPTIONS = (
-        "Wykryj błędy, ale nie licz po naprawie geometrii",
+        "Nie wykrywaj błędów geometrii; licz obiekt źródłowy",
         "Wykryj błędy i spróbuj naprawić geometrię "
         "(uwaga: geometria wyniku może się zmienić)",
     )
@@ -137,7 +137,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
         return self.tr(
             "Oblicza powierzchnię działek z poprawką odwzorowawczą. "
             "Warstwa wejściowa nie jest modyfikowana; wynik powstaje w nowej "
-            "warstwie PL-2000 wraz z raportem walidacji i naprawy geometrii."
+            "warstwie PL-2000. Opcja bez wykrywania błędów pomija kontrolę "
+            "GEOS i liczy z geometrii źródłowej. Opcja naprawy sprawdza "
+            "geometrię i może zmienić jej kopię w warstwie wynikowej."
         )
 
     def createInstance(self) -> "CalculateEgibAreaAlgorithm":
@@ -283,17 +285,20 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                     epsg=prepared.target_epsg,
                 )
                 self._put_calculation(values, calculation)
-                values["egib_status"] = (
-                    "repaired"
-                    if prepared.report.repair_method is not RepairMethod.NONE
-                    else "ok"
-                )
+                if repair_mode is RepairMode.SOURCE_GEOMETRY:
+                    values["egib_status"] = "source_geometry"
+                elif (
+                    prepared.report.repair_method is not RepairMethod.NONE
+                ):
+                    values["egib_status"] = "repaired"
+                else:
+                    values["egib_status"] = "ok"
                 values["egib_warnings"] = self._joined_warnings(
                     prepared.report.warnings,
                     calculation.warnings,
                 )
             else:
-                values["egib_status"] = "strict_repair_required"
+                values["egib_status"] = "calculation_not_allowed"
 
         except GeometryRepairError as error:
             self._put_report(values, error.report)
@@ -468,7 +473,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
             parameters, self.REPAIR_MODE, context
         )
         if mode_index == 0:
-            return RepairMode.STRICT
+            return RepairMode.SOURCE_GEOMETRY
         if mode_index == 1:
             return RepairMode.AUTO_REPAIR
         raise QgsProcessingException(

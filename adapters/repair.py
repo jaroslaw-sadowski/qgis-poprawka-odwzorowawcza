@@ -27,9 +27,9 @@ from .geometry import (
 
 
 class RepairMode(str, Enum):
-    """Policy controlling whether a repaired geometry may yield legal area."""
+    """Policy controlling validation and repair of the calculation geometry."""
 
-    STRICT = "strict"
+    SOURCE_GEOMETRY = "source_geometry"
     AUTO_REPAIR = "auto_repair"
 
 
@@ -46,8 +46,8 @@ class RepairMethod(str, Enum):
 class GeometryRepairReport:
     """Required before/after geometry repair metrics."""
 
-    validity_before: bool
-    validity_after: bool
+    validity_before: Optional[bool]
+    validity_after: Optional[bool]
     repair_method: RepairMethod
     original_part_count: int
     repaired_part_count: int
@@ -97,9 +97,9 @@ def prepare_geometry(
     transform_context: QgsCoordinateTransformContext,
     *,
     selected_zone: Optional[int] = None,
-    repair_mode: RepairMode = RepairMode.STRICT,
+    repair_mode: RepairMode = RepairMode.SOURCE_GEOMETRY,
 ) -> GeometryPreparationResult:
-    """Transform, validate and optionally accept repair of a geometry copy."""
+    """Transform and prepare a geometry copy according to the chosen policy."""
 
     transformed = transform_geometry_to_pl2000(
         geometry,
@@ -132,6 +132,22 @@ def _repair_geometry(
     original_geometry = QgsGeometry(geometry)
     original_snapshot = geometry_snapshot(original_geometry)
     input_warnings = _geometry_input_warnings(original_snapshot)
+
+    if repair_mode is RepairMode.SOURCE_GEOMETRY:
+        report = _build_report(
+            validity_before=None,
+            validity_after=None,
+            repair_method=RepairMethod.NONE,
+            original=original_snapshot,
+            repaired=original_snapshot,
+            warnings=input_warnings,
+        )
+        return _RepairResult(
+            geometry=QgsGeometry(original_geometry),
+            statutory_result_allowed=True,
+            report=report,
+        )
+
     validity_before = original_geometry.isGeosValid()
     if validity_before:
         report = _build_report(
@@ -174,8 +190,6 @@ def _repair_geometry(
         warnings.extend(
             _geometry_change_warnings(original_snapshot, repaired_snapshot)
         )
-        if repair_mode is RepairMode.STRICT:
-            warnings.append("strict_mode_blocks_statutory_result")
 
         report = _build_report(
             validity_before=False,
@@ -187,7 +201,7 @@ def _repair_geometry(
         )
         return _RepairResult(
             geometry=QgsGeometry(candidate),
-            statutory_result_allowed=repair_mode is RepairMode.AUTO_REPAIR,
+            statutory_result_allowed=True,
             report=report,
         )
 
@@ -265,8 +279,8 @@ def _geometry_input_warnings(snapshot: GeometrySnapshot) -> Tuple[str, ...]:
 
 def _build_report(
     *,
-    validity_before: bool,
-    validity_after: bool,
+    validity_before: Optional[bool],
+    validity_after: Optional[bool],
     repair_method: RepairMethod,
     original: GeometrySnapshot,
     repaired: GeometrySnapshot,

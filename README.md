@@ -10,10 +10,10 @@ Wtyczka nie edytuje warstwy wejściowej. Transformacja, walidacja GEOS i
 opcjonalne `makeValid()` działają na kopiach geometrii. Processing zapisuje
 wyniki i diagnostykę do nowej warstwy.
 
-Domyślna opcja wykrywa błędy geometrii, ale nie wyznacza wyniku, jeżeli
-geometria wymaga naprawy. Druga opcja próbuje naprawić kopię geometrii i
+Domyślna opcja pomija kontrolę GEOS i oblicza pole z geometrii obiektu
+źródłowego. Druga opcja wykrywa błędy, próbuje naprawić kopię geometrii i
 wyraźnie oznacza obliczony na niej wynik. Warstwa źródłowa pozostaje bez
-zmian.
+zmian w obu trybach.
 
 ## Zgodność
 

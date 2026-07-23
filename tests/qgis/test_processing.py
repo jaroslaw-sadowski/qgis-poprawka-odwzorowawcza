@@ -67,7 +67,7 @@ def test_provider_registers_and_removes_algorithm() -> None:
     provider = EgibAreaProvider()
 
     assert CalculateEgibAreaAlgorithm.REPAIR_OPTIONS == (
-        "Wykryj błędy, ale nie licz po naprawie geometrii",
+        "Nie wykrywaj błędów geometrii; licz obiekt źródłowy",
         "Wykryj błędy i spróbuj naprawić geometrię "
         "(uwaga: geometria wyniku może się zmienić)",
     )
@@ -120,7 +120,7 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
 
     first = next(output.getFeatures())
     assert first["parcel_id"] == 1
-    assert first["egib_status"] == "ok"
+    assert first["egib_status"] == "source_geometry"
     assert first["egib_po_m2"] == 10_000.00
     assert first["egib_corr_m2"] == -1.54
     assert first["egib_area_m2"] == 10_001.54
@@ -131,22 +131,23 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
     assert first.geometry().isMultipart() is True
 
 
-def test_strict_mode_writes_diagnostics_but_no_statutory_result() -> None:
+def test_source_mode_calculates_without_geometry_validation() -> None:
     layer = _polygon_layer(
-        "MULTIPOLYGON (((7500000 5800000,7500100 5800100,"
-        "7500000 5800100,7500100 5800000,7500000 5800000)))"
+        "MULTIPOLYGON (((7500000 5800000,7500200 5800200,"
+        "7500000 5800200,7500100 5800000,7500000 5800000)))"
     )
+    source_wkb = bytes(next(layer.getFeatures()).geometry().asWkb())
 
     output, _context = _run_algorithm(layer, repair_mode_index=0)
     result = next(output.getFeatures())
 
-    assert result["egib_status"] == "strict_repair_required"
-    assert result["egib_repair_method"] == "structure"
-    assert result["egib_valid_before"] is False
-    assert result["egib_valid_after"] is True
-    assert result["egib_area_m2"] == NULL
-    assert result["egib_repaired_area_m2"] == pytest.approx(5_000.0)
-    assert result.geometry().isGeosValid() is True
+    assert result["egib_status"] == "source_geometry"
+    assert result["egib_repair_method"] == "none"
+    assert result["egib_valid_before"] == NULL
+    assert result["egib_valid_after"] == NULL
+    assert result["egib_po_m2"] == 10_000.00
+    assert result["egib_area_m2"] is not NULL
+    assert bytes(result.geometry().asWkb()) == source_wkb
 
 
 def test_auto_repair_calculates_area_in_new_layer() -> None:
@@ -181,7 +182,7 @@ def test_feature_without_geometry_is_reported_and_batch_continues() -> None:
     }
 
     assert output.featureCount() == 2
-    assert results[1]["egib_status"] == "ok"
+    assert results[1]["egib_status"] == "source_geometry"
     assert results[2]["egib_status"] == "error"
     assert results[2]["egib_zone"] == 7
     assert results[2]["egib_epsg"] == 2178
@@ -225,7 +226,7 @@ def test_explicit_zone_transforms_non_pl2000_input_in_output_copy() -> None:
     result = next(output.getFeatures())
 
     assert output.crs().authid() == "EPSG:2178"
-    assert result["egib_status"] == "ok"
+    assert result["egib_status"] == "source_geometry"
     assert result["egib_zone"] == 7
     assert result["egib_epsg"] == 2178
     assert result["egib_area_m2"] > 0

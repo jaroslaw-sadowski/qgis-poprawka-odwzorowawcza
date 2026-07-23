@@ -24,7 +24,14 @@ def _bow_tie() -> QgsGeometry:
     )
 
 
-def test_valid_geometry_is_not_changed_or_repaired() -> None:
+def _asymmetric_bow_tie() -> QgsGeometry:
+    return QgsGeometry.fromWkt(
+        "POLYGON ((7500000 5800000, 7500200 5800200, "
+        "7500000 5800200, 7500100 5800000, 7500000 5800000))"
+    )
+
+
+def test_source_geometry_mode_does_not_validate_or_repair() -> None:
     source = QgsGeometry.fromWkt(
         "POLYGON ((7500000 5800000, 7500100 5800000, "
         "7500100 5800100, 7500000 5800000))"
@@ -40,8 +47,8 @@ def test_valid_geometry_is_not_changed_or_repaired() -> None:
     assert bytes(source.asWkb()) == source_wkb
     assert bytes(result.geometry_for_area.asWkb()) == source_wkb
     assert result.statutory_result_allowed is True
-    assert result.report.validity_before is True
-    assert result.report.validity_after is True
+    assert result.report.validity_before is None
+    assert result.report.validity_after is None
     assert result.report.repair_method is RepairMethod.NONE
     assert result.report.area_difference_m2 == 0.0
     assert result.report.vertices_added == 0
@@ -82,17 +89,24 @@ def test_structure_repairs_copy_and_populates_full_report() -> None:
     assert "repair_changed_boundary_vertices" in report.warnings
 
 
-def test_strict_mode_repairs_for_diagnostics_but_blocks_legal_result() -> None:
+def test_source_geometry_mode_keeps_invalid_geometry_unchecked() -> None:
+    source = _asymmetric_bow_tie()
+    source_wkb = bytes(source.asWkb())
+
     result = prepare_geometry(
-        _bow_tie(),
+        source,
         QgsCoordinateReferenceSystem("EPSG:2178"),
         QgsCoordinateTransformContext(),
-        repair_mode=RepairMode.STRICT,
+        repair_mode=RepairMode.SOURCE_GEOMETRY,
     )
 
-    assert result.geometry_for_area.isGeosValid() is True
-    assert result.statutory_result_allowed is False
-    assert "strict_mode_blocks_statutory_result" in result.report.warnings
+    assert bytes(source.asWkb()) == source_wkb
+    assert bytes(result.geometry_for_area.asWkb()) == source_wkb
+    assert result.statutory_result_allowed is True
+    assert result.report.validity_before is None
+    assert result.report.validity_after is None
+    assert result.report.repair_method is RepairMethod.NONE
+    assert result.report.warnings == ()
 
 
 def test_linework_is_used_when_structure_is_not_supported(monkeypatch) -> None:
@@ -174,6 +188,6 @@ def test_multipart_and_interior_rings_are_reported() -> None:
         QgsCoordinateTransformContext(),
     )
 
-    assert result.report.validity_before is True
+    assert result.report.validity_before is None
     assert "multipart_geometry" in result.report.warnings
     assert "interior_rings_included" in result.report.warnings
