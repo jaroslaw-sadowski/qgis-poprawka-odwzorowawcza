@@ -1,6 +1,9 @@
 from decimal import Decimal
 
 from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
+from qgis.PyQt.QtCore import QPoint, Qt
+from qgis.PyQt.QtTest import QTest
+from qgis.PyQt.QtWidgets import QApplication
 
 import gui.dialog as dialog_module
 from adapters import RepairMethod
@@ -39,7 +42,9 @@ def test_dialog_calculates_without_editing_source() -> None:
         == "Poprawka odwzorowawcza — zaznaczona działka"
     )
     assert dialog.zone_combo.isEnabled() is False
+    assert "Wykryto PL-2000" in dialog.zone_combo.currentText()
     assert "strefa 7" in dialog.zone_combo.currentText()
+    assert "Automatycznie wykryto PL-2000" in dialog.zone_combo.toolTip()
     assert (
         dialog.repair_mode_combo.currentText()
         == "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
@@ -54,7 +59,7 @@ def test_dialog_calculates_without_editing_source() -> None:
         label.text() for label in dialog.findChildren(dialog_module.QLabel)
     )
     assert "Warstwa:" in selection_text
-    assert "EPSG:" in selection_text
+    assert "Wykryty EPSG:" in selection_text
     assert "Obiekt:" in selection_text
     repair_tooltip = dialog.repair_mode_combo.toolTip()
     assert "pomija kontrolę GEOS" in repair_tooltip
@@ -82,7 +87,45 @@ def test_dialog_calculates_without_editing_source() -> None:
     assert "σ = σ₀ + m₀ · v²" in text
     assert "10001,539" not in text
     assert "param:sigma" in dialog.result_text._hover_help
+    assert "result:p0" in dialog.result_text._hover_help
+    assert "diagnostic:zone" in dialog.result_text._hover_help
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
+
+
+def test_clicking_report_help_link_keeps_calculation_visible() -> None:
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    dialog = _dialog(layer)
+    dialog.calculate_button.click()
+    dialog.show()
+    QApplication.processEvents()
+
+    browser = dialog.result_text
+    help_position = None
+    for y_position in range(0, browser.viewport().height(), 2):
+        for x_position in range(0, browser.viewport().width(), 3):
+            position = QPoint(x_position, y_position)
+            if browser.anchorAt(position) == "result:p0":
+                help_position = position
+                break
+        if help_position is not None:
+            break
+
+    assert help_position is not None
+    text_before_click = browser.toPlainText()
+    mouse_button_enum = getattr(Qt, "MouseButton", Qt)
+    QTest.mouseClick(
+        browser.viewport(),
+        getattr(mouse_button_enum, "LeftButton"),
+        pos=help_position,
+    )
+    QApplication.processEvents()
+
+    assert browser.toPlainText() == text_before_click
+    assert dialog.last_result is not None
+    assert dialog.last_result.calculation is not None
 
 
 def test_dialog_source_mode_calculates_without_geometry_check() -> None:
@@ -167,6 +210,17 @@ def test_dialog_requires_confirmed_zone_for_other_crs(monkeypatch) -> None:
     dialog = _dialog(layer)
     warnings = []
 
+    assert "Wykryty EPSG:</b> 4326" in " ".join(
+        label.text() for label in dialog.findChildren(dialog_module.QLabel)
+    )
+    assert dialog.zone_combo.isEnabled() is True
+    assert (
+        dialog.zone_combo.currentText()
+        == "Wskaż strefę PL-2000, w której leży obiekt…"
+    )
+    assert "przeliczona w locie" in dialog.zone_combo.toolTip()
+    assert "CRS nie zostaną zmienione" in dialog.zone_combo.toolTip()
+
     class FakeMessageBox:
         @staticmethod
         def warning(parent, title, message):
@@ -179,10 +233,31 @@ def test_dialog_requires_confirmed_zone_for_other_crs(monkeypatch) -> None:
 
     assert dialog.last_result is None
     assert warnings == [
-        "Wybierz strefę PL-2000 i potwierdź ją przed obliczeniem."
+        "Wskaż strefę PL-2000, w której leży obiekt, i potwierdź wybór "
+        "przed obliczeniem."
     ]
 
     dialog.zone_combo.setCurrentIndex(3)
+    assert "Wybrano strefę 7" in dialog.zone_combo.toolTip()
+    assert "EPSG:2178" in dialog.zone_combo.toolTip()
     dialog.calculate_button.click()
     assert dialog.last_result is not None
     assert dialog.last_result.preparation.target_epsg == 2178
+
+
+def test_epsg_1992_requires_explicit_pl2000_zone() -> None:
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((500000 500000,500100 500000,"
+        "500100 500100,500000 500100,500000 500000)))",
+        crs="EPSG:2180",
+    )
+    dialog = _dialog(layer)
+
+    selection_text = " ".join(
+        label.text() for label in dialog.findChildren(dialog_module.QLabel)
+    )
+    assert "Wykryty EPSG:</b> 2180" in selection_text
+    assert dialog.zone_combo.isEnabled() is True
+    assert "Wskaż strefę PL-2000" in dialog.zone_combo.currentText()
+    assert "EPSG:2180" in dialog.zone_combo.toolTip()
+    assert "przeliczona w locie" in dialog.zone_combo.toolTip()

@@ -220,6 +220,87 @@ _PARAMETER_DETAILS = {
     ),
 }
 
+_RESULT_DETAILS = {
+    "result:p0": (
+        "P₀ — pole w układzie PL-2000",
+        "Pole powierzchni działki obliczone z płaskich współrzędnych "
+        "prostokątnych w docelowej strefie PL-2000, przed zastosowaniem "
+        "powierzchniowej poprawki odwzorowawczej.",
+    ),
+    "result:correction": (
+        "ΔP₀ — poprawka odwzorowawcza",
+        "Powierzchniowa poprawka odwzorowawcza obliczona ze skali m² "
+        "w punkcie P_GK. Wartość może być dodatnia albo ujemna.",
+    ),
+    "result:p-m2": (
+        "P = P₀ − ΔP₀",
+        "Pole powierzchni obiektu ewidencyjnego po uwzględnieniu poprawki "
+        "odwzorowawczej. Wartość w metrach kwadratowych jest prezentowana "
+        "z dokładnością do dwóch miejsc po przecinku.",
+    ),
+    "result:p-ha": (
+        "P w hektarach",
+        "Pole ewidencyjne przeliczone na hektary i zaokrąglone do 0,0001 ha "
+        "zgodnie z przyjętą polityką zaokrąglania ROUND_HALF_UP.",
+    ),
+}
+
+_DIAGNOSTIC_DETAILS = {
+    "diagnostic:zone": (
+        "Docelowa strefa PL-2000",
+        "Strefa i kod EPSG, w których wykonano obliczenie. Dla warstwy "
+        "spoza PL-2000 geometria została wcześniej przetransformowana "
+        "w locie do tej strefy.",
+    ),
+    "diagnostic:valid-before": (
+        "Kontrola GEOS przed naprawą",
+        "Wynik testu poprawności topologicznej geometrii przed ewentualnym "
+        "makeValid(). Wartość „nie sprawdzano” oznacza świadomie wybraną "
+        "opcję obliczenia bez wykrywania błędów.",
+    ),
+    "diagnostic:valid-after": (
+        "Kontrola GEOS po naprawie",
+        "Wynik testu poprawności naprawionej kopii. „Nie sprawdzano” oznacza, "
+        "że kontrola i naprawa geometrii były wyłączone.",
+    ),
+    "diagnostic:repair-method": (
+        "Metoda naprawy",
+        "Metoda QGIS/GEOS użyta do utworzenia poprawnej kopii poligonu. "
+        "Structure zachowuje strukturę pierścieni, a Linework odbudowuje "
+        "poligony z linii granicznych.",
+    ),
+    "diagnostic:parts": (
+        "Części geometrii",
+        "Liczba części poligonu przed i po naprawie. Strzałka pokazuje "
+        "zmianę w kopii wykorzystywanej do obliczenia.",
+    ),
+    "diagnostic:rings": (
+        "Pierścienie",
+        "Łączna liczba pierścieni zewnętrznych i wewnętrznych przed oraz "
+        "po naprawie geometrii.",
+    ),
+    "diagnostic:vertices": (
+        "Wierzchołki",
+        "Liczba unikalnych wierzchołków granicy przed i po naprawie. "
+        "Techniczne punkty domykające pierścienie nie są liczone podwójnie.",
+    ),
+    "diagnostic:vertex-change": (
+        "Wierzchołki dodane i usunięte",
+        "Porównanie zbiorów współrzędnych granicy przed i po makeValid(). "
+        "Zmiana może świadczyć o przebudowie kształtu poligonu.",
+    ),
+    "diagnostic:areas": (
+        "Pole geometrii przed i po",
+        "Porównanie planarnego pola kopii wejściowej i kopii po naprawie, "
+        "jeszcze przed zastosowaniem poprawki odwzorowawczej.",
+    ),
+    "diagnostic:area-difference": (
+        "Różnica pola po naprawie",
+        "Pole naprawionej kopii minus pole geometrii przed naprawą. Zero "
+        "oznacza brak zmiany pola z dokładnością prezentacji.",
+    ),
+}
+
 
 class TechnicalReportBrowser(QTextBrowser):
     """Read-only report with contextual help for symbols and warnings."""
@@ -357,19 +438,39 @@ class SelectedParcelDialog(QDialog):
             f"<b>Warstwa:</b> {escape(self._layer.name())}"
         )
         layer_name.setObjectName("selectionField")
-        layer_name.setToolTip(self._layer.name())
+        layer_name.setToolTip(
+            _tooltip_html(
+                "Warstwa źródłowa",
+                "Nazwa aktywnej warstwy, z której pochodzi wybrany obiekt: "
+                f"{self._layer.name()}. Wtyczka pracuje na kopii geometrii "
+                "i nie modyfikuje tej warstwy.",
+            )
+        )
         selection_layout.addWidget(layer_name, 1)
 
         authid = self._layer.crs().authid()
-        epsg = authid.partition(":")[2] if ":" in authid else authid
+        epsg = (
+            authid.partition(":")[2]
+            if authid.upper().startswith("EPSG:")
+            else "brak"
+        )
         epsg_label = QLabel(
-            f"<b>EPSG:</b> {escape(epsg or 'brak')}"
+            f"<b>Wykryty EPSG:</b> {escape(epsg or 'brak')}"
         )
         epsg_label.setObjectName("selectionField")
+        epsg_label.setToolTip(_source_crs_tooltip(self._layer.crs()))
         selection_layout.addWidget(epsg_label)
 
         object_label = QLabel(f"<b>Obiekt:</b> {self._feature.id()}")
         object_label.setObjectName("selectionField")
+        object_label.setToolTip(
+            _tooltip_html(
+                "Identyfikator obiektu",
+                "Wewnętrzny identyfikator wybranego obiektu w warstwie: "
+                f"{self._feature.id()}. Obliczenie dotyczy wyłącznie tego "
+                "jednego poligonu.",
+            )
+        )
         selection_layout.addWidget(object_label)
         layout.addWidget(selection_card)
 
@@ -383,7 +484,7 @@ class SelectedParcelDialog(QDialog):
         self.zone_combo = QComboBox()
         self.zone_combo.setObjectName("zoneCombo")
         self._populate_zone_combo()
-        settings_layout.addRow("Strefa układu PL-2000", self.zone_combo)
+        settings_layout.addRow("Docelowy układ PL-2000", self.zone_combo)
 
         self.repair_mode_combo = QComboBox()
         self.repair_mode_combo.setObjectName("repairModeCombo")
@@ -418,6 +519,7 @@ class SelectedParcelDialog(QDialog):
         self.result_text = TechnicalReportBrowser()
         self.result_text.setObjectName("resultText")
         self.result_text.setReadOnly(True)
+        self.result_text.setOpenLinks(False)
         self.result_text.setOpenExternalLinks(False)
         self.result_text.setHtml(_empty_result_html(self._colors))
         layout.addWidget(self.result_text, 1)
@@ -432,16 +534,29 @@ class SelectedParcelDialog(QDialog):
         self.calculate_button.setObjectName("calculateButton")
         self.calculate_button.setProperty("role", "primary")
         self.calculate_button.setDefault(True)
+        self.calculate_button.setToolTip(
+            _tooltip_html(
+                "Oblicz powierzchnię",
+                "Tworzy roboczą kopię geometrii, w razie potrzeby "
+                "transformuje ją w locie do wybranej strefy PL-2000, "
+                "stosuje wybraną obsługę geometrii i wyświetla raport. "
+                "Warstwa źródłowa pozostaje bez zmian.",
+            )
+        )
         button_layout.addWidget(self.close_button)
         button_layout.addWidget(self.calculate_button)
         layout.addLayout(button_layout)
 
         self.calculate_button.clicked.connect(self.calculate)
+        self.zone_combo.currentIndexChanged.connect(
+            self._update_zone_tooltip
+        )
         self.close_button.clicked.connect(self.reject)
         self._set_status("Gotowy do obliczenia.", "ready")
 
     def _set_status(self, message: str, state: str) -> None:
         self.status_label.setText(message)
+        self.status_card.setToolTip(_status_tooltip(message, state))
         self.status_card.setProperty("state", state)
         self.status_card.style().unpolish(self.status_card)
         self.status_card.style().polish(self.status_card)
@@ -452,18 +567,41 @@ class SelectedParcelDialog(QDialog):
         if source_zone is not None:
             source_epsg = 2171 + source_zone
             self.zone_combo.addItem(
-                f"Z CRS warstwy — strefa {source_zone} (EPSG:{source_epsg})",
+                "Wykryto PL-2000 — "
+                f"strefa {source_zone} (EPSG:{source_epsg})",
                 None,
             )
             self.zone_combo.setEnabled(False)
+            self.zone_combo.setToolTip(
+                _zone_selection_tooltip(
+                    self._layer.crs(),
+                    selected_zone=source_zone,
+                    detected_pl2000=True,
+                )
+            )
             return
 
-        self.zone_combo.addItem("Wybierz i potwierdź strefę…", None)
+        self.zone_combo.addItem(
+            "Wskaż strefę PL-2000, w której leży obiekt…",
+            None,
+        )
         for zone in (5, 6, 7, 8):
             self.zone_combo.addItem(
-                f"Strefa {zone} — EPSG:{2171 + zone}",
+                f"PL-2000 — strefa {zone} (EPSG:{2171 + zone})",
                 zone,
             )
+        self._update_zone_tooltip()
+
+    def _update_zone_tooltip(self) -> None:
+        if not self.zone_combo.isEnabled():
+            return
+        self.zone_combo.setToolTip(
+            _zone_selection_tooltip(
+                self._layer.crs(),
+                selected_zone=self.zone_combo.currentData(),
+                detected_pl2000=False,
+            )
+        )
 
     def calculate(self) -> None:
         """Calculate and render the feature without editing its layer."""
@@ -471,7 +609,8 @@ class SelectedParcelDialog(QDialog):
         selected_zone = self.zone_combo.currentData()
         if self.zone_combo.isEnabled() and selected_zone is None:
             self._show_error(
-                "Wybierz strefę PL-2000 i potwierdź ją przed obliczeniem."
+                "Wskaż strefę PL-2000, w której leży obiekt, i potwierdź "
+                "wybór przed obliczeniem."
             )
             return
 
@@ -553,6 +692,7 @@ def _format_result_html(
     else:
         result_rows = (
             _result_row(
+                "result:p0",
                 "P₀",
                 "Pole powierzchni działki obliczone na podstawie "
                 "współrzędnych prostokątnych płaskich w układzie "
@@ -560,11 +700,13 @@ def _format_result_html(
                 f"{_format_number(calculation.po_m2, 2)} m²",
             ),
             _result_row(
+                "result:correction",
                 "ΔP₀",
                 "Powierzchniowa poprawka odwzorowawcza",
                 f"{_format_number(calculation.correction_m2, 2)} m²",
             ),
             _result_row(
+                "result:p-m2",
                 "P = P₀ − ΔP₀",
                 "Pole powierzchni obiektu ewidencyjnego, jako fragmentu "
                 "powierzchni elipsoidy GRS 80",
@@ -572,6 +714,7 @@ def _format_result_html(
                 prominent=True,
             ),
             _result_row(
+                "result:p-ha",
                 "P",
                 "Pole powierzchni obiektu ewidencyjnego w hektarach",
                 f"{_format_decimal(calculation.legal_area_ha_rounded)} ha",
@@ -669,44 +812,54 @@ def _format_result_html(
 
     geometry_items = (
         _diagnostic_cells(
+            "diagnostic:zone",
             "Strefa układu PL-2000",
             f"{preparation.zone} (EPSG:{preparation.target_epsg})",
         ),
         _diagnostic_cells(
+            "diagnostic:valid-before",
             "Kontrola GEOS przed naprawą",
             _yes_no(report.validity_before),
         ),
         _diagnostic_cells(
+            "diagnostic:valid-after",
             "Kontrola GEOS po naprawie",
             _yes_no(report.validity_after),
         ),
         _diagnostic_cells(
+            "diagnostic:repair-method",
             "Metoda naprawy",
             repair_method_label,
         ),
         _diagnostic_cells(
+            "diagnostic:parts",
             "Części geometrii",
             f"{report.original_part_count} → {report.repaired_part_count}",
         ),
         _diagnostic_cells(
+            "diagnostic:rings",
             "Pierścienie",
             f"{report.original_ring_count} → {report.repaired_ring_count}",
         ),
         _diagnostic_cells(
+            "diagnostic:vertices",
             "Wierzchołki",
             f"{report.original_vertex_count} → "
             f"{report.repaired_vertex_count}",
         ),
         _diagnostic_cells(
+            "diagnostic:vertex-change",
             "Wierzchołki dodane / usunięte",
             f"{report.vertices_added} / {report.vertices_removed}",
         ),
         _diagnostic_cells(
+            "diagnostic:areas",
             "Pole geometrii przed / po",
             f"{_format_number(report.original_area_m2, 2)} / "
             f"{_format_number(report.repaired_area_m2, 2)} m²",
         ),
         _diagnostic_cells(
+            "diagnostic:area-difference",
             "Różnica pola po naprawie",
             f"{_format_number(report.area_difference_m2, 2)} m²",
         ),
@@ -757,6 +910,7 @@ def _format_result_html(
 
 
 def _result_row(
+    help_key: str,
     symbol: str,
     description: str,
     value: str,
@@ -766,7 +920,8 @@ def _result_row(
     row_class = " prominent" if prominent else ""
     return (
         f'<tr class="result-row{row_class}">'
-        f'<td class="result-symbol">{symbol}</td>'
+        '<td class="result-symbol">'
+        f'<a class="help-link" href="{help_key}">{symbol}</a></td>'
         f'<td class="result-description">{escape(description)}</td>'
         f'<td class="result-value">{value}</td>'
         "</tr>"
@@ -787,9 +942,11 @@ def _parameter_cells(
     )
 
 
-def _diagnostic_cells(label: str, value: str) -> str:
+def _diagnostic_cells(help_key: str, label: str, value: str) -> str:
     return (
-        f'<td class="diagnostic-label">{escape(label)}</td>'
+        '<td class="diagnostic-label">'
+        f'<a class="help-link" href="{help_key}">'
+        f"{escape(label)}</a></td>"
         f'<td class="diagnostic-value">{escape(value)}</td>'
     )
 
@@ -993,7 +1150,12 @@ def _warning_label(warning: str) -> str:
 def _report_hover_help(result: SelectedParcelResult) -> dict:
     hover_help = {
         help_key: _tooltip_html(title, description)
-        for help_key, (title, description) in _PARAMETER_DETAILS.items()
+        for details in (
+            _RESULT_DETAILS,
+            _PARAMETER_DETAILS,
+            _DIAGNOSTIC_DETAILS,
+        )
+        for help_key, (title, description) in details.items()
     }
     for warning_index, warning in enumerate(result.warnings):
         warning_code, separator, details = warning.partition(": ")
@@ -1036,6 +1198,101 @@ def _repair_options_tooltip() -> str:
         f"<b>{escape(_REPAIR_OPTION_AUTO)}</b></span><br>"
         f"{escape(repair_description)}"
         "</div></html>"
+    )
+
+
+def _status_tooltip(message: str, state: str) -> str:
+    if state == "ready":
+        details = (
+            "Wtyczka czeka na uruchomienie obliczenia. Sprawdź docelową "
+            "strefę PL-2000 i sposób obsługi geometrii."
+        )
+    elif "bez kontroli" in message:
+        details = (
+            "Wynik obliczono z kopii geometrii źródłowej bez testu GEOS "
+            "i bez makeValid(). Błędy topologiczne mogły wpłynąć na pole."
+        )
+    elif "naprawionej kopii" in message:
+        details = (
+            "GEOS wykrył problem, a wynik obliczono z naprawionej kopii. "
+            "Sprawdź uwagi oraz porównanie geometrii przed i po naprawie."
+        )
+    elif state == "success":
+        details = (
+            "Obliczenie zakończyło się bez błędów i bez potrzeby naprawy "
+            "geometrii."
+        )
+    elif state == "error":
+        details = (
+            "Nie utworzono wyniku. Szczegóły przyczyny pokazuje komunikat "
+            "ostrzegawczy QGIS."
+        )
+    else:
+        details = (
+            "Obliczenie wymaga uwagi użytkownika. Sprawdź treść raportu "
+            "i wyjaśnienia poszczególnych ostrzeżeń."
+        )
+    return _tooltip_html("Status obliczenia", details)
+
+
+def _source_crs_tooltip(crs: QgsCoordinateReferenceSystem) -> str:
+    authid = crs.authid() or "brak identyfikatora"
+    description = crs.description() or "brak nazwy układu"
+    if authid.upper().startswith("EPSG:"):
+        details = (
+            f"Warstwa ma przypisany układ {authid} — {description}. "
+            "Jest to źródłowy układ współrzędnych używany do odczytania "
+            "geometrii. Jeżeli nie jest to PL-2000, robocza kopia obiektu "
+            "zostanie podczas obliczenia przetransformowana w locie do "
+            "wybranej strefy PL-2000."
+        )
+    else:
+        details = (
+            f"Warstwa ma przypisany układ „{description}” ({authid}), ale "
+            "nie udało się odczytać identyfikatora EPSG. Przed obliczeniem "
+            "sprawdź definicję CRS warstwy i wskaż właściwą strefę PL-2000."
+        )
+    return _tooltip_html("Wykryty układ warstwy", details)
+
+
+def _zone_selection_tooltip(
+    source_crs: QgsCoordinateReferenceSystem,
+    *,
+    selected_zone: Optional[int],
+    detected_pl2000: bool,
+) -> str:
+    source_authid = source_crs.authid() or "CRS bez identyfikatora"
+    if detected_pl2000:
+        target_epsg = 2171 + int(selected_zone)
+        details = (
+            f"Wykryty CRS warstwy to {source_authid}, czyli układ PL-2000 "
+            f"w strefie {selected_zone}. Wybór jest zablokowany, ponieważ "
+            f"strefa wynika bezpośrednio z EPSG:{target_epsg}. Obliczenia "
+            "są wykonywane na kopii obiektu; warstwa źródłowa pozostaje "
+            "bez zmian."
+        )
+        return _tooltip_html("Automatycznie wykryto PL-2000", details)
+
+    transform_details = (
+        f"Wykryty układ źródłowy to {source_authid}, a nie jedna z czterech "
+        "stref PL-2000. Wtyczka nie zgaduje strefy na podstawie centroidu. "
+        "Wskaż strefę 5, 6, 7 albo 8 zgodną z rzeczywistym położeniem "
+        "obiektu. Podczas obliczenia robocza kopia geometrii zostanie "
+        "przeliczona w locie do wskazanego układu PL-2000. Warstwa "
+        "źródłowa i jej CRS nie zostaną zmienione."
+    )
+    if selected_zone is None:
+        return _tooltip_html(
+            "Wymagany wybór strefy PL-2000",
+            transform_details,
+        )
+
+    target_epsg = 2171 + int(selected_zone)
+    return _tooltip_html(
+        f"Wybrano strefę {selected_zone} — EPSG:{target_epsg}",
+        transform_details
+        + f" Aktualnie wskazano strefę {selected_zone} "
+        f"(EPSG:{target_epsg}).",
     )
 
 

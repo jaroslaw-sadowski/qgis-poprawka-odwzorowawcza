@@ -15,6 +15,10 @@ Domyślna opcja pomija kontrolę GEOS i oblicza pole z geometrii obiektu
 wyraźnie oznacza obliczony na niej wynik. Warstwa źródłowa pozostaje bez
 zmian w obu trybach.
 
+Dla warstw w EPSG:2176–2179 strefa PL-2000 jest wykrywana automatycznie.
+Dla pozostałych CRS użytkownik wskazuje właściwą strefę, a kopia geometrii
+jest transformowana do niej w locie na potrzeby obliczenia.
+
 ## Zgodność
 
 Kod jest przygotowany dla QGIS 3.44.x/Qt5 oraz QGIS 4.2.x/Qt6 i używa
