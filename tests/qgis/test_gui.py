@@ -35,10 +35,17 @@ def test_dialog_calculates_without_editing_source() -> None:
     dialog = _dialog(layer)
 
     assert (
-        dialog.windowTitle() == "Poprawka odwzorowawcza — zaznaczona działka"
+        dialog.windowTitle()
+        == "Poprawka odwzorowawcza — zaznaczona działka"
     )
     assert dialog.zone_combo.isEnabled() is False
     assert "strefa 7" in dialog.zone_combo.currentText()
+    assert (
+        dialog.repair_mode_combo.currentText()
+        == "Wykryj błędy, ale nie licz po naprawie geometrii"
+    )
+    assert "Segoe UI" in dialog.styleSheet()
+    assert dialog.calculate_button.isDefault() is True
 
     dialog.calculate_button.click()
 
@@ -48,10 +55,18 @@ def test_dialog_calculates_without_editing_source() -> None:
         "1.0002"
     )
     text = dialog.result_text.toPlainText()
-    assert "Pole ewidencyjne: 1,0002 ha" in text
-    assert "PGK — prawne X (północna)" in text
-    assert "PGK — prawne Y (wschodnia)" in text
-    assert "Strefa PL-2000: 7 (EPSG:2178)" in text
+    assert "P₀" in text
+    assert "ΔP₀" in text
+    assert "P = P₀ − ΔP₀" in text
+    assert "10000,00 m²" in text
+    assert "-1,54 m²" in text
+    assert "10001,54 m²" in text
+    assert "1,0002 ha" in text
+    assert "PGK — X₂₀₀₀" in text
+    assert "PGK — Y₂₀₀₀" in text
+    assert "7 (EPSG:2178)" in text
+    assert "σ = σ₀ + m₀ · v²" in text
+    assert "10001,539" not in text
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
 
@@ -72,9 +87,9 @@ def test_dialog_strict_mode_blocks_result_after_repair() -> None:
         is RepairMethod.STRUCTURE
     )
     assert (
-        "Tryb STRICT zablokował wynik ustawowy" in dialog.status_label.text()
+        "nie wyznaczono wyniku po naprawie" in dialog.status_label.text()
     )
-    assert "Nie wyznaczono" in dialog.result_text.toPlainText()
+    assert "Nie wyznaczono wyniku" in dialog.result_text.toPlainText()
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
 
@@ -85,6 +100,16 @@ def test_dialog_auto_repair_marks_repaired_calculation() -> None:
     )
     dialog = _dialog(layer)
     dialog.repair_mode_combo.setCurrentIndex(1)
+
+    assert (
+        dialog.repair_mode_combo.currentText()
+        == "Wykryj błędy i spróbuj naprawić geometrię"
+    )
+    assert "może zmienić geometrię poligonu" in dialog.repair_hint.text()
+    assert (
+        "Warstwa źródłowa pozostanie bez zmian"
+        in dialog.repair_hint.text()
+    )
 
     dialog.calculate_button.click()
 

@@ -87,8 +87,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
     ZONE_BY_INDEX = {1: 5, 2: 6, 3: 7, 4: 8}
 
     REPAIR_OPTIONS = (
-        "STRICT — bez wyniku ustawowego po naprawie",
-        "AUTO_REPAIR — oblicz po naprawie",
+        "Wykryj błędy, ale nie licz po naprawie geometrii",
+        "Wykryj błędy i spróbuj naprawić geometrię "
+        "(uwaga: geometria wyniku może się zmienić)",
     )
 
     OUTPUT_FIELD_NAMES = (
@@ -362,9 +363,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
             return QgsField(name, FIELD_TYPE_STRING, "", length)
 
         return (
-            double_field("egib_po_m2"),
-            double_field("egib_corr_m2"),
-            double_field("egib_area_m2"),
+            double_field("egib_po_m2", 2),
+            double_field("egib_corr_m2", 2),
+            double_field("egib_area_m2", 2),
             double_field("egib_area_ha", 4),
             integer_field("egib_zone"),
             integer_field("egib_epsg"),
@@ -382,9 +383,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
             integer_field("egib_repaired_rings"),
             integer_field("egib_orig_vertices"),
             integer_field("egib_repaired_vertices"),
-            double_field("egib_orig_area_m2"),
-            double_field("egib_repaired_area_m2"),
-            double_field("egib_area_diff_m2"),
+            double_field("egib_orig_area_m2", 2),
+            double_field("egib_repaired_area_m2", 2),
+            double_field("egib_area_diff_m2", 2),
             integer_field("egib_vertices_added"),
             integer_field("egib_vertices_removed"),
             string_field("egib_warnings", 2000),
@@ -410,9 +411,11 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 "egib_repaired_rings": report.repaired_ring_count,
                 "egib_orig_vertices": report.original_vertex_count,
                 "egib_repaired_vertices": report.repaired_vertex_count,
-                "egib_orig_area_m2": report.original_area_m2,
-                "egib_repaired_area_m2": report.repaired_area_m2,
-                "egib_area_diff_m2": report.area_difference_m2,
+                "egib_orig_area_m2": _round_m2(report.original_area_m2),
+                "egib_repaired_area_m2": _round_m2(
+                    report.repaired_area_m2
+                ),
+                "egib_area_diff_m2": _round_m2(report.area_difference_m2),
                 "egib_vertices_added": report.vertices_added,
                 "egib_vertices_removed": report.vertices_removed,
                 "egib_warnings": CalculateEgibAreaAlgorithm._joined_warnings(
@@ -428,9 +431,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
     ) -> None:
         values.update(
             {
-                "egib_po_m2": calculation.po_m2,
-                "egib_corr_m2": calculation.correction_m2,
-                "egib_area_m2": calculation.legal_area_m2_raw,
+                "egib_po_m2": _round_m2(calculation.po_m2),
+                "egib_corr_m2": _round_m2(calculation.correction_m2),
+                "egib_area_m2": _round_m2(calculation.legal_area_m2_raw),
                 "egib_area_ha": float(calculation.legal_area_ha_rounded),
                 "egib_zone": calculation.zone,
                 "egib_epsg": calculation.epsg,
@@ -486,3 +489,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
         return QCoreApplication.translate(
             "CalculateEgibAreaAlgorithm", message
         )
+
+
+def _round_m2(value: float) -> float:
+    """Round a square-metre output field to its declared precision."""
+
+    return round(value, 2)

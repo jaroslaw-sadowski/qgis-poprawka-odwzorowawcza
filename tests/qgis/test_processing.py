@@ -66,6 +66,12 @@ def test_provider_registers_and_removes_algorithm() -> None:
     registry = QgsApplication.processingRegistry()
     provider = EgibAreaProvider()
 
+    assert CalculateEgibAreaAlgorithm.REPAIR_OPTIONS == (
+        "Wykryj błędy, ale nie licz po naprawie geometrii",
+        "Wykryj błędy i spróbuj naprawić geometrię "
+        "(uwaga: geometria wyniku może się zmienić)",
+    )
+
     assert registry.addProvider(provider) is True
     try:
         algorithm = registry.algorithmById("egib_area:calculate_egib_area")
@@ -96,7 +102,15 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
     assert set(CalculateEgibAreaAlgorithm.OUTPUT_FIELD_NAMES).issubset(
         output.fields().names()
     )
-    assert output.fields().field("egib_area_m2").precision() == 10
+    for field_name in (
+        "egib_po_m2",
+        "egib_corr_m2",
+        "egib_area_m2",
+        "egib_orig_area_m2",
+        "egib_repaired_area_m2",
+        "egib_area_diff_m2",
+    ):
+        assert output.fields().field(field_name).precision() == 2
     assert output.fields().field("egib_area_ha").precision() == 4
     assert layer.fields().names() == input_fields
     assert [
@@ -107,8 +121,9 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
     first = next(output.getFeatures())
     assert first["parcel_id"] == 1
     assert first["egib_status"] == "ok"
-    assert first["egib_po_m2"] == pytest.approx(10_000.0)
-    assert first["egib_area_m2"] == pytest.approx(10_001.53994071)
+    assert first["egib_po_m2"] == 10_000.00
+    assert first["egib_corr_m2"] == -1.54
+    assert first["egib_area_m2"] == 10_001.54
     assert first["egib_area_ha"] == pytest.approx(1.0002)
     assert first["egib_zone"] == 7
     assert first["egib_epsg"] == 2178

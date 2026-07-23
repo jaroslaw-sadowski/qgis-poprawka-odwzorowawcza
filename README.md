@@ -10,9 +10,10 @@ Wtyczka nie edytuje warstwy wejściowej. Transformacja, walidacja GEOS i
 opcjonalne `makeValid()` działają na kopiach geometrii. Processing zapisuje
 wyniki i diagnostykę do nowej warstwy.
 
-Domyślny tryb `STRICT` blokuje wynik ustawowy, jeżeli geometria wymagała
-naprawy. `AUTO_REPAIR` jest świadomym wyborem użytkownika i wyraźnie oznacza
-wynik obliczony z naprawionej kopii.
+Domyślna opcja wykrywa błędy geometrii, ale nie wyznacza wyniku, jeżeli
+geometria wymaga naprawy. Druga opcja próbuje naprawić kopię geometrii i
+wyraźnie oznacza obliczony na niej wynik. Warstwa źródłowa pozostaje bez
+zmian.
 
 ## Zgodność
 
