@@ -1,5 +1,5 @@
 [general]
-name=Poprawka odwzorowawcza EGiB
+name=Poprawka odwzorowawcza
 description=Calculates statutory cadastral parcel area with the PL-2000 projection correction.
 about=Calculates corrected parcel areas for Poland in PL-2000 zones 5-8. It works locally, has no runtime dependencies and never modifies source geometry. For a source CRS other than EPSG:2176-2179, the user must select the correct target zone. Curved polygon rings and geometries exceeding the documented complexity limits are rejected. The default mode deliberately skips GEOS validation; optional repair works only on a copy. GeoPackage is recommended for complete diagnostic output. The project is developed with a disclosed vibe-coding workflow and verified with tests, security scanners and human review.
 version=0.1.0

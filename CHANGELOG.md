@@ -17,6 +17,11 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Dokumentacja użytkowa i społecznościowa oraz formularze zgłoszeń.
 - Workflow CI dla jakości źródeł, skanerów i powtarzalności paczki.
 
+### Changed
+
+- Oficjalną nazwę skrócono do „Poprawka odwzorowawcza”; zakres EGiB
+  pozostaje jednoznacznie opisany w funkcjach i dokumentacji.
+
 ### Security
 
 - Limity złożoności geometrii wykonywane przed transformacją i GEOS.

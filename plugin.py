@@ -20,7 +20,7 @@ else:
 class EgibAreaPlugin:
     """Register Processing and open a dialog for one selected polygon."""
 
-    MENU_NAME = "&Poprawka odwzorowawcza EGiB"
+    MENU_NAME = "&Poprawka odwzorowawcza"
     ACTION_TEXT = "Oblicz powierzchnię zaznaczonej działki"
     ABOUT_ACTION_TEXT = "O wtyczce…"
 

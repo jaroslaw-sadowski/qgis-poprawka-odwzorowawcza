@@ -2,7 +2,7 @@
   <img src="resources/icon.svg" width="88" height="88" alt="">
 </p>
 
-# Poprawka odwzorowawcza EGiB
+# Poprawka odwzorowawcza
 
 Wtyczka QGIS do obliczania ustawowego pola działki ewidencyjnej
 z powierzchniową poprawką odwzorowawczą w układzie PL-2000. Udostępnia
@@ -35,7 +35,7 @@ QGIS 3.40–3.x; QGIS 4 nie jest jeszcze deklarowany.
 ### Oficjalne repozytorium QGIS
 
 Po zatwierdzeniu wydania otwórz w QGIS **Wtyczki → Zarządzanie i instalowanie
-wtyczek**, wyszukaj „Poprawka odwzorowawcza EGiB” i wybierz
+wtyczek**, wyszukaj „Poprawka odwzorowawcza” i wybierz
 **Zainstaluj wtyczkę**.
 
 ### Kandydat wydania z ZIP
@@ -54,7 +54,7 @@ SHA-256.
 ### Jedna działka
 
 1. Aktywuj warstwę Polygon lub MultiPolygon i zaznacz dokładnie jeden obiekt.
-2. Uruchom **Wektor → Poprawka odwzorowawcza EGiB → Oblicz powierzchnię
+2. Uruchom **Wektor → Poprawka odwzorowawcza → Oblicz powierzchnię
    zaznaczonej działki** albo użyj przycisku na pasku narzędzi.
 3. Dla CRS innego niż EPSG:2176–2179 wskaż właściwą strefę PL-2000.
 4. Wybierz sposób obsługi geometrii i uruchom obliczenie.
