@@ -5,6 +5,7 @@ from qgis.PyQt.QtCore import QPoint, Qt
 from qgis.PyQt.QtTest import QTest
 from qgis.PyQt.QtWidgets import QApplication
 
+import adapters.geometry as geometry_module
 import gui.dialog as dialog_module
 from adapters import RepairMethod
 from gui import SelectedParcelDialog
@@ -261,3 +262,33 @@ def test_epsg_1992_requires_explicit_pl2000_zone() -> None:
     assert "Wskaż strefę PL-2000" in dialog.zone_combo.currentText()
     assert "EPSG:2180" in dialog.zone_combo.toolTip()
     assert "przeliczona w locie" in dialog.zone_combo.toolTip()
+
+
+def test_dialog_reports_geometry_budget_before_calculation(
+    monkeypatch,
+) -> None:
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    dialog = _dialog(layer)
+    warnings = []
+    monkeypatch.setattr(
+        geometry_module,
+        "MAX_BOUNDARY_COORDINATES",
+        4,
+    )
+
+    class FakeMessageBox:
+        @staticmethod
+        def warning(parent, title, message):
+            del parent, title
+            warnings.append(message)
+
+    monkeypatch.setattr(dialog_module, "QMessageBox", FakeMessageBox)
+
+    dialog.calculate_button.click()
+
+    assert dialog.last_result is None
+    assert "Nie można obliczyć powierzchni" in warnings[0]
+    assert "limit liczby współrzędnych: 5 > 4" in warnings[0]

@@ -83,14 +83,17 @@ class EgibAreaPlugin:
             self._warn("Aktywna warstwa musi mieć geometrię poligonową.")
             return
 
-        selected_features = list(layer.getSelectedFeatures())
-        if len(selected_features) != 1:
+        if layer.selectedFeatureCount() != 1:
             self._warn("Zaznacz dokładnie jedną działkę na aktywnej warstwie.")
+            return
+        selected_feature = next(layer.getSelectedFeatures(), None)
+        if selected_feature is None:
+            self._warn("Nie można odczytać zaznaczonej działki.")
             return
 
         dialog = SelectedParcelDialog(
             layer,
-            selected_features[0],
+            selected_feature,
             QgsProject.instance().transformContext(),
             self.iface.mainWindow(),
         )

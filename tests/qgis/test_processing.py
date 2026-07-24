@@ -13,6 +13,7 @@ from qgis.core import (
     QgsVectorLayer,
 )
 
+import adapters.geometry as geometry_module
 from compat import FIELD_TYPE_INT, FIELD_TYPE_STRING
 from processing_provider import CalculateEgibAreaAlgorithm, EgibAreaProvider
 
@@ -188,6 +189,28 @@ def test_feature_without_geometry_is_reported_and_batch_continues() -> None:
     assert results[2]["egib_epsg"] == 2178
     assert results[2].hasGeometry() is False
     assert "null" in results[2]["egib_warnings"]
+
+
+def test_feature_over_geometry_budget_is_reported_without_processing(
+    monkeypatch,
+) -> None:
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    monkeypatch.setattr(
+        geometry_module,
+        "MAX_BOUNDARY_COORDINATES",
+        4,
+    )
+
+    output, _context = _run_algorithm(layer)
+    result = next(output.getFeatures())
+
+    assert result["egib_status"] == "error"
+    assert result["egib_area_m2"] == NULL
+    assert "limit liczby współrzędnych: 5 > 4" in result["egib_warnings"]
+    assert result.hasGeometry() is False
 
 
 def test_reserved_output_field_collision_is_rejected() -> None:

@@ -9,6 +9,7 @@ from .geometry import (
     extract_boundary_points,
     geometry_snapshot,
     transform_geometry_to_pl2000,
+    validate_geometry_budget,
 )
 from .repair import (
     GeometryPreparationResult,
@@ -42,4 +43,5 @@ __all__ = [
     "prepare_geometry",
     "resolve_target_pl2000_crs",
     "transform_geometry_to_pl2000",
+    "validate_geometry_budget",
 ]

@@ -3,7 +3,13 @@ import importlib
 from pathlib import Path
 from zipfile import ZipFile
 
-from qgis.core import QgsApplication, QgsFeature, QgsGeometry, QgsVectorLayer
+from qgis.core import (
+    Qgis,
+    QgsApplication,
+    QgsFeature,
+    QgsGeometry,
+    QgsVectorLayer,
+)
 from qgis.PyQt.QtWidgets import QWidget
 
 import plugin as plugin_module
@@ -118,6 +124,55 @@ def test_plugin_action_warns_when_selection_is_missing(monkeypatch) -> None:
     ]
 
 
+def test_plugin_does_not_materialize_the_selected_feature_iterator(
+    monkeypatch,
+) -> None:
+    selected_feature = QgsFeature()
+    opened_dialogs = []
+
+    class SelectionIterator:
+        def __init__(self):
+            self.call_count = 0
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            self.call_count += 1
+            if self.call_count == 1:
+                return selected_feature
+            raise AssertionError("selection iterator was materialized")
+
+    selection_iterator = SelectionIterator()
+
+    class FakeSelectedLayer:
+        def geometryType(self):
+            return Qgis.GeometryType.Polygon
+
+        def selectedFeatureCount(self):
+            return 1
+
+        def getSelectedFeatures(self):
+            return selection_iterator
+
+    class FakeDialog:
+        def __init__(self, layer, feature, transform_context, parent):
+            del layer, transform_context, parent
+            assert feature is selected_feature
+            opened_dialogs.append(self)
+
+    monkeypatch.setattr(plugin_module, "QgsVectorLayer", FakeSelectedLayer)
+    monkeypatch.setattr(plugin_module, "SelectedParcelDialog", FakeDialog)
+    monkeypatch.setattr(plugin_module, "execute_dialog", lambda dialog: 0)
+    iface = FakeIface()
+    iface.layer = FakeSelectedLayer()
+
+    EgibAreaPlugin(iface).run()
+
+    assert len(opened_dialogs) == 1
+    assert selection_iterator.call_count == 1
+
+
 def test_qgis_class_factory_imports_plugin_as_a_package(monkeypatch) -> None:
     repository_root = Path(__file__).resolve().parents[2]
     monkeypatch.syspath_prepend(str(repository_root.parent))
@@ -139,6 +194,13 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert metadata["qgismaximumversion"] == "3.99"
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "jaroslaw-sadowski@users.noreply.github.com"
+    assert metadata["description"].startswith(
+        "Calculates statutory cadastral parcel area"
+    )
+    assert "PL-2000 zones 5-8" in metadata["about"]
+    assert "Curved polygon rings" in metadata["about"]
+    assert "Source geometry is never modified" in metadata["about"]
+    assert "GeoPackage is recommended" in metadata["about"]
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
 
 

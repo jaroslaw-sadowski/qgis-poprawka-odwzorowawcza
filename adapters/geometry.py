@@ -21,6 +21,10 @@ else:
 
 from .zones import resolve_target_pl2000_crs
 
+MAX_POLYGON_PARTS = 10_000
+MAX_POLYGON_RINGS = 50_000
+MAX_BOUNDARY_COORDINATES = 500_000
+
 
 class GeometryInputError(ValueError):
     """Raised when an input geometry cannot represent a cadastral parcel."""
@@ -65,6 +69,7 @@ def transform_geometry_to_pl2000(
     """Copy and transform a polygon to PL-2000 without touching the source."""
 
     _validate_polygon_geometry(geometry)
+    validate_geometry_budget(geometry)
     selection = resolve_target_pl2000_crs(
         source_crs,
         selected_zone=selected_zone,
@@ -98,6 +103,41 @@ def transform_geometry_to_pl2000(
         target_epsg=selection.epsg,
         zone=selection.zone,
     )
+
+
+def validate_geometry_budget(geometry: QgsGeometry) -> None:
+    """Reject a polygon that exceeds the synchronous processing budget."""
+
+    _validate_polygon_geometry(geometry)
+    coordinate_count = geometry.constGet().nCoordinates()
+    if coordinate_count > MAX_BOUNDARY_COORDINATES:
+        raise GeometryInputError(
+            "Geometria przekracza limit liczby współrzędnych: "
+            f"{coordinate_count} > {MAX_BOUNDARY_COORDINATES}. "
+            "Uprość lub podziel obiekt przed obliczeniem."
+        )
+
+    part_count = 0
+    ring_count = 0
+    for part in geometry.constParts():
+        if not isinstance(part, QgsCurvePolygon):
+            raise GeometryInputError("polygon contains a non-polygon part")
+
+        part_count += 1
+        if part_count > MAX_POLYGON_PARTS:
+            raise GeometryInputError(
+                "Geometria przekracza limit liczby części: "
+                f"{part_count} > {MAX_POLYGON_PARTS}. "
+                "Podziel obiekt przed obliczeniem."
+            )
+
+        ring_count += 1 + part.numInteriorRings()
+        if ring_count > MAX_POLYGON_RINGS:
+            raise GeometryInputError(
+                "Geometria przekracza limit liczby pierścieni: "
+                f"{ring_count} > {MAX_POLYGON_RINGS}. "
+                "Podziel obiekt przed obliczeniem."
+            )
 
 
 def extract_boundary_points(

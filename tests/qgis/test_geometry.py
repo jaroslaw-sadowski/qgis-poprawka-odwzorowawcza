@@ -5,12 +5,14 @@ from qgis.core import (
     QgsGeometry,
 )
 
+import adapters.geometry as geometry_module
 from adapters import (
     CurvedGeometryError,
     GeometryInputError,
     extract_boundary_points,
     geometry_snapshot,
     transform_geometry_to_pl2000,
+    validate_geometry_budget,
 )
 
 
@@ -105,3 +107,66 @@ def test_boundary_point_extraction_preserves_legal_axis_mapping() -> None:
 
     assert {point.northing_x for point in points} == {5_800_200.0, 5_800_600.0}
     assert {point.easting_y for point in points} == {7_500_100.0, 7_500_300.0}
+
+
+def test_coordinate_budget_is_checked_before_transform(monkeypatch) -> None:
+    geometry = QgsGeometry.fromWkt(
+        "POLYGON ((21 52,21.001 52,21.001 52.001,21 52.001,21 52))"
+    )
+    source_wkb = bytes(geometry.asWkb())
+    monkeypatch.setattr(
+        geometry_module,
+        "MAX_BOUNDARY_COORDINATES",
+        4,
+    )
+
+    def unexpected_transform(*args, **kwargs):
+        del args, kwargs
+        pytest.fail("coordinate transform must not be created over budget")
+
+    monkeypatch.setattr(
+        geometry_module,
+        "QgsCoordinateTransform",
+        unexpected_transform,
+    )
+
+    with pytest.raises(GeometryInputError, match="współrzędnych: 5 > 4"):
+        transform_geometry_to_pl2000(
+            geometry,
+            QgsCoordinateReferenceSystem("EPSG:4326"),
+            QgsCoordinateTransformContext(),
+            selected_zone=7,
+        )
+
+    assert bytes(geometry.asWkb()) == source_wkb
+
+
+def test_part_budget_is_enforced(monkeypatch) -> None:
+    geometry = QgsGeometry.fromWkt(
+        "MULTIPOLYGON (((0 0,10 0,10 10,0 0)),((20 20,30 20,30 30,20 20)))"
+    )
+    monkeypatch.setattr(geometry_module, "MAX_POLYGON_PARTS", 1)
+
+    with pytest.raises(GeometryInputError, match="liczby części: 2 > 1"):
+        validate_geometry_budget(geometry)
+
+
+def test_ring_budget_is_enforced(monkeypatch) -> None:
+    geometry = QgsGeometry.fromWkt(
+        "POLYGON ((0 0,10 0,10 10,0 0),(2 2,3 2,3 3,2 2))"
+    )
+    monkeypatch.setattr(geometry_module, "MAX_POLYGON_RINGS", 1)
+
+    with pytest.raises(GeometryInputError, match="pierścieni: 2 > 1"):
+        validate_geometry_budget(geometry)
+
+
+def test_geometry_exactly_at_complexity_budget_is_accepted(
+    monkeypatch,
+) -> None:
+    geometry = QgsGeometry.fromWkt("POLYGON ((0 0,10 0,10 10,0 10,0 0))")
+    monkeypatch.setattr(geometry_module, "MAX_POLYGON_PARTS", 1)
+    monkeypatch.setattr(geometry_module, "MAX_POLYGON_RINGS", 1)
+    monkeypatch.setattr(geometry_module, "MAX_BOUNDARY_COORDINATES", 5)
+
+    validate_geometry_budget(geometry)

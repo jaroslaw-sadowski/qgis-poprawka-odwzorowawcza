@@ -1,7 +1,7 @@
 [general]
 name=Poprawka odwzorowawcza EGiB
-description=Obliczanie pola działki ewidencyjnej z poprawką odwzorowawczą PL-2000
-about=Oblicza ustawowe pole powierzchni zaznaczonej działki oraz wielu działek w Processing, z diagnostyką i opcjonalną naprawą geometrii.
+description=Calculates statutory cadastral parcel area with the PL-2000 projection correction.
+about=Calculates corrected parcel areas for Poland in PL-2000 zones 5-8. For a source CRS other than EPSG:2176-2179, the user must select the correct target zone. Curved polygon rings and geometries exceeding the documented complexity limits are rejected. The default mode deliberately skips GEOS validation; the optional repair mode works only on a copy. Source geometry is never modified. GeoPackage is recommended for complete diagnostic output.
 version=0.1.0
 qgisMinimumVersion=3.40
 qgisMaximumVersion=3.99
