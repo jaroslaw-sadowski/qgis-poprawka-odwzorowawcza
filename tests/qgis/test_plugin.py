@@ -206,6 +206,7 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
 
     metadata = parser["general"]
     assert metadata["name"] == "Poprawka odwzorowawcza"
+    assert metadata["version"] == "1.0.0"
     assert metadata["qgisminimumversion"] == "3.40"
     assert metadata["qgismaximumversion"] == "3.99"
     assert metadata["hasprocessingprovider"] == "yes"
@@ -220,7 +221,8 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert "vibe-coding workflow" in metadata["about"]
     assert "GeoPackage is recommended" in metadata["about"]
     assert metadata["icon"] == "resources/icon.png"
-    assert "0.1.0 release candidate" in metadata["changelog"]
+    assert metadata["changelog"].startswith("1.0.0: first stable release")
+    assert metadata["experimental"] == "False"
     assert metadata["deprecated"] == "False"
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
 

@@ -5,9 +5,11 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-24
+
 ### Added
 
-- Kandydat pierwszego publicznego wydania `0.1.0`.
+- Pierwsze stabilne publiczne wydanie.
 - Dialog obliczenia dla jednej zaznaczonej działki.
 - Algorytm Processing do bezpiecznego przetwarzania wielu obiektów.
 - Diagnostyka geometrii i opcjonalna naprawa kopii metodami GEOS.
@@ -32,4 +34,5 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Bezpieczne komunikaty GUI, minimalne uprawnienia CI i akcje GitHub
   przypięte do pełnych identyfikatorów commitów.
 
-[Unreleased]: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/releases/tag/v1.0.0

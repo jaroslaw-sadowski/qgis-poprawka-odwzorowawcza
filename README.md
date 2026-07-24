@@ -13,9 +13,11 @@ obliczeń seryjnych.
 > vibe coding. Kod, wzór, zachowanie na danych brzegowych i paczka wydaniowa
 > są weryfikowane testami automatycznymi, skanerami oraz ręcznym przeglądem.
 
-**Status:** kandydat wersji `0.1.0`, oznaczony jako eksperymentalny. Faktycznie
-przetestowano QGIS 3.40.15 / Qt 5.15 na Linuksie. `metadata.txt` deklaruje
-QGIS 3.40–3.x; QGIS 4 nie jest jeszcze deklarowany.
+**Status:** kandydat stabilnego wydania `1.0.0`. Automatyczne testy wykonano
+w QGIS 3.40.15 / Qt 5.15 na Linuksie. `metadata.txt` deklaruje QGIS
+3.40–3.x; QGIS 4 nie jest jeszcze deklarowany. Przed publikacją pozostaje
+ręczny test finalnego ZIP-u zgodnie z
+[checklistą wydania](docs/PUBLISHING.md).
 
 ![Okno obliczenia powierzchni zaznaczonej działki w QGIS](docs/images/dialog-preview.png)
 
@@ -118,11 +120,11 @@ Plik `requirements-dev.txt` zawiera tylko narzędzia deweloperskie.
 ## Projekt
 
 - [Changelog](CHANGELOG.md)
+- [Publikacja wydania krok po kroku](docs/PUBLISHING.md)
 - [Polityka bezpieczeństwa](SECURITY.md)
 - [Raport walidacji wydania](docs/RELEASE_VALIDATION.md)
 - [Audyt bezpieczeństwa i jakości](docs/SECURITY_AUDIT_2026-07-24.md)
 - [Licencja GNU GPL v2](LICENSE)
 
 Autor i opiekun: [Jarosław Sadowski](https://github.com/jaroslaw-sadowski).
-Projekt jest utrzymywany aktywnie na etapie przygotowania pierwszego
-publicznego wydania.
+Projekt jest aktywnie utrzymywany.

@@ -45,8 +45,10 @@ def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
         metadata.read_string(
             archive.read(f"{PLUGIN_PACKAGE_NAME}/metadata.txt").decode("utf-8")
         )
+        assert metadata["general"]["version"] == "1.0.0"
         assert metadata["general"]["qgisminimumversion"] == "3.40"
         assert metadata["general"]["hasprocessingprovider"] == "yes"
+        assert metadata["general"]["experimental"] == "False"
 
         for relative_path in RUNTIME_FILES:
             assert (

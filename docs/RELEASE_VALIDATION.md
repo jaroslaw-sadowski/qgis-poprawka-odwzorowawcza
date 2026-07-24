@@ -1,14 +1,15 @@
-# Walidacja kandydata wydania 0.1.0
+# Walidacja kandydata wydania 1.0.0
 
 - Data: 2026-07-24
 - Gałąź lokalna: `main`
-- Zweryfikowany commit runtime:
-  `c8d3092030a715a6e3287ec6689212888d145ae4`
+- Bazowy commit zgodny z `origin/main`:
+  `92932fb452383f3fedb84745af81eacb62aa5bcc`
+- Stan wydania: zmiany `1.0.0` w lokalnym drzewie roboczym przed commitem
 - Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
 
-Raport dotyczy zatwierdzonego, czystego drzewa po fast-forward do lokalnego
-`main`. Nie zastępuje odbudowania artefaktu z oznaczonego commitu ani testów
-na wszystkich wspieranych platformach.
+Raport dotyczy bazowego commitu wskazanego powyżej oraz opisanych zmian
+wydaniowych. Nie zastępuje odbudowania artefaktu z oznaczonego commitu ani
+testów na wszystkich wspieranych platformach.
 
 ## Zakres zmian
 
@@ -20,6 +21,8 @@ na wszystkich wspieranych platformach.
 - Ujednolicono motyw GUI, dodano okno „O wtyczce” i ikonę PNG dla
   repozytorium QGIS.
 - Ujednolicono oficjalną nazwę do „Poprawka odwzorowawcza”.
+- Przygotowano pierwsze stabilne wydanie `1.0.0` i prostą instrukcję
+  publikacji.
 - Komunikaty GUI nie pokazują surowych wyjątków ani lokalnych ścieżek.
 - Uzupełniono metadane, jawny manifest paczki i testy nowych elementów.
 - Nie zmieniono wzoru, stałych, mapowania osi, stref, PGK, zaokrąglania ani
@@ -32,6 +35,7 @@ na wszystkich wspieranych platformach.
 | Repozytorium i dokumentacja | 101/101 | 3 ustalenia bazowe | 0 | 0 | 0 |
 | Interfejs i metadane | 103/103 | 0 | 0 | 0 | 0 |
 | CI, bezpieczne błędy i paczka | 104/104 | 0 | 0 | 0 | 0 |
+| Stabilne wydanie 1.0.0 | 104/104 | 0 | 0 | 0 | 0 |
 
 Trzy bazowe ustalenia Ruff z pierwszej grupy zostały naprawione w drugiej:
 dwa stałe odczyty enum oraz format trzech plików. Nazwa
@@ -43,7 +47,7 @@ Końcowe kontrole źródeł:
 | Kontrola | Wynik |
 |---|---|
 | `compileall` utrzymywanych plików | OK |
-| Ruff 0.16.0 | 0 ustaleń, 44/44 pliki sformatowane |
+| Ruff 0.16.0 | 0 ustaleń, 45/45 plików sformatowanych |
 | Flake8 7.3.0 | 0 ustaleń |
 | Bandit 1.9.4 na runtime i builderze | 0 ustaleń |
 | detect-secrets 1.5.0 | 0 sekretów |
@@ -53,12 +57,13 @@ Końcowe kontrole źródeł:
 
 ## Artefakt
 
-Końcowy ZIP zbudowano dwukrotnie poza repozytorium:
+Końcowy ZIP z bieżącego drzewa zbudowano dwukrotnie:
 
-- plik kontrolny: `/tmp/qgis_poprawka_odwzorowawcza-0.1.0.zip`;
-- rozmiar: 61 446 B;
+- plik kontrolny:
+  `dist/qgis_poprawka_odwzorowawcza-1.0.0.zip`;
+- rozmiar: 61 481 B;
 - SHA-256:
-  `144ec7a899c362d8710ad737cc4ee7245af0b2442c0a4dc610f7c7915a19ed3f`;
+  `b7e8a83add098545014ea0e1c690cedc24fee39f13e77e04b81208d81845d158`;
 - zawartość: 24 pliki pod jednym katalogiem
   `qgis_poprawka_odwzorowawcza/`;
 - porównanie z jawnym manifestem: wszystkie pliki zgodne bajt w bajt;
@@ -70,13 +75,14 @@ Flake8, Bandit i detect-secrets zakończyły się bez ustaleń. ZIP nie zawiera
 testów, dokumentacji deweloperskiej, materiałów prawnych, plików cache,
 lokalnego `dist/`, konfiguracji GitHub ani zależności narzędziowych.
 
-Istniejącego, ignorowanego pliku `dist/*.zip` nie należy publikować. Po
-utworzeniu końcowego commitu lub tagu trzeba ponownie zbudować paczkę i
-opublikować nową sumę SHA-256.
+Starego pliku `dist/qgis_poprawka_odwzorowawcza-0.1.0.zip` nie należy
+publikować. Po utworzeniu końcowego commitu i taga trzeba ponownie zbudować
+paczkę `1.0.0`; jej suma musi pozostać zgodna z wartością powyżej.
 
 ## Kontrola repozytorium i historii
 
-- `main` i `origin/main` wskazują ten sam commit bazowy.
+- `main` i `origin/main` wskazują ten sam commit bazowy; zmiany wydania
+  `1.0.0` nie są jeszcze zatwierdzone.
 - Jedyna zdalna gałąź to `main`; brak zdalnych kandydatów do usunięcia.
 - Brak tagów i wydań, więc nie ma kandydatów do usunięcia.
 - Historia ma 16 commitów i jednego autora używającego adresu GitHub
@@ -110,6 +116,14 @@ Przed wysłaniem lokalnego `main` i publikacją opiekun powinien:
 5. Włączyć automatyczne usuwanie gałęzi po scaleniu i preferować squash
    merge lub rebase. Wyłączyć Wiki i Projects, jeśli nie będą używane.
 
+## Ręczne testy finalnego ZIP-u
+
+| Środowisko | Instalacja | GUI | Processing | unload | Stan |
+|---|---:|---:|---:|---:|---|
+| QGIS 3.44 / Linux | — | — | — | — | niewykonany |
+| QGIS 3.44 / Windows | — | — | — | — | niewykonany |
+| QGIS 3.44 / macOS | — | — | — | — | niewykonany |
+
 ## Niewykonane bramki publikacji
 
 Nie wykonano interaktywnej instalacji finalnego ZIP ani testów na QGIS 3.44,
@@ -118,9 +132,11 @@ Windows i macOS. Przed wysłaniem do oficjalnego repozytorium QGIS pozostają:
 - instalacja, GUI, unload i Processing na QGIS 3.44 / Linux;
 - te same testy na QGIS 3.44 / Windows;
 - te same testy na QGIS 3.44 / macOS;
-- konfiguracja i przejście ochrony `main` oraz checku `Source quality`;
-- push lokalnego `main`, podpisany tag `v0.1.0`, świeży ZIP i jego SHA-256.
+- commit i push zmian wydania oraz zielony check `Source quality`;
+- odbudowanie ZIP-u z commitu wydania i potwierdzenie SHA-256;
+- tag `v1.0.0`, GitHub Release i wysłanie tego samego ZIP-u do QGIS.
 
 QGIS 4/Qt6 nie jest deklarowany i nie wolno rozszerzać
 `qgisMaximumVersion` przed rzeczywistym testem. Do czasu zamknięcia powyższych
-bramek ocena kandydata brzmi: **WYMAGA POPRAWEK**.
+bramek ocena kandydata brzmi:
+**AUTOMATYCZNIE ZWALIDOWANY — OCZEKUJE NA TESTY RĘCZNE**.
