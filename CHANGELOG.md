@@ -24,6 +24,8 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Oficjalną nazwę skrócono do „Poprawka odwzorowawcza”; zakres EGiB
   pozostaje jednoznacznie opisany w funkcjach i dokumentacji.
 - Wszystkie opisy metadanych wtyczki przetłumaczono na język polski.
+- Opis publikacyjny uproszczono i ukierunkowano na potrzeby użytkownika.
+- Do tagów dodano „Stowarzyszenie QGIS Polska”.
 - Nie zmieniono logiki obliczeń ani zachowania wtyczki.
 
 ### Security

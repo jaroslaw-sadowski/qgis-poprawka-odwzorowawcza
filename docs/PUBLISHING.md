@@ -56,9 +56,9 @@ Suma musi być zgodna z sumą zapisaną w raporcie walidacji.
 
 ## 3. Utwórz tag i GitHub Release
 
-Tag `v1.0.0` został utworzony przed polonizacją metadanych, ale nie powstał
-jeszcze GitHub Release ani wydanie QGIS. Po zaliczeniu testów ręcznych i
-GitHub Actions odtwórz tag na finalnym commicie:
+Tag `v1.0.0` został utworzony przed finalną korektą metadanych, ale nie
+powstał jeszcze GitHub Release ani wydanie QGIS. Po zaliczeniu testów
+ręcznych i GitHub Actions odtwórz tag na finalnym commicie:
 
 ```bash
 git tag -d v1.0.0

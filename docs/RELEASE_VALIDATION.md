@@ -3,8 +3,8 @@
 - Data: 2026-07-24
 - Gałąź lokalna: `main`
 - Bazowy commit zgodny z `origin/main`:
-  `dd9ada517a86235ada237ebf6a7154a1bfc4b473`
-- Stan wydania: polskie metadane `1.0.0` w drzewie roboczym przed commitem
+  `9bef7f097cf7a816e14ef2e5fd472b16d3349cb9`
+- Stan wydania: finalny opis i tagi `1.0.0` w drzewie przed commitem
 - Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
 
 Raport dotyczy bazowego commitu wskazanego powyżej oraz opisanych zmian
@@ -25,6 +25,8 @@ testów na wszystkich wspieranych platformach.
   publikacji.
 - Wszystkie widoczne opisy metadanych wydania `1.0.0` przetłumaczono na
   język polski.
+- Opis publikacyjny uproszczono i ukierunkowano na potrzeby użytkownika;
+  dodano tag „Stowarzyszenie QGIS Polska”.
 - Komunikaty GUI nie pokazują surowych wyjątków ani lokalnych ścieżek.
 - Uzupełniono metadane, jawny manifest paczki i testy nowych elementów.
 - Nie zmieniono wzoru, stałych, mapowania osi, stref, PGK, zaokrąglania ani
@@ -39,6 +41,7 @@ testów na wszystkich wspieranych platformach.
 | CI, bezpieczne błędy i paczka | 104/104 | 0 | 0 | 0 | 0 |
 | Stabilne wydanie 1.0.0 | 104/104 | 0 | 0 | 0 | 0 |
 | Polskie metadane 1.0.0 | 104/104 | 0 | 0 | 0 | 0 |
+| Opis produkcyjny i tagi | 104/104 | 0 | 0 | 0 | 0 |
 
 Trzy bazowe ustalenia Ruff z pierwszej grupy zostały naprawione w drugiej:
 dwa stałe odczyty enum oraz format trzech plików. Nazwa
@@ -64,9 +67,9 @@ Końcowy ZIP z bieżącego drzewa zbudowano dwukrotnie:
 
 - plik kontrolny:
   `dist/qgis_poprawka_odwzorowawcza-1.0.0.zip`;
-- rozmiar: 61 616 B;
+- rozmiar: 61 561 B;
 - SHA-256:
-  `46d89a5d77d101b90ce649a1483b9e27c0a9a5629f4767f8166218d4c732abad`;
+  `c8279ddfc6c8b2a11fc36dc52a4c0f650cb47c2174f950458309360f04794c79`;
 - zawartość: 24 pliki pod jednym katalogiem
   `qgis_poprawka_odwzorowawcza/`;
 - porównanie z jawnym manifestem: wszystkie pliki zgodne bajt w bajt;
@@ -86,12 +89,12 @@ powyżej.
 ## Kontrola repozytorium i historii
 
 - `main` i `origin/main` wskazują ten sam commit bazowy; zmiany wydania
-  `1.0.0` z polskimi metadanymi nie są jeszcze zatwierdzone.
+  `1.0.0` z finalnym opisem i tagami nie są jeszcze zatwierdzone.
 - Jedyna zdalna gałąź to `main`; brak zdalnych kandydatów do usunięcia.
-- Istniejący lokalny i zdalny tag `v1.0.0` wskazuje commit sprzed polonizacji
-  metadanych. Ponieważ GitHub Release i wydanie QGIS nie powstały, po
+- Istniejący lokalny i zdalny tag `v1.0.0` wskazuje commit sprzed finalnej
+  korekty metadanych. Ponieważ GitHub Release i wydanie QGIS nie powstały, po
   zatwierdzeniu zmian tag trzeba jednorazowo odtworzyć na finalnym commicie.
-- Historia ma 21 commitów i jednego autora używającego adresu GitHub
+- Historia ma 22 commity i jednego autora używającego adresu GitHub
   `noreply`. Starsze niespójne komunikaty pozostają bez przepisywania
   historii; dla nowych zmian udokumentowano Conventional Commits.
 - Nie znaleziono sekretów, poświadczeń, prywatnych kluczy, wewnętrznych

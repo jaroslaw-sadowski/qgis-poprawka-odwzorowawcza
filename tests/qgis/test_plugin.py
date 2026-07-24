@@ -212,16 +212,17 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "jaroslaw-sadowski@users.noreply.github.com"
     assert metadata["description"].startswith(
-        "Oblicza ustawowe pole działki ewidencyjnej"
+        "Pomaga obliczyć pole działki ewidencyjnej"
     )
-    assert "strefach 5–8 układu PL-2000" in metadata["about"]
-    assert "zakrzywione pierścienie poligonów" in metadata["about"]
-    assert "nigdy nie modyfikuje geometrii źródłowej" in metadata["about"]
-    assert "Działa lokalnie" in metadata["about"]
-    assert "procesie wspomaganym przez AI" in metadata["about"]
-    assert "zalecany jest GeoPackage" in metadata["about"]
+    assert "geodetach i użytkownikach danych EGiB" in metadata["about"]
+    assert "polskich przepisów" in metadata["about"]
+    assert "jedną wybraną działką lub wieloma działkami" in metadata["about"]
+    assert "bez wysyłania danych" in metadata["about"]
+    assert "bez zmieniania warstwy źródłowej" in metadata["about"]
+    assert "narzędzi AI" in metadata["about"]
     assert metadata["tags"] == (
-        "kataster,egib,pl-2000,geodezja,pole działki,polska"
+        "kataster,egib,pl-2000,geodezja,pole działki,polska,"
+        "Stowarzyszenie QGIS Polska"
     )
     assert metadata["icon"] == "resources/icon.png"
     assert metadata["changelog"].startswith(
