@@ -1,13 +1,14 @@
 # Walidacja kandydata wydania 0.1.0
 
 - Data: 2026-07-24
-- Gałąź robocza: `chore/professional-release`
-- Bazowy commit: `695ce18f7b97b7639575eaf5b0898ada0388c5ab`
+- Gałąź lokalna: `main`
+- Zweryfikowany commit runtime:
+  `f729f49da796f4d12e72d8c5e82e94ac632937d2`
 - Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
 
-Raport dotyczy niezatwierdzonego drzewa roboczego z poprawkami po audycie.
-Nie zastępuje odbudowania artefaktu z końcowego, oznaczonego commitu ani
-testów na wszystkich wspieranych platformach.
+Raport dotyczy zatwierdzonego, czystego drzewa po fast-forward do lokalnego
+`main`. Nie zastępuje odbudowania artefaktu z oznaczonego commitu ani testów
+na wszystkich wspieranych platformach.
 
 ## Zakres zmian
 
@@ -93,7 +94,7 @@ gałęzią domyślną, nie ma rulesetu ani ochrony gałęzi, topics, tagów i wy
 Ustawień bezpieczeństwa niewidocznych bez uwierzytelnienia nie oznaczono jako
 sprawdzone.
 
-Przed scaleniem i publikacją opiekun powinien:
+Przed wysłaniem lokalnego `main` i publikacją opiekun powinien:
 
 1. Ustawić topics: `qgis`, `qgis-plugin`, `pyqgis`, `cadastre`, `egib`,
    `pl-2000`, `geodesy`, `poland`.
@@ -117,7 +118,7 @@ Windows i macOS. Przed wysłaniem do oficjalnego repozytorium QGIS pozostają:
 - te same testy na QGIS 3.44 / Windows;
 - te same testy na QGIS 3.44 / macOS;
 - konfiguracja i przejście ochrony `main` oraz checku `Source quality`;
-- końcowy commit, podpisany tag `v0.1.0`, świeży ZIP i jego SHA-256.
+- push lokalnego `main`, podpisany tag `v0.1.0`, świeży ZIP i jego SHA-256.
 
 QGIS 4/Qt6 nie jest deklarowany i nie wolno rozszerzać
 `qgisMaximumVersion` przed rzeczywistym testem. Do czasu zamknięcia powyższych
