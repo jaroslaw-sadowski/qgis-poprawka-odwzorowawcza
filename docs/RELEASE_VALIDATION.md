@@ -3,7 +3,7 @@
 - Data: 2026-07-24
 - Gałąź lokalna: `main`
 - Zweryfikowany commit runtime:
-  `f729f49da796f4d12e72d8c5e82e94ac632937d2`
+  `c8d3092030a715a6e3287ec6689212888d145ae4`
 - Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
 
 Raport dotyczy zatwierdzonego, czystego drzewa po fast-forward do lokalnego
@@ -19,6 +19,7 @@ na wszystkich wspieranych platformach.
   skanera sekretów.
 - Ujednolicono motyw GUI, dodano okno „O wtyczce” i ikonę PNG dla
   repozytorium QGIS.
+- Ujednolicono oficjalną nazwę do „Poprawka odwzorowawcza”.
 - Komunikaty GUI nie pokazują surowych wyjątków ani lokalnych ścieżek.
 - Uzupełniono metadane, jawny manifest paczki i testy nowych elementów.
 - Nie zmieniono wzoru, stałych, mapowania osi, stref, PGK, zaokrąglania ani
@@ -54,10 +55,10 @@ Końcowe kontrole źródeł:
 
 Końcowy ZIP zbudowano dwukrotnie poza repozytorium:
 
-- plik kontrolny: `/tmp/qgis-poprawka-final-a.zip`;
-- rozmiar: 61 459 B;
+- plik kontrolny: `/tmp/qgis_poprawka_odwzorowawcza-0.1.0.zip`;
+- rozmiar: 61 446 B;
 - SHA-256:
-  `f5c539c28046b2f561c418eba74d889f84fc4592df44722c11cb09b9cbffcc2a`;
+  `144ec7a899c362d8710ad737cc4ee7245af0b2442c0a4dc610f7c7915a19ed3f`;
 - zawartość: 24 pliki pod jednym katalogiem
   `qgis_poprawka_odwzorowawcza/`;
 - porównanie z jawnym manifestem: wszystkie pliki zgodne bajt w bajt;
