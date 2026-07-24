@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 5
+    groups:
+      development-tools:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: chore

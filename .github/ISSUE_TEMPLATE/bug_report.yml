@@ -1,0 +1,63 @@
+name: Zgłoszenie błędu
+description: Zgłoś możliwy do odtworzenia problem z działaniem wtyczki.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Nie publikuj danych osobowych, poświadczeń ani niezanonimizowanych
+        projektów QGIS. Podatności zgłaszaj prywatnie zgodnie z SECURITY.md.
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Wersja wtyczki
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: qgis-version
+    attributes:
+      label: Wersja QGIS i Qt
+      placeholder: "QGIS 3.40.15, Qt 5.15"
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: System operacyjny
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Inny
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Kroki odtworzenia
+      description: Podaj minimalny, powtarzalny scenariusz bez danych wrażliwych.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Oczekiwany rezultat
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Rzeczywisty rezultat
+      description: Usuń lokalne ścieżki, dane osobowe i inne informacje poufne.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Kontrola zgłoszenia
+      options:
+        - label: Sprawdziłem istniejące zgłoszenia.
+          required: true
+        - label: Zgłoszenie nie zawiera danych wrażliwych.
+          required: true

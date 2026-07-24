@@ -20,7 +20,9 @@ RUNTIME_FILES = (
     "core/errors.py",
     "core/models.py",
     "gui/__init__.py",
+    "gui/about_dialog.py",
     "gui/dialog.py",
+    "gui/theme.py",
     "LICENSE",
     "metadata.txt",
     "plugin.py",
@@ -28,7 +30,9 @@ RUNTIME_FILES = (
     "processing_provider/area_algorithm.py",
     "processing_provider/provider.py",
     "README.md",
+    "resources/icon.png",
     "resources/icon.svg",
+    "user_messages.py",
 )
 RUNTIME_DIRECTORIES = (
     "adapters",

@@ -14,6 +14,8 @@ from qgis.core import (
 )
 
 import adapters.geometry as geometry_module
+import processing_provider.area_algorithm as algorithm_module
+from adapters import GeometryTransformError
 from compat import FIELD_TYPE_INT, FIELD_TYPE_STRING
 from processing_provider import CalculateEgibAreaAlgorithm, EgibAreaProvider
 
@@ -188,7 +190,7 @@ def test_feature_without_geometry_is_reported_and_batch_continues() -> None:
     assert results[2]["egib_zone"] == 7
     assert results[2]["egib_epsg"] == 2178
     assert results[2].hasGeometry() is False
-    assert "null" in results[2]["egib_warnings"]
+    assert "Geometria wejściowa jest pusta" in results[2]["egib_warnings"]
 
 
 def test_feature_over_geometry_budget_is_reported_without_processing(
@@ -211,6 +213,33 @@ def test_feature_over_geometry_budget_is_reported_without_processing(
     assert result["egib_area_m2"] == NULL
     assert "limit liczby współrzędnych: 5 > 4" in result["egib_warnings"]
     assert result.hasGeometry() is False
+
+
+def test_processing_hides_raw_transform_error_details(monkeypatch) -> None:
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+
+    def fail_preparation(*args, **kwargs):
+        del args, kwargs
+        raise GeometryTransformError(
+            "grid missing at /home/private-user/secret-grid.gsb"
+        )
+
+    monkeypatch.setattr(
+        algorithm_module,
+        "prepare_geometry",
+        fail_preparation,
+    )
+
+    output, _context = _run_algorithm(layer)
+    result = next(output.getFeatures())
+
+    assert result["egib_status"] == "error"
+    assert "Sprawdź CRS warstwy" in result["egib_warnings"]
+    assert "/home/private-user" not in result["egib_warnings"]
+    assert "grid missing" not in result["egib_warnings"]
 
 
 def test_reserved_output_field_collision_is_rejected() -> None:

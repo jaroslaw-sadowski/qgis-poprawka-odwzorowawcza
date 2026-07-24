@@ -29,6 +29,8 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+from .theme import MONOSPACE_FONT_STACK, UI_FONT_STACK, theme_colors
+
 if "." in __package__:
     from ..adapters import (
         GeometryInputError,
@@ -45,6 +47,7 @@ if "." in __package__:
         AreaCalculationResult,
         calculate_area,
     )
+    from ..user_messages import safe_calculation_error_message
 else:
     from adapters import (
         GeometryInputError,
@@ -61,14 +64,14 @@ else:
         AreaCalculationResult,
         calculate_area,
     )
+    from user_messages import safe_calculation_error_message
 
 
 _PL2000_ZONE_BY_EPSG = {2176: 5, 2177: 6, 2178: 7, 2179: 8}
 
 _WARNING_LABELS = {
     "duplicate_boundary_points_removed": (
-        "Usunięto powtarzające się współrzędne punktów przy "
-        "wyznaczaniu P_GK."
+        "Usunięto powtarzające się współrzędne punktów przy wyznaczaniu P_GK."
     ),
     "geometry_invalid_before_repair": (
         "Geometria była niepoprawna według GEOS."
@@ -84,9 +87,7 @@ _WARNING_LABELS = {
     "repair_changed_boundary_vertices": (
         "Naprawa zmieniła zbiór wierzchołków granicy."
     ),
-    "repair_changed_part_count": (
-        "Naprawa zmieniła liczbę części geometrii."
-    ),
+    "repair_changed_part_count": ("Naprawa zmieniła liczbę części geometrii."),
     "repair_changed_ring_count": "Naprawa zmieniła liczbę pierścieni.",
     "repair_changed_area": "Naprawa zmieniła pole powierzchni geometrii.",
     "structure_not_supported": "Metoda Structure nie jest obsługiwana.",
@@ -102,13 +103,11 @@ _REPAIR_METHOD_LABELS = {
     RepairMethod.FAILED: "nieudana",
 }
 
-_REPAIR_OPTION_SOURCE = (
-    "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
-)
+_REPAIR_OPTION_SOURCE = "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
 _REPAIR_OPTION_AUTO = "Wykryj błędy i spróbuj naprawić geometrię"
 
 _EVENT_TYPE_ENUM = getattr(QEvent, "Type", QEvent)
-_TOOLTIP_EVENT_TYPE = getattr(_EVENT_TYPE_ENUM, "ToolTip")
+_TOOLTIP_EVENT_TYPE = _EVENT_TYPE_ENUM.ToolTip
 
 _WARNING_DETAILS = {
     "duplicate_boundary_points_removed": (
@@ -205,8 +204,7 @@ _PARAMETER_DETAILS = {
     ),
     "param:m": (
         "m",
-        "Skala zniekształcenia liniowego w punkcie P_GK: "
-        "m = σ · 10⁻⁵ + 1.",
+        "Skala zniekształcenia liniowego w punkcie P_GK: m = σ · 10⁻⁵ + 1.",
     ),
     "param:m2": (
         "m²",
@@ -312,7 +310,7 @@ class TechnicalReportBrowser(QTextBrowser):
     def set_hover_help(self, hover_help: dict) -> None:
         self._hover_help = dict(hover_help)
 
-    def viewportEvent(self, event: object) -> bool:
+    def viewportEvent(self, event: object) -> bool:  # noqa: N802
         if event.type() == _TOOLTIP_EVENT_TYPE:
             help_key = self.anchorAt(event.pos())
             help_text = self._hover_help.get(help_key)
@@ -391,8 +389,8 @@ class SelectedParcelDialog(QDialog):
         )
         self.setWindowIcon(QIcon(str(icon_path)))
         self.setMinimumSize(680, 480)
-        self.resize(840, 600)
-        self._colors = _theme_colors(self)
+        self.resize(880, 620)
+        self._colors = theme_colors(self)
         self._build_ui()
         self.setStyleSheet(_dialog_stylesheet(self._colors))
 
@@ -434,9 +432,7 @@ class SelectedParcelDialog(QDialog):
         layer_caption.setObjectName("eyebrowLabel")
         selection_layout.addWidget(layer_caption)
 
-        layer_name = QLabel(
-            f"<b>Warstwa:</b> {escape(self._layer.name())}"
-        )
+        layer_name = QLabel(f"<b>Warstwa:</b> {escape(self._layer.name())}")
         layer_name.setObjectName("selectionField")
         layer_name.setToolTip(
             _tooltip_html(
@@ -454,9 +450,7 @@ class SelectedParcelDialog(QDialog):
             if authid.upper().startswith("EPSG:")
             else "brak"
         )
-        epsg_label = QLabel(
-            f"<b>Wykryty EPSG:</b> {escape(epsg or 'brak')}"
-        )
+        epsg_label = QLabel(f"<b>Wykryty EPSG:</b> {escape(epsg or 'brak')}")
         epsg_label.setObjectName("selectionField")
         epsg_label.setToolTip(_source_crs_tooltip(self._layer.crs()))
         selection_layout.addWidget(epsg_label)
@@ -548,9 +542,7 @@ class SelectedParcelDialog(QDialog):
         layout.addLayout(button_layout)
 
         self.calculate_button.clicked.connect(self.calculate)
-        self.zone_combo.currentIndexChanged.connect(
-            self._update_zone_tooltip
-        )
+        self.zone_combo.currentIndexChanged.connect(self._update_zone_tooltip)
         self.close_button.clicked.connect(self.reject)
         self._set_status("Gotowy do obliczenia.", "ready")
 
@@ -567,8 +559,7 @@ class SelectedParcelDialog(QDialog):
         if source_zone is not None:
             source_epsg = 2171 + source_zone
             self.zone_combo.addItem(
-                "Wykryto PL-2000 — "
-                f"strefa {source_zone} (EPSG:{source_epsg})",
+                f"Wykryto PL-2000 — strefa {source_zone} (EPSG:{source_epsg})",
                 None,
             )
             self.zone_combo.setEnabled(False)
@@ -631,7 +622,8 @@ class SelectedParcelDialog(QDialog):
             ZoneSelectionError,
         ) as error:
             self._show_error(
-                f"Nie można obliczyć powierzchni.\n\nSzczegóły: {error}"
+                "Nie można obliczyć powierzchni.\n\n"
+                f"{safe_calculation_error_message(error)}"
             )
             return
 
@@ -844,8 +836,7 @@ def _format_result_html(
         _diagnostic_cells(
             "diagnostic:vertices",
             "Wierzchołki",
-            f"{report.original_vertex_count} → "
-            f"{report.repaired_vertex_count}",
+            f"{report.original_vertex_count} → {report.repaired_vertex_count}",
         ),
         _diagnostic_cells(
             "diagnostic:vertex-change",
@@ -987,8 +978,7 @@ def _html_document(body: str, colors: dict) -> str:
           body {{
             color: {colors["text"]};
             background-color: {colors["surface"]};
-            font-family: "DejaVu Sans Mono", Consolas, Menlo,
-              "Liberation Mono", monospace;
+            font-family: {UI_FONT_STACK};
             font-size: 8.5pt;
             margin: 8px;
           }}
@@ -1024,8 +1014,7 @@ def _html_document(body: str, colors: dict) -> str:
           }}
           .result-symbol {{
             color: {colors["accent"]};
-            font-family: "DejaVu Sans Mono", Consolas, Menlo,
-              "Liberation Mono", monospace;
+            font-family: {MONOSPACE_FONT_STACK};
             font-size: 9.5pt;
             font-weight: 700;
             white-space: nowrap;
@@ -1037,8 +1026,7 @@ def _html_document(body: str, colors: dict) -> str:
             width: 49%;
           }}
           .result-value {{
-            font-family: "DejaVu Sans Mono", Consolas, Menlo,
-              "Liberation Mono", monospace;
+            font-family: {MONOSPACE_FONT_STACK};
             font-size: 9pt;
             font-weight: 700;
             text-align: right;
@@ -1051,8 +1039,7 @@ def _html_document(body: str, colors: dict) -> str:
           .formula {{
             color: {colors["accent"]};
             background-color: {colors["accent_soft"]};
-            font-family: "DejaVu Sans Mono", Consolas, Menlo,
-              "Liberation Mono", monospace;
+            font-family: {MONOSPACE_FONT_STACK};
             font-size: 8.5pt;
             padding: 6px 8px;
           }}
@@ -1075,13 +1062,11 @@ def _html_document(body: str, colors: dict) -> str:
             width: 18%;
           }}
           .parameter-symbol {{
-            font-family: "DejaVu Sans Mono", Consolas, Menlo,
-              "Liberation Mono", monospace;
+            font-family: {MONOSPACE_FONT_STACK};
             font-size: 8.5pt;
           }}
           .parameter-value, .diagnostic-value {{
-            font-family: "DejaVu Sans Mono", Consolas, Menlo,
-              "Liberation Mono", monospace;
+            font-family: {MONOSPACE_FONT_STACK};
             text-align: right;
             white-space: nowrap;
             width: 32%;
@@ -1126,8 +1111,7 @@ def _html_document(body: str, colors: dict) -> str:
           }}
           .welcome-mark {{
             color: {colors["accent"]};
-            font-family: "DejaVu Sans Mono", Consolas, Menlo,
-              "Liberation Mono", monospace;
+            font-family: {MONOSPACE_FONT_STACK};
             font-size: 14pt;
             font-weight: 700;
             margin-bottom: 7px;
@@ -1290,8 +1274,7 @@ def _zone_selection_tooltip(
     target_epsg = 2171 + int(selected_zone)
     return _tooltip_html(
         f"Wybrano strefę {selected_zone} — EPSG:{target_epsg}",
-        transform_details
-        + f" Aktualnie wskazano strefę {selected_zone} "
+        transform_details + f" Aktualnie wskazano strefę {selected_zone} "
         f"(EPSG:{target_epsg}).",
     )
 
@@ -1318,60 +1301,20 @@ def _yes_no(value: Optional[bool]) -> str:
     return "tak" if value else "nie"
 
 
-def _theme_colors(dialog: QDialog) -> dict:
-    is_dark = dialog.palette().window().color().lightness() < 128
-    if is_dark:
-        return {
-            "window": "#1d252c",
-            "surface": "#252f38",
-            "surface_alt": "#2d3943",
-            "text": "#edf3f7",
-            "muted": "#adbac5",
-            "border": "#44515d",
-            "accent": "#63b3d4",
-            "accent_hover": "#7bc1de",
-            "accent_soft": "#243f4c",
-            "success": "#65c59b",
-            "success_soft": "#243e35",
-            "warning": "#efbd68",
-            "warning_soft": "#453922",
-            "error": "#ee817c",
-            "error_soft": "#482d2e",
-        }
-    return {
-        "window": "#f2f5f7",
-        "surface": "#ffffff",
-        "surface_alt": "#eaf0f3",
-        "text": "#17242d",
-        "muted": "#5e6d77",
-        "border": "#d3dde3",
-        "accent": "#176b8b",
-        "accent_hover": "#0f5874",
-        "accent_soft": "#e1f0f5",
-        "success": "#247253",
-        "success_soft": "#e1f1e9",
-        "warning": "#946116",
-        "warning_soft": "#fbefd8",
-        "error": "#a43d3a",
-        "error_soft": "#f8e5e4",
-    }
-
-
 def _dialog_stylesheet(colors: dict) -> str:
     return f"""
     QDialog#selectedParcelDialog {{
         background-color: {colors["window"]};
         color: {colors["text"]};
-        font-family: "DejaVu Sans Mono", Consolas, Menlo,
-            "Liberation Mono", monospace;
-        font-size: 8.5pt;
+        font-family: {UI_FONT_STACK};
+        font-size: 9pt;
     }}
     QLabel {{
         background: transparent;
         color: {colors["text"]};
     }}
     QLabel#dialogTitle {{
-        font-size: 12pt;
+        font-size: 13pt;
         font-weight: 600;
     }}
     QLabel#dialogSubtitle {{
@@ -1518,8 +1461,7 @@ def _dialog_stylesheet(colors: dict) -> str:
         background-color: {colors["surface"]};
         border: 1px solid {colors["accent"]};
         padding: 7px;
-        font-family: "DejaVu Sans Mono", Consolas, Menlo,
-            "Liberation Mono", monospace;
-        font-size: 8pt;
+        font-family: {UI_FONT_STACK};
+        font-size: 8.5pt;
     }}
     """

@@ -74,31 +74,46 @@ def test_plugin_registers_action_provider_and_unloads(monkeypatch) -> None:
     plugin.initGui()
     try:
         assert plugin.action is not None
+        assert plugin.about_action is not None
         assert plugin.action.objectName() == "egibSelectedParcelAction"
+        assert plugin.about_action.objectName() == "egibAboutAction"
         assert plugin.action.icon().isNull() is False
-        assert iface.menu_actions == [(plugin.MENU_NAME, plugin.action)]
+        assert iface.menu_actions == [
+            (plugin.MENU_NAME, plugin.action),
+            (plugin.MENU_NAME, plugin.about_action),
+        ]
         assert iface.toolbar_actions == [plugin.action]
         assert (
             registry.algorithmById("egib_area:calculate_egib_area") is not None
         )
 
+        plugin.about_action.trigger()
+        assert opened_dialogs[0].objectName() == "aboutDialog"
+        assert "O wtyczce" in opened_dialogs[0].windowTitle()
+        assert plugin.about_dialog is None
+
         iface.layer = _selected_layer()
         plugin.action.trigger()
-        assert len(opened_dialogs) == 1
+        assert len(opened_dialogs) == 2
         assert (
-            opened_dialogs[0]
+            opened_dialogs[1]
             .windowTitle()
             .startswith("Poprawka odwzorowawcza")
         )
         assert plugin.dialog is None
     finally:
         action = plugin.action
+        about_action = plugin.about_action
         plugin.unload()
 
     assert registry.algorithmById("egib_area:calculate_egib_area") is None
-    assert iface.removed_menu_actions == [(plugin.MENU_NAME, action)]
+    assert iface.removed_menu_actions == [
+        (plugin.MENU_NAME, action),
+        (plugin.MENU_NAME, about_action),
+    ]
     assert iface.removed_toolbar_actions == [action]
     assert plugin.action is None
+    assert plugin.about_action is None
     assert plugin.provider is None
 
 
@@ -199,8 +214,13 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     )
     assert "PL-2000 zones 5-8" in metadata["about"]
     assert "Curved polygon rings" in metadata["about"]
-    assert "Source geometry is never modified" in metadata["about"]
+    assert "never modifies source geometry" in metadata["about"]
+    assert "works locally" in metadata["about"]
+    assert "vibe-coding workflow" in metadata["about"]
     assert "GeoPackage is recommended" in metadata["about"]
+    assert metadata["icon"] == "resources/icon.png"
+    assert "0.1.0 release candidate" in metadata["changelog"]
+    assert metadata["deprecated"] == "False"
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
 
 

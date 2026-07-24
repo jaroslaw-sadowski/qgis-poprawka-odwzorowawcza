@@ -1,0 +1,39 @@
+name: Propozycja ulepszenia
+description: Zaproponuj zmianę poprawiającą użyteczność lub audytowalność.
+title: "feat: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Jaki problem ma rozwiązać zmiana?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proponowane rozwiązanie
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Rozważone alternatywy
+  - type: dropdown
+    id: calculation-impact
+    attributes:
+      label: Czy propozycja zmienia wynik obliczenia?
+      options:
+        - Nie
+        - Tak
+        - Nie wiem
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Kontrola zgłoszenia
+      options:
+        - label: Sprawdziłem istniejące zgłoszenia.
+          required: true
+        - label: Propozycja nie zawiera danych wrażliwych.
+          required: true

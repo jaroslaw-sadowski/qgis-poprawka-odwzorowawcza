@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Prywatne zgłoszenie podatności
+    url: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/security/advisories/new
+    about: Nie publikuj szczegółów podatności w zwykłym issue.
+  - name: Dokumentacja użytkownika
+    url: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza#readme
+    about: Sprawdź instalację, użycie i ograniczenia wtyczki.

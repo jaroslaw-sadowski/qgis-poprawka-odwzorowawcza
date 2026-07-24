@@ -1,3 +1,8 @@
+# Archiwalny audyt materiałów wejściowych
+
+> Dokument historyczny wykonany przed implementacją. Nie opisuje bieżącego
+> stanu repozytorium ani aktualnych wyników testów.
+
 # Audyt materiałów wejściowych
 
 ## 1. Zakres i wynik audytu

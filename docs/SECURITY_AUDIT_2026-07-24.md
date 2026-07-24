@@ -1,5 +1,8 @@
 # Audyt bezpieczeństwa i jakości wtyczki QGIS
 
+> Raport punktowy dla commitu wskazanego poniżej. Wdrożenie rekomendacji
+> i aktualny stan kandydata wydania opisuje `RELEASE_VALIDATION.md`.
+
 Data audytu: 2026-07-24  
 Audytowany commit: `5310cd4` (`main`, zgodny z `origin/main`)  
 Zakres: cały katalog projektu, w tym pliki śledzone, lokalne artefakty

@@ -44,6 +44,7 @@ if "." in __package__:
         AreaCalculationResult,
         calculate_area,
     )
+    from ..user_messages import safe_calculation_error_message
 else:
     from adapters import (
         GeometryInputError,
@@ -67,6 +68,7 @@ else:
         AreaCalculationResult,
         calculate_area,
     )
+    from user_messages import safe_calculation_error_message
 
 
 class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
@@ -200,7 +202,9 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 selected_zone=selected_zone,
             )
         except (AreaCalculationError, ZoneSelectionError) as error:
-            raise QgsProcessingException(str(error)) from error
+            raise QgsProcessingException(
+                self.tr(safe_calculation_error_message(error))
+            ) from error
 
         output_fields = self._output_fields(source.fields())
         output_wkb_type = QgsWkbTypes.multiType(
@@ -287,9 +291,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 self._put_calculation(values, calculation)
                 if repair_mode is RepairMode.SOURCE_GEOMETRY:
                     values["egib_status"] = "source_geometry"
-                elif (
-                    prepared.report.repair_method is not RepairMethod.NONE
-                ):
+                elif prepared.report.repair_method is not RepairMethod.NONE:
                     values["egib_status"] = "repaired"
                 else:
                     values["egib_status"] = "ok"
@@ -301,14 +303,15 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 values["egib_status"] = "calculation_not_allowed"
 
         except GeometryRepairError as error:
+            safe_message = safe_calculation_error_message(error)
             self._put_report(values, error.report)
             values["egib_status"] = "repair_failed"
             values["egib_warnings"] = self._joined_warnings(
                 error.report.warnings,
-                (str(error),),
+                (safe_message,),
             )
             feedback.reportError(
-                self.tr(f"Obiekt {source_feature.id()}: {error}"),
+                self.tr(f"Obiekt {source_feature.id()}: {safe_message}"),
                 fatalError=False,
             )
         except (
@@ -317,10 +320,11 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
             GeometryTransformError,
             ZoneSelectionError,
         ) as error:
+            safe_message = safe_calculation_error_message(error)
             values["egib_status"] = "error"
-            values["egib_warnings"] = str(error)
+            values["egib_warnings"] = safe_message
             feedback.reportError(
-                self.tr(f"Obiekt {source_feature.id()}: {error}"),
+                self.tr(f"Obiekt {source_feature.id()}: {safe_message}"),
                 fatalError=False,
             )
 
@@ -417,9 +421,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 "egib_orig_vertices": report.original_vertex_count,
                 "egib_repaired_vertices": report.repaired_vertex_count,
                 "egib_orig_area_m2": _round_m2(report.original_area_m2),
-                "egib_repaired_area_m2": _round_m2(
-                    report.repaired_area_m2
-                ),
+                "egib_repaired_area_m2": _round_m2(report.repaired_area_m2),
                 "egib_area_diff_m2": _round_m2(report.area_difference_m2),
                 "egib_vertices_added": report.vertices_added,
                 "egib_vertices_removed": report.vertices_removed,

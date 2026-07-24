@@ -1,3 +1,8 @@
+# Archiwalny plan implementacji
+
+> Dokument historyczny opisujący decyzje sprzed implementacji. Aktualne
+> zachowanie projektu opisują README, testy i kod źródłowy.
+
 # Plan przekształcenia skryptu w plugin QGIS
 
 ## 1. Cel i zakres
@@ -335,4 +340,3 @@ W obu środowiskach sprawdzić:
 - `STRICT` konserwatywnie blokuje wynik dla każdej geometrii, która wymagała
   naprawy.
 - Repozytorium zachowuje istniejącą licencję GPL v2.
-

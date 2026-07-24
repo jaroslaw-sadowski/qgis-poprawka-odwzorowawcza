@@ -1,87 +1,124 @@
 # Walidacja kandydata wydania 0.1.0
 
-Data: 2026-07-24  
-Bazowy HEAD: `6efb73a2f7a566341d510c3e447b315127430ceb`  
-Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
+- Data: 2026-07-24
+- Gałąź robocza: `chore/professional-release`
+- Bazowy commit: `695ce18f7b97b7639575eaf5b0898ada0388c5ab`
+- Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
 
-Raport dotyczy bieżącego drzewa roboczego z poprawkami po audycie. Nie
-zastępuje testów wydania na wspieranych systemach ani odbudowania artefaktu
-z końcowego, oznaczonego commitu.
+Raport dotyczy niezatwierdzonego drzewa roboczego z poprawkami po audycie.
+Nie zastępuje odbudowania artefaktu z końcowego, oznaczonego commitu ani
+testów na wszystkich wspieranych platformach.
 
-## Artefakt
+## Zakres zmian
 
-- plik:
-  `dist/qgis_poprawka_odwzorowawcza-0.1.0.zip`;
-- rozmiar: 42 189 B;
-- SHA-256:
-  `6328bcea0acce12d7e318a579330d7f217e6a10d221961caf7cb8040a2590943`;
-- zawartość: 20 plików pod jednym katalogiem
-  `qgis_poprawka_odwzorowawcza/`;
-- porównanie z jawnym manifestem: 20/20 plików zgodnych bajt w bajt;
-- powtarzalność: drugi build miał identyczną sumę i wynik `cmp`.
+- Uporządkowano README, dokumentację projektu i materiały audytowe.
+- Dodano politykę bezpieczeństwa, changelog, zasady współtworzenia,
+  formularze zgłoszeń i szablon pull requestu.
+- Dodano minimalnie uprzywilejowany workflow CI, Dependabot oraz baseline
+  skanera sekretów.
+- Ujednolicono motyw GUI, dodano okno „O wtyczce” i ikonę PNG dla
+  repozytorium QGIS.
+- Komunikaty GUI nie pokazują surowych wyjątków ani lokalnych ścieżek.
+- Uzupełniono metadane, jawny manifest paczki i testy nowych elementów.
+- Nie zmieniono wzoru, stałych, mapowania osi, stref, PGK, zaokrąglania ani
+  kolejności obliczeń.
 
 ## Kontrole po grupach zmian
 
-| Grupa | Pytest | Bandit M/H | Flake8 | detect-secrets |
-|---|---:|---:|---:|---:|
-| Metadane i README | 90/90 | 0 | 0 | 0 |
-| Builder ZIP i testy negatywne | 94/94 | 0 | 0 | 0 |
-| Limity geometrii i selekcja | 101/101 | 0 | 0 | 0 |
+| Grupa | Pytest | Ruff/format | Flake8 | Bandit | Sekrety |
+|---|---:|---:|---:|---:|---:|
+| Repozytorium i dokumentacja | 101/101 | 3 ustalenia bazowe | 0 | 0 | 0 |
+| Interfejs i metadane | 103/103 | 0 | 0 | 0 | 0 |
+| CI, bezpieczne błędy i paczka | 104/104 | 0 | 0 | 0 | 0 |
 
-Pełny końcowy Bandit na źródłach zgłosił 290 trafień. Wszystkie są
-`B101`, mają poziom LOW i wysoką pewność, występują wyłącznie w testach oraz
-odpowiadają użyciu instrukcji `assert`. Kod runtime ma 0 trafień.
+Trzy bazowe ustalenia Ruff z pierwszej grupy zostały naprawione w drugiej:
+dwa stałe odczyty enum oraz format trzech plików. Nazwa
+`viewportEvent()` zachowuje wymagany kontrakt Qt i ma minimalne, lokalne
+`# noqa: N802`.
 
-Ruff odtwarza ustalenia jakościowe opisane już w audycie:
-
-- dwa `B009` dla stałego `getattr()` — jeden w GUI i jeden w teście;
-- `N802` dla `viewportEvent()`, którego nazwa wynika z API Qt;
-- formatowanie trzech plików źródłowych odbiega od Ruff.
-
-Nowe pliki i nowo dodane fragmenty nie zwiększają liczby tych trafień.
-Ustalenia Ruff należą do sekcji „Zalecane”, nie do grupy blokującej
-„Przed publikacją”.
-
-## Kontrole dokładnej zawartości ZIP
+Końcowe kontrole źródeł:
 
 | Kontrola | Wynik |
 |---|---|
-| `unzip -t` | 20/20 wpisów OK |
-| Bandit | 0 trafień |
-| Flake8 | 0 trafień |
-| detect-secrets | 0 sekretów |
-| porównanie ZIP–źródła | 20/20 plików zgodnych |
-| deterministyczny rebuild | identyczny bajt w bajt |
+| `compileall` utrzymywanych plików | OK |
+| Ruff 0.16.0 | 0 ustaleń, 44/44 pliki sformatowane |
+| Flake8 7.3.0 | 0 ustaleń |
+| Bandit 1.9.4 na runtime i builderze | 0 ustaleń |
+| detect-secrets 1.5.0 | 0 sekretów |
+| pip-audit 2.10.1 dla `requirements-dev.txt` | 0 znanych podatności |
+| actionlint 1.7.12 | workflow poprawny |
+| pełny pytest | 104/104 |
 
-Ruff uruchomiony na paczce z konfiguracją projektu odtwarza dwa dotyczące
-runtime ustalenia bazowe: `B009` i świadomy wyjątek `N802`. Kontrola
-formatowania wskazuje dwa bazowe pliki runtime.
+## Artefakt
 
-## Klasyfikacja ręczna
+Końcowy ZIP zbudowano dwukrotnie poza repozytorium:
 
-- Nie znaleziono sekretów, wykonania poleceń, dostępu do sieci ani nowych
-  zależności runtime.
-- Builder przyjmuje tylko jawny manifest, odrzuca symlinki, pliki specjalne,
-  wyjście poza katalog źródłowy i nieoczekiwane pliki w katalogach runtime.
-- Geometria jest odrzucana przed transformacją, materializacją punktów
-  i GEOS po przekroczeniu 10 000 części, 50 000 pierścieni lub 500 000
-  współrzędnych.
-- Zmiany nie modyfikują wzoru, stałych, mapowania osi, stref, PGK,
-  zaokrąglania ani schematu obliczenia.
+- plik kontrolny: `/tmp/qgis-poprawka-final-a.zip`;
+- rozmiar: 61 459 B;
+- SHA-256:
+  `f5c539c28046b2f561c418eba74d889f84fc4592df44722c11cb09b9cbffcc2a`;
+- zawartość: 24 pliki pod jednym katalogiem
+  `qgis_poprawka_odwzorowawcza/`;
+- porównanie z jawnym manifestem: wszystkie pliki zgodne bajt w bajt;
+- powtarzalność: drugi build jest identyczny według `cmp`;
+- test struktury ZIP: OK.
+
+Dokładną rozpakowaną zawartość przeskanowano ponownie. Ruff, formatowanie,
+Flake8, Bandit i detect-secrets zakończyły się bez ustaleń. ZIP nie zawiera
+testów, dokumentacji deweloperskiej, materiałów prawnych, plików cache,
+lokalnego `dist/`, konfiguracji GitHub ani zależności narzędziowych.
+
+Istniejącego, ignorowanego pliku `dist/*.zip` nie należy publikować. Po
+utworzeniu końcowego commitu lub tagu trzeba ponownie zbudować paczkę i
+opublikować nową sumę SHA-256.
+
+## Kontrola repozytorium i historii
+
+- `main` i `origin/main` wskazują ten sam commit bazowy.
+- Jedyna zdalna gałąź to `main`; brak zdalnych kandydatów do usunięcia.
+- Brak tagów i wydań, więc nie ma kandydatów do usunięcia.
+- Historia ma 16 commitów i jednego autora używającego adresu GitHub
+  `noreply`. Starsze niespójne komunikaty pozostają bez przepisywania
+  historii; dla nowych zmian udokumentowano Conventional Commits.
+- Nie znaleziono sekretów, poświadczeń, prywatnych kluczy, wewnętrznych
+  hostów ani danych produkcyjnych.
+- Nie ma śledzonych symlinków, cache Python, środowisk wirtualnych ani ZIP.
+- Pliki binarne w `docs/legal/` pozostają audytowalnym źródłem podstawy
+  prawnej i nie trafiają do paczki wtyczki.
+
+## Stan i zalecane ustawienia GitHub
+
+Publiczne API GitHub potwierdziło: repozytorium jest publiczne, `main` jest
+gałęzią domyślną, nie ma rulesetu ani ochrony gałęzi, topics, tagów i wydań.
+Ustawień bezpieczeństwa niewidocznych bez uwierzytelnienia nie oznaczono jako
+sprawdzone.
+
+Przed scaleniem i publikacją opiekun powinien:
+
+1. Ustawić topics: `qgis`, `qgis-plugin`, `pyqgis`, `cadastre`, `egib`,
+   `pl-2000`, `geodesy`, `poland`.
+2. Dodać ruleset dla `main`: pull request, wymagany check `Source quality`,
+   rozwiązane rozmowy, liniowa historia, blokada force push i usuwania.
+   Przy jednym opiekunie można zacząć od 0 wymaganych akceptacji; po dodaniu
+   drugiego opiekuna ustawić 1 i unieważnianie akceptacji po nowych zmianach.
+3. Ustawić Actions na read-only `GITHUB_TOKEN`, wyłączyć zatwierdzanie pull
+   requestów przez workflow i wymagać pełnych SHA dla akcji.
+4. Włączyć Dependabot alerts i security updates, code scanning dla Python,
+   secret scanning z push protection oraz private vulnerability reporting.
+5. Włączyć automatyczne usuwanie gałęzi po scaleniu i preferować squash
+   merge lub rebase. Wyłączyć Wiki i Projects, jeśli nie będą używane.
 
 ## Niewykonane bramki publikacji
 
-W lokalnym środowisku nie ma QGIS 3.44 ani systemów Windows i macOS.
-Przed publikacją nadal trzeba wykonać instalację z dokładnego ZIP oraz test
-GUI, unload i Processing co najmniej na:
+Nie wykonano interaktywnej instalacji finalnego ZIP ani testów na QGIS 3.44,
+Windows i macOS. Przed wysłaniem do oficjalnego repozytorium QGIS pozostają:
 
-- QGIS 3.44 / Linux;
-- QGIS 3.44 / Windows;
-- QGIS 3.44 / macOS.
+- instalacja, GUI, unload i Processing na QGIS 3.44 / Linux;
+- te same testy na QGIS 3.44 / Windows;
+- te same testy na QGIS 3.44 / macOS;
+- konfiguracja i przejście ochrony `main` oraz checku `Source quality`;
+- końcowy commit, podpisany tag `v0.1.0`, świeży ZIP i jego SHA-256.
 
-QGIS 4/Qt6 nie jest deklarowany w `metadata.txt` i nie wolno rozszerzać
-`qgisMaximumVersion` przed rzeczywistym testem QGIS 4.
-
-Po wykonaniu testów platformowych należy zaktualizować ten raport, utworzyć
-końcowy commit lub tag, odbudować ZIP z tego stanu i ponownie zapisać jego
-sumę SHA-256.
+QGIS 4/Qt6 nie jest deklarowany i nie wolno rozszerzać
+`qgisMaximumVersion` przed rzeczywistym testem. Do czasu zamknięcia powyższych
+bramek ocena kandydata brzmi: **WYMAGA POPRAWEK**.

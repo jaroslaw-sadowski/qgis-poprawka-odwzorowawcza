@@ -1,14 +1,15 @@
 from decimal import Decimal
+from pathlib import Path
 
 from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
 from qgis.PyQt.QtCore import QPoint, Qt
 from qgis.PyQt.QtTest import QTest
-from qgis.PyQt.QtWidgets import QApplication
+from qgis.PyQt.QtWidgets import QApplication, QLabel
 
 import adapters.geometry as geometry_module
 import gui.dialog as dialog_module
-from adapters import RepairMethod
-from gui import SelectedParcelDialog
+from adapters import GeometryTransformError, RepairMethod
+from gui import AboutDialog, SelectedParcelDialog, read_plugin_metadata
 
 
 def _layer_with_geometry(
@@ -39,8 +40,7 @@ def test_dialog_calculates_without_editing_source() -> None:
     dialog = _dialog(layer)
 
     assert (
-        dialog.windowTitle()
-        == "Poprawka odwzorowawcza — zaznaczona działka"
+        dialog.windowTitle() == "Poprawka odwzorowawcza — zaznaczona działka"
     )
     assert dialog.zone_combo.isEnabled() is False
     assert "Wykryto PL-2000" in dialog.zone_combo.currentText()
@@ -50,11 +50,12 @@ def test_dialog_calculates_without_editing_source() -> None:
         dialog.repair_mode_combo.currentText()
         == "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
     )
-    assert "DejaVu Sans Mono" in dialog.styleSheet()
-    assert "Consolas" in dialog.styleSheet()
-    assert "Menlo" in dialog.styleSheet()
-    assert dialog.width() == 840
-    assert dialog.height() == 600
+    assert "Noto Sans" in dialog.styleSheet()
+    assert "Segoe UI" in dialog.styleSheet()
+    assert "DejaVu Sans" in dialog.styleSheet()
+    assert "DejaVu Sans Mono" in dialog.result_text.toHtml()
+    assert dialog.width() == 880
+    assert dialog.height() == 620
     assert dialog.calculate_button.isDefault() is True
     selection_text = " ".join(
         label.text() for label in dialog.findChildren(dialog_module.QLabel)
@@ -119,7 +120,7 @@ def test_clicking_report_help_link_keeps_calculation_visible() -> None:
     mouse_button_enum = getattr(Qt, "MouseButton", Qt)
     QTest.mouseClick(
         browser.viewport(),
-        getattr(mouse_button_enum, "LeftButton"),
+        mouse_button_enum.LeftButton,
         pos=help_position,
     )
     QApplication.processEvents()
@@ -292,3 +293,56 @@ def test_dialog_reports_geometry_budget_before_calculation(
     assert dialog.last_result is None
     assert "Nie można obliczyć powierzchni" in warnings[0]
     assert "limit liczby współrzędnych: 5 > 4" in warnings[0]
+
+
+def test_dialog_hides_raw_transform_error_details(monkeypatch) -> None:
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    dialog = _dialog(layer)
+    warnings = []
+
+    def fail_calculation(*args, **kwargs):
+        del args, kwargs
+        raise GeometryTransformError(
+            "grid missing at /home/private-user/secret-grid.gsb"
+        )
+
+    class FakeMessageBox:
+        @staticmethod
+        def warning(parent, title, message):
+            del parent, title
+            warnings.append(message)
+
+    monkeypatch.setattr(
+        dialog_module,
+        "calculate_selected_parcel",
+        fail_calculation,
+    )
+    monkeypatch.setattr(dialog_module, "QMessageBox", FakeMessageBox)
+
+    dialog.calculate_button.click()
+
+    assert dialog.last_result is None
+    assert "Sprawdź CRS warstwy" in warnings[0]
+    assert "/home/private-user" not in warnings[0]
+    assert "grid missing" not in warnings[0]
+
+
+def test_about_dialog_presents_authorship_privacy_and_disclosure() -> None:
+    repository_root = Path(__file__).resolve().parents[2]
+    metadata = read_plugin_metadata(repository_root)
+    dialog = AboutDialog(plugin_root=repository_root)
+    visible_text = " ".join(
+        label.text() for label in dialog.findChildren(QLabel)
+    )
+
+    assert dialog.objectName() == "aboutDialog"
+    assert dialog.windowIcon().isNull() is False
+    assert metadata["name"] in dialog.windowTitle()
+    assert f"Wersja {metadata['version']}" in visible_text
+    assert metadata["author"] in visible_text
+    assert "Dane pozostają w QGIS" in visible_text
+    assert "nie łączy się z siecią" in visible_text
+    assert "vibe coding" in visible_text
