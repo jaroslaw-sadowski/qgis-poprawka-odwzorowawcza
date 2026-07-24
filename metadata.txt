@@ -1,7 +1,7 @@
 [general]
 name=Poprawka odwzorowawcza
-description=Calculates statutory cadastral parcel area with the PL-2000 projection correction.
-about=Calculates corrected parcel areas for Poland in PL-2000 zones 5-8. It works locally, has no runtime dependencies and never modifies source geometry. For a source CRS other than EPSG:2176-2179, the user must select the correct target zone. Curved polygon rings and geometries exceeding the documented complexity limits are rejected. The default mode deliberately skips GEOS validation; optional repair works only on a copy. GeoPackage is recommended for complete diagnostic output. The project is developed with a disclosed vibe-coding workflow and verified with tests, security scanners and human review.
+description=Oblicza ustawowe pole działki ewidencyjnej z powierzchniową poprawką odwzorowawczą w układzie PL-2000.
+about=Oblicza skorygowane pola działek ewidencyjnych w Polsce, w strefach 5–8 układu PL-2000. Działa lokalnie, nie wymaga dodatkowych zależności i nigdy nie modyfikuje geometrii źródłowej. Dla źródłowego CRS innego niż EPSG:2176–2179 użytkownik musi wybrać właściwą strefę docelową. Odrzuca zakrzywione pierścienie poligonów oraz geometrie przekraczające udokumentowane limity złożoności. Tryb domyślny celowo pomija walidację GEOS; opcjonalna naprawa działa wyłącznie na kopii. Do zachowania pełnej diagnostyki zalecany jest GeoPackage. Projekt powstaje w jawnym procesie wspomaganym przez AI i jest weryfikowany testami, skanerami bezpieczeństwa oraz przeglądem człowieka.
 version=1.0.0
 qgisMinimumVersion=3.40
 qgisMaximumVersion=3.99
@@ -11,9 +11,9 @@ homepage=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 repository=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 tracker=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/issues
 category=Vector
-tags=cadastre,egib,pl-2000,geodesy,parcel area,poland
+tags=kataster,egib,pl-2000,geodezja,pole działki,polska
 icon=resources/icon.png
-changelog=1.0.0: first stable release with a selected-parcel dialog, batch Processing, geometry diagnostics, deterministic packaging, tests and security checks.
+changelog=1.0.0: pierwsze stabilne wydanie z polskimi opisami metadanych, dialogiem wybranej działki, przetwarzaniem seryjnym, diagnostyką geometrii, testami i kontrolami bezpieczeństwa.
 hasProcessingProvider=yes
 experimental=False
 deprecated=False

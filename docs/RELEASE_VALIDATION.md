@@ -3,8 +3,8 @@
 - Data: 2026-07-24
 - Gałąź lokalna: `main`
 - Bazowy commit zgodny z `origin/main`:
-  `92932fb452383f3fedb84745af81eacb62aa5bcc`
-- Stan wydania: zmiany `1.0.0` w lokalnym drzewie roboczym przed commitem
+  `dd9ada517a86235ada237ebf6a7154a1bfc4b473`
+- Stan wydania: polskie metadane `1.0.0` w drzewie roboczym przed commitem
 - Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
 
 Raport dotyczy bazowego commitu wskazanego powyżej oraz opisanych zmian
@@ -23,6 +23,8 @@ testów na wszystkich wspieranych platformach.
 - Ujednolicono oficjalną nazwę do „Poprawka odwzorowawcza”.
 - Przygotowano pierwsze stabilne wydanie `1.0.0` i prostą instrukcję
   publikacji.
+- Wszystkie widoczne opisy metadanych wydania `1.0.0` przetłumaczono na
+  język polski.
 - Komunikaty GUI nie pokazują surowych wyjątków ani lokalnych ścieżek.
 - Uzupełniono metadane, jawny manifest paczki i testy nowych elementów.
 - Nie zmieniono wzoru, stałych, mapowania osi, stref, PGK, zaokrąglania ani
@@ -36,6 +38,7 @@ testów na wszystkich wspieranych platformach.
 | Interfejs i metadane | 103/103 | 0 | 0 | 0 | 0 |
 | CI, bezpieczne błędy i paczka | 104/104 | 0 | 0 | 0 | 0 |
 | Stabilne wydanie 1.0.0 | 104/104 | 0 | 0 | 0 | 0 |
+| Polskie metadane 1.0.0 | 104/104 | 0 | 0 | 0 | 0 |
 
 Trzy bazowe ustalenia Ruff z pierwszej grupy zostały naprawione w drugiej:
 dwa stałe odczyty enum oraz format trzech plików. Nazwa
@@ -61,9 +64,9 @@ Końcowy ZIP z bieżącego drzewa zbudowano dwukrotnie:
 
 - plik kontrolny:
   `dist/qgis_poprawka_odwzorowawcza-1.0.0.zip`;
-- rozmiar: 61 481 B;
+- rozmiar: 61 616 B;
 - SHA-256:
-  `b7e8a83add098545014ea0e1c690cedc24fee39f13e77e04b81208d81845d158`;
+  `46d89a5d77d101b90ce649a1483b9e27c0a9a5629f4767f8166218d4c732abad`;
 - zawartość: 24 pliki pod jednym katalogiem
   `qgis_poprawka_odwzorowawcza/`;
 - porównanie z jawnym manifestem: wszystkie pliki zgodne bajt w bajt;
@@ -76,16 +79,19 @@ testów, dokumentacji deweloperskiej, materiałów prawnych, plików cache,
 lokalnego `dist/`, konfiguracji GitHub ani zależności narzędziowych.
 
 Starego pliku `dist/qgis_poprawka_odwzorowawcza-0.1.0.zip` nie należy
-publikować. Po utworzeniu końcowego commitu i taga trzeba ponownie zbudować
-paczkę `1.0.0`; jej suma musi pozostać zgodna z wartością powyżej.
+publikować. Po utworzeniu końcowego commitu i odtworzeniu taga trzeba
+ponownie zbudować paczkę `1.0.0`; jej suma musi pozostać zgodna z wartością
+powyżej.
 
 ## Kontrola repozytorium i historii
 
 - `main` i `origin/main` wskazują ten sam commit bazowy; zmiany wydania
-  `1.0.0` nie są jeszcze zatwierdzone.
+  `1.0.0` z polskimi metadanymi nie są jeszcze zatwierdzone.
 - Jedyna zdalna gałąź to `main`; brak zdalnych kandydatów do usunięcia.
-- Brak tagów i wydań, więc nie ma kandydatów do usunięcia.
-- Historia ma 16 commitów i jednego autora używającego adresu GitHub
+- Istniejący lokalny i zdalny tag `v1.0.0` wskazuje commit sprzed polonizacji
+  metadanych. Ponieważ GitHub Release i wydanie QGIS nie powstały, po
+  zatwierdzeniu zmian tag trzeba jednorazowo odtworzyć na finalnym commicie.
+- Historia ma 21 commitów i jednego autora używającego adresu GitHub
   `noreply`. Starsze niespójne komunikaty pozostają bez przepisywania
   historii; dla nowych zmian udokumentowano Conventional Commits.
 - Nie znaleziono sekretów, poświadczeń, prywatnych kluczy, wewnętrznych
@@ -97,9 +103,9 @@ paczkę `1.0.0`; jej suma musi pozostać zgodna z wartością powyżej.
 ## Stan i zalecane ustawienia GitHub
 
 Publiczne API GitHub potwierdziło: repozytorium jest publiczne, `main` jest
-gałęzią domyślną, nie ma rulesetu ani ochrony gałęzi, topics, tagów i wydań.
-Ustawień bezpieczeństwa niewidocznych bez uwierzytelnienia nie oznaczono jako
-sprawdzone.
+gałęzią domyślną, istnieje tag `v1.0.0`, a GitHub Release nie został jeszcze
+utworzony. Ustawień bezpieczeństwa niewidocznych bez uwierzytelnienia nie
+oznaczono jako sprawdzone.
 
 Przed wysłaniem lokalnego `main` i publikacją opiekun powinien:
 
@@ -134,7 +140,8 @@ Windows i macOS. Przed wysłaniem do oficjalnego repozytorium QGIS pozostają:
 - te same testy na QGIS 3.44 / macOS;
 - commit i push zmian wydania oraz zielony check `Source quality`;
 - odbudowanie ZIP-u z commitu wydania i potwierdzenie SHA-256;
-- tag `v1.0.0`, GitHub Release i wysłanie tego samego ZIP-u do QGIS.
+- odtworzenie taga `v1.0.0`, GitHub Release i wysłanie tego samego ZIP-u do
+  QGIS.
 
 QGIS 4/Qt6 nie jest deklarowany i nie wolno rozszerzać
 `qgisMaximumVersion` przed rzeczywistym testem. Do czasu zamknięcia powyższych

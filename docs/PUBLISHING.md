@@ -56,9 +56,13 @@ Suma musi być zgodna z sumą zapisaną w raporcie walidacji.
 
 ## 3. Utwórz tag i GitHub Release
 
-Po zaliczeniu testów ręcznych i GitHub Actions:
+Tag `v1.0.0` został utworzony przed polonizacją metadanych, ale nie powstał
+jeszcze GitHub Release ani wydanie QGIS. Po zaliczeniu testów ręcznych i
+GitHub Actions odtwórz tag na finalnym commicie:
 
 ```bash
+git tag -d v1.0.0
+git push origin --delete v1.0.0
 git tag -a v1.0.0 -m "Poprawka odwzorowawcza 1.0.0"
 git push origin v1.0.0
 ```
@@ -78,7 +82,7 @@ Na GitHubie:
 Do publikacji potrzebny jest bezpłatny identyfikator OSGeo.
 
 1. Zaloguj się na [plugins.qgis.org](https://plugins.qgis.org/).
-2. Wybierz **Share a plugin**.
+2. Wybierz **Upload a plugin**.
 3. Wskaż ten sam plik ZIP, który został dołączony do GitHub Release.
 4. Sprawdź podgląd: nazwa „Poprawka odwzorowawcza”, wersja `1.0.0`,
    QGIS `3.40–3.99` i wydanie stabilne.

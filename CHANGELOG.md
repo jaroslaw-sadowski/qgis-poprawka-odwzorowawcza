@@ -23,6 +23,8 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 - Oficjalną nazwę skrócono do „Poprawka odwzorowawcza”; zakres EGiB
   pozostaje jednoznacznie opisany w funkcjach i dokumentacji.
+- Wszystkie opisy metadanych wtyczki przetłumaczono na język polski.
+- Nie zmieniono logiki obliczeń ani zachowania wtyczki.
 
 ### Security
 

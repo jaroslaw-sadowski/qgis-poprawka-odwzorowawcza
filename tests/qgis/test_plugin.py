@@ -212,16 +212,21 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "jaroslaw-sadowski@users.noreply.github.com"
     assert metadata["description"].startswith(
-        "Calculates statutory cadastral parcel area"
+        "Oblicza ustawowe pole działki ewidencyjnej"
     )
-    assert "PL-2000 zones 5-8" in metadata["about"]
-    assert "Curved polygon rings" in metadata["about"]
-    assert "never modifies source geometry" in metadata["about"]
-    assert "works locally" in metadata["about"]
-    assert "vibe-coding workflow" in metadata["about"]
-    assert "GeoPackage is recommended" in metadata["about"]
+    assert "strefach 5–8 układu PL-2000" in metadata["about"]
+    assert "zakrzywione pierścienie poligonów" in metadata["about"]
+    assert "nigdy nie modyfikuje geometrii źródłowej" in metadata["about"]
+    assert "Działa lokalnie" in metadata["about"]
+    assert "procesie wspomaganym przez AI" in metadata["about"]
+    assert "zalecany jest GeoPackage" in metadata["about"]
+    assert metadata["tags"] == (
+        "kataster,egib,pl-2000,geodezja,pole działki,polska"
+    )
     assert metadata["icon"] == "resources/icon.png"
-    assert metadata["changelog"].startswith("1.0.0: first stable release")
+    assert metadata["changelog"].startswith(
+        "1.0.0: pierwsze stabilne wydanie z polskimi opisami metadanych"
+    )
     assert metadata["experimental"] == "False"
     assert metadata["deprecated"] == "False"
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
