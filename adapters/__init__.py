@@ -8,6 +8,7 @@ from .geometry import (
     TransformedGeometry,
     extract_boundary_points,
     geometry_snapshot,
+    measure_geodesic_area_m2,
     transform_geometry_to_pl2000,
     validate_geometry_budget,
 )
@@ -40,6 +41,7 @@ __all__ = [
     "ZoneSelectionError",
     "extract_boundary_points",
     "geometry_snapshot",
+    "measure_geodesic_area_m2",
     "prepare_geometry",
     "resolve_target_pl2000_crs",
     "transform_geometry_to_pl2000",

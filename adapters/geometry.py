@@ -11,6 +11,7 @@ from qgis.core import (
     QgsCsException,
     QgsCurve,
     QgsCurvePolygon,
+    QgsDistanceArea,
     QgsGeometry,
 )
 
@@ -57,6 +58,28 @@ class TransformedGeometry:
     target_crs: QgsCoordinateReferenceSystem
     target_epsg: int
     zone: int
+
+
+def measure_geodesic_area_m2(
+    geometry: QgsGeometry,
+    source_crs: QgsCoordinateReferenceSystem,
+    transform_context: QgsCoordinateTransformContext,
+) -> float:
+    """Measure an ellipsoidal area on GRS 80 using the QGIS engine."""
+
+    _validate_polygon_geometry(geometry)
+    calculator = QgsDistanceArea()
+    calculator.setSourceCrs(source_crs, transform_context)
+    if not calculator.setEllipsoid("GRS80"):
+        raise GeometryTransformError(
+            "QGIS could not configure the GRS 80 ellipsoid"
+        )
+    try:
+        return calculator.measureArea(geometry)
+    except QgsCsException as error:
+        raise GeometryTransformError(
+            f"failed to measure ellipsoidal area on GRS 80: {error}"
+        ) from error
 
 
 def transform_geometry_to_pl2000(

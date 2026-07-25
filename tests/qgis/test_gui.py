@@ -1,10 +1,17 @@
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
 from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
 from qgis.PyQt.QtCore import QPoint, Qt
 from qgis.PyQt.QtTest import QTest
-from qgis.PyQt.QtWidgets import QApplication, QLabel
+from qgis.PyQt.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QGroupBox,
+    QLabel,
+    QTextBrowser,
+)
 
 import adapters.geometry as geometry_module
 import gui.dialog as dialog_module
@@ -40,7 +47,8 @@ def test_dialog_calculates_without_editing_source() -> None:
     dialog = _dialog(layer)
 
     assert (
-        dialog.windowTitle() == "Poprawka odwzorowawcza — zaznaczona działka"
+        dialog.windowTitle()
+        == "Poprawka odwzorowawcza PL-2000 — zaznaczona działka"
     )
     assert dialog.zone_combo.isEnabled() is False
     assert "Wykryto PL-2000" in dialog.zone_combo.currentText()
@@ -50,12 +58,34 @@ def test_dialog_calculates_without_editing_source() -> None:
         dialog.repair_mode_combo.currentText()
         == "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
     )
-    assert "Noto Sans" in dialog.styleSheet()
-    assert "Segoe UI" in dialog.styleSheet()
-    assert "DejaVu Sans" in dialog.styleSheet()
+    assert "Noto Sans" not in dialog.styleSheet()
+    assert "Segoe UI" not in dialog.styleSheet()
+    assert "DejaVu Sans Mono" in dialog.styleSheet()
     assert "DejaVu Sans Mono" in dialog.result_text.toHtml()
+    expected_font_family = dialog.font().family()
+    assert expected_font_family == "DejaVu Sans Mono"
+    assert (
+        dialog.findChild(QLabel, "dialogTitle").font().family()
+        == expected_font_family
+    )
+    assert (
+        dialog.findChild(QLabel, "dialogTitle").text()
+        == "Poprawka odwzorowawcza PL-2000"
+    )
+    assert (
+        dialog.findChild(QGroupBox, "settingsGroup").font().family()
+        == expected_font_family
+    )
+    assert (
+        dialog.findChild(QComboBox, "zoneCombo").font().family()
+        == expected_font_family
+    )
+    assert (
+        dialog.findChild(QTextBrowser, "resultText").font().family()
+        == expected_font_family
+    )
     assert dialog.width() == 880
-    assert dialog.height() == 620
+    assert dialog.height() == 580
     assert dialog.calculate_button.isDefault() is True
     selection_text = " ".join(
         label.text() for label in dialog.findChildren(dialog_module.QLabel)
@@ -75,8 +105,14 @@ def test_dialog_calculates_without_editing_source() -> None:
     assert dialog.last_result.calculation.legal_area_ha_rounded == Decimal(
         "1.0002"
     )
+    assert dialog.last_result.qgis_geodesic_area_m2 == pytest.approx(
+        10_001.54017795077
+    )
     text = dialog.result_text.toPlainText()
     assert "P₀" in text
+    assert "P QGIS" in text
+    assert "Pole matematyczne/kartezjańskie" in text
+    assert "Pole geodezyjne QGIS" in text
     assert "ΔP₀" in text
     assert "P = P₀ − ΔP₀" in text
     assert "10000,00 m²" in text
@@ -90,6 +126,14 @@ def test_dialog_calculates_without_editing_source() -> None:
     assert "10001,539" not in text
     assert "param:sigma" in dialog.result_text._hover_help
     assert "result:p0" in dialog.result_text._hover_help
+    assert "result:qgis-geodesic" in dialog.result_text._hover_help
+    assert "QgsGeometry.area()" in dialog.result_text._hover_help["result:p0"]
+    assert "area(geometry)" in dialog.result_text._hover_help["result:p0"]
+    assert (
+        "QgsDistanceArea.measureArea()"
+        in dialog.result_text._hover_help["result:qgis-geodesic"]
+    )
+    assert "$area" in dialog.result_text._hover_help["result:qgis-geodesic"]
     assert "diagnostic:zone" in dialog.result_text._hover_help
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
@@ -343,6 +387,16 @@ def test_about_dialog_presents_authorship_privacy_and_disclosure() -> None:
     assert metadata["name"] in dialog.windowTitle()
     assert f"Wersja {metadata['version']}" in visible_text
     assert metadata["author"] in visible_text
+    assert metadata["repository"] in visible_text
     assert "Dane pozostają w QGIS" in visible_text
     assert "nie łączy się z siecią" in visible_text
     assert "vibe coding" in visible_text
+    assert "DejaVu Sans Mono" in dialog.styleSheet()
+    assert dialog.font().family() == "DejaVu Sans Mono"
+    assert (
+        dialog.findChild(QLabel, "aboutTitle").font().family()
+        == dialog.font().family()
+    )
+    assert dialog.findChild(QLabel, "aboutIcon").width() == 18
+    assert "font-size: 10.5pt" in dialog.styleSheet()
+    assert dialog.height() == 440

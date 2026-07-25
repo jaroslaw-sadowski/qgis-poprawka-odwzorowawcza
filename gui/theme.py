@@ -1,13 +1,21 @@
 """Shared visual tokens for the plugin dialogs."""
 
+from qgis.PyQt.QtGui import QFont
 from qgis.PyQt.QtWidgets import QWidget
 
-UI_FONT_STACK = (
-    '"Noto Sans", "Segoe UI", "SF Pro Text", "DejaVu Sans", sans-serif'
-)
 MONOSPACE_FONT_STACK = (
     '"DejaVu Sans Mono", Consolas, Menlo, "Liberation Mono", monospace'
 )
+_FONT_STYLE_HINT_ENUM = getattr(QFont, "StyleHint", QFont)
+
+
+def technical_font(point_size: int = 9) -> QFont:
+    """Return the fixed-pitch font used by every plugin widget."""
+
+    font = QFont("DejaVu Sans Mono", point_size)
+    font.setStyleHint(_FONT_STYLE_HINT_ENUM.Monospace)
+    font.setFixedPitch(True)
+    return font
 
 
 def theme_colors(widget: QWidget) -> dict:

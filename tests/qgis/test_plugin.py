@@ -83,6 +83,7 @@ def test_plugin_registers_action_provider_and_unloads(monkeypatch) -> None:
             (plugin.MENU_NAME, plugin.about_action),
         ]
         assert iface.toolbar_actions == [plugin.action]
+        assert plugin.MENU_NAME == "&Poprawka odwzorowawcza PL-2000"
         assert (
             registry.algorithmById("egib_area:calculate_egib_area") is not None
         )
@@ -98,7 +99,7 @@ def test_plugin_registers_action_provider_and_unloads(monkeypatch) -> None:
         assert (
             opened_dialogs[1]
             .windowTitle()
-            .startswith("Poprawka odwzorowawcza")
+            .startswith("Poprawka odwzorowawcza PL-2000")
         )
         assert plugin.dialog is None
     finally:
@@ -205,28 +206,31 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     parser.read(metadata_path, encoding="utf-8")
 
     metadata = parser["general"]
-    assert metadata["name"] == "Poprawka odwzorowawcza"
-    assert metadata["version"] == "1.0.0"
+    assert metadata["name"] == "Poprawka odwzorowawcza PL-2000"
+    assert metadata["version"] == "1.0.1"
     assert metadata["qgisminimumversion"] == "3.40"
     assert metadata["qgismaximumversion"] == "3.99"
     assert metadata["hasprocessingprovider"] == "yes"
-    assert metadata["email"] == "jaroslaw-sadowski@users.noreply.github.com"
+    assert metadata["email"] == "github.com.amenity983@passfwd.com"
     assert metadata["description"].startswith(
         "Pomaga obliczyć pole działki ewidencyjnej"
     )
     assert "geodetach i użytkownikach danych EGiB" in metadata["about"]
-    assert "polskich przepisów" in metadata["about"]
+    assert "§ 16 ust. 2" in metadata["about"]
+    assert "załącznika nr 3" in metadata["about"]
+    assert "Dz.U. z 2024 r. poz. 219 ze zm." in metadata["about"]
     assert "jedną wybraną działką lub wieloma działkami" in metadata["about"]
     assert "bez wysyłania danych" in metadata["about"]
     assert "bez zmieniania warstwy źródłowej" in metadata["about"]
     assert "narzędzi AI" in metadata["about"]
     assert metadata["tags"] == (
-        "kataster,egib,pl-2000,geodezja,pole działki,polska,"
+        "kataster,egib,pl-2000,geodezja,pole działki,powierzchnia,polska,"
         "Stowarzyszenie QGIS Polska"
     )
+    assert metadata["category"] == "Vector"
     assert metadata["icon"] == "resources/icon.png"
     assert metadata["changelog"].startswith(
-        "1.0.0: pierwsze stabilne wydanie z polskimi opisami metadanych"
+        "1.0.1: pełna nazwa „Poprawka odwzorowawcza PL-2000”"
     )
     assert metadata["experimental"] == "False"
     assert metadata["deprecated"] == "False"

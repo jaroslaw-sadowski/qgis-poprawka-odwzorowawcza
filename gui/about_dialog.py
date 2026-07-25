@@ -16,7 +16,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
-from .theme import UI_FONT_STACK, theme_colors
+from .theme import MONOSPACE_FONT_STACK, technical_font, theme_colors
 
 
 def read_plugin_metadata(plugin_root: Path) -> dict:
@@ -48,6 +48,7 @@ class AboutDialog(QDialog):
         plugin_root: Optional[Path] = None,
     ) -> None:
         super().__init__(parent)
+        self.setFont(technical_font())
         root = plugin_root or Path(__file__).resolve().parents[1]
         metadata = read_plugin_metadata(root)
         colors = theme_colors(self)
@@ -57,18 +58,18 @@ class AboutDialog(QDialog):
         self.setWindowIcon(QIcon(str(root / "resources" / "icon.svg")))
         self.setModal(True)
         self.setMinimumWidth(560)
-        self.resize(640, 470)
+        self.resize(640, 440)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 22, 24, 20)
         layout.setSpacing(14)
 
         header = QHBoxLayout()
-        header.setSpacing(14)
+        header.setSpacing(8)
         icon_label = QLabel()
         icon_label.setObjectName("aboutIcon")
-        icon_label.setPixmap(self.windowIcon().pixmap(64, 64))
-        icon_label.setFixedSize(68, 68)
+        icon_label.setPixmap(self.windowIcon().pixmap(16, 16))
+        icon_label.setFixedSize(18, 18)
         header.addWidget(icon_label)
 
         title_layout = QVBoxLayout()
@@ -143,7 +144,7 @@ def _about_stylesheet(colors: dict) -> str:
     QDialog#aboutDialog {{
         background-color: {colors["window"]};
         color: {colors["text"]};
-        font-family: {UI_FONT_STACK};
+        font-family: {MONOSPACE_FONT_STACK};
         font-size: 9pt;
     }}
     QLabel {{
@@ -151,7 +152,7 @@ def _about_stylesheet(colors: dict) -> str:
         color: {colors["text"]};
     }}
     QLabel#aboutTitle {{
-        font-size: 15pt;
+        font-size: 10.5pt;
         font-weight: 650;
     }}
     QLabel#aboutVersion {{
@@ -159,7 +160,7 @@ def _about_stylesheet(colors: dict) -> str:
         font-size: 9pt;
     }}
     QLabel#aboutSummary {{
-        font-size: 10pt;
+        font-size: 9pt;
     }}
     QFrame#aboutPrivacyCard {{
         background-color: {colors["accent_soft"]};

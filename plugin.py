@@ -20,7 +20,7 @@ else:
 class EgibAreaPlugin:
     """Register Processing and open a dialog for one selected polygon."""
 
-    MENU_NAME = "&Poprawka odwzorowawcza"
+    MENU_NAME = "&Poprawka odwzorowawcza PL-2000"
     ACTION_TEXT = "Oblicz powierzchnię zaznaczonej działki"
     ABOUT_ACTION_TEXT = "O wtyczce…"
 
@@ -137,6 +137,6 @@ class EgibAreaPlugin:
     def _warn(self, message: str) -> None:
         QMessageBox.warning(
             self.iface.mainWindow(),
-            "Poprawka odwzorowawcza",
+            "Poprawka odwzorowawcza PL-2000",
             message,
         )

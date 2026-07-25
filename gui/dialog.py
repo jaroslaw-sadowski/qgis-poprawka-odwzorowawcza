@@ -29,7 +29,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
-from .theme import MONOSPACE_FONT_STACK, UI_FONT_STACK, theme_colors
+from .theme import MONOSPACE_FONT_STACK, technical_font, theme_colors
 
 if "." in __package__:
     from ..adapters import (
@@ -40,6 +40,7 @@ if "." in __package__:
         RepairMethod,
         RepairMode,
         ZoneSelectionError,
+        measure_geodesic_area_m2,
         prepare_geometry,
     )
     from ..core import (
@@ -57,6 +58,7 @@ else:
         RepairMethod,
         RepairMode,
         ZoneSelectionError,
+        measure_geodesic_area_m2,
         prepare_geometry,
     )
     from core import (
@@ -220,10 +222,23 @@ _PARAMETER_DETAILS = {
 
 _RESULT_DETAILS = {
     "result:p0": (
-        "P₀ — pole w układzie PL-2000",
-        "Pole powierzchni działki obliczone z płaskich współrzędnych "
-        "prostokątnych w docelowej strefie PL-2000, przed zastosowaniem "
-        "powierzchniowej poprawki odwzorowawczej.",
+        "P₀ — pole kartezjańskie w układzie PL-2000",
+        "Pole planarne (matematyczne/kartezjańskie), obliczone przez "
+        "QgsGeometry.area() z płaskich współrzędnych prostokątnych "
+        "w docelowej strefie PL-2000. Nie uwzględnia krzywizny Ziemi "
+        "i stanowi wartość wejściową do poprawki odwzorowawczej. Funkcja "
+        "wyrażeniowa QGIS area(geometry) również zawsze liczy planarnie.",
+    ),
+    "result:qgis-geodesic": (
+        "Pole geodezyjne QGIS — GRS 80",
+        "Niezależny pomiar elipsoidalny wykonany przez QGIS metodą "
+        "QgsDistanceArea.measureArea() z elipsoidą GRS 80. Uwzględnia "
+        "krzywiznę Ziemi, podczas gdy P₀ jest polem kartezjańskim. Może "
+        "nieznacznie różnić się od głównego wyniku P, ponieważ QGIS "
+        "całkuje pole geometrii na elipsoidzie, a P wynika z określonego "
+        "w przepisach wzoru z poprawką wyznaczoną w punkcie P_GK. Jest to "
+        "rodzaj pomiaru używany przez $area przy ustawionej elipsoidzie, "
+        "ale wtyczka jawnie ustawia GRS 80 niezależnie od projektu.",
     ),
     "result:correction": (
         "ΔP₀ — poprawka odwzorowawcza",
@@ -327,6 +342,7 @@ class SelectedParcelResult:
 
     preparation: GeometryPreparationResult
     calculation: Optional[AreaCalculationResult]
+    qgis_geodesic_area_m2: Optional[float]
 
     @property
     def warnings(self) -> Tuple[str, ...]:
@@ -354,15 +370,22 @@ def calculate_selected_parcel(
         repair_mode=repair_mode,
     )
     calculation = None
+    qgis_geodesic_area_m2 = None
     if preparation.statutory_result_allowed:
         calculation = calculate_area(
             po_m2=preparation.geometry_for_area.area(),
             boundary_points=preparation.original_boundary_points,
             epsg=preparation.target_epsg,
         )
+        qgis_geodesic_area_m2 = measure_geodesic_area_m2(
+            preparation.geometry_for_area,
+            preparation.target_crs,
+            transform_context,
+        )
     return SelectedParcelResult(
         preparation=preparation,
         calculation=calculation,
+        qgis_geodesic_area_m2=qgis_geodesic_area_m2,
     )
 
 
@@ -377,19 +400,22 @@ class SelectedParcelDialog(QDialog):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
+        self.setFont(technical_font())
         self._layer = layer
         self._feature = QgsFeature(feature)
         self._transform_context = transform_context
         self.last_result: Optional[SelectedParcelResult] = None
 
         self.setObjectName("selectedParcelDialog")
-        self.setWindowTitle("Poprawka odwzorowawcza — zaznaczona działka")
+        self.setWindowTitle(
+            "Poprawka odwzorowawcza PL-2000 — zaznaczona działka"
+        )
         icon_path = (
             Path(__file__).resolve().parents[1] / "resources" / "icon.svg"
         )
         self.setWindowIcon(QIcon(str(icon_path)))
         self.setMinimumSize(680, 480)
-        self.resize(880, 620)
+        self.resize(880, 580)
         self._colors = theme_colors(self)
         self._build_ui()
         self.setStyleSheet(_dialog_stylesheet(self._colors))
@@ -410,7 +436,7 @@ class SelectedParcelDialog(QDialog):
 
         heading_layout = QVBoxLayout()
         heading_layout.setSpacing(0)
-        title_label = QLabel("Korekta pola powierzchni działki")
+        title_label = QLabel("Poprawka odwzorowawcza PL-2000")
         title_label.setObjectName("dialogTitle")
         subtitle_label = QLabel(
             "Obliczenie według wzorów dla układu współrzędnych PL-2000"
@@ -651,7 +677,11 @@ class SelectedParcelDialog(QDialog):
     def _show_error(self, message: str) -> None:
         self.last_result = None
         self._set_status("Obliczenie nie zostało wykonane.", "error")
-        QMessageBox.warning(self, "Poprawka odwzorowawcza", message)
+        QMessageBox.warning(
+            self,
+            "Poprawka odwzorowawcza PL-2000",
+            message,
+        )
 
 
 def _zone_from_crs(crs: QgsCoordinateReferenceSystem) -> Optional[int]:
@@ -686,10 +716,15 @@ def _format_result_html(
             _result_row(
                 "result:p0",
                 "P₀",
-                "Pole powierzchni działki obliczone na podstawie "
-                "współrzędnych prostokątnych płaskich w układzie "
-                "PL-2000",
+                "Pole matematyczne/kartezjańskie z płaskich "
+                "współrzędnych prostokątnych PL-2000",
                 f"{_format_number(calculation.po_m2, 2)} m²",
+            ),
+            _result_row(
+                "result:qgis-geodesic",
+                "P QGIS",
+                "Pole geodezyjne QGIS na elipsoidzie GRS 80",
+                f"{_format_number(result.qgis_geodesic_area_m2, 2)} m²",
             ),
             _result_row(
                 "result:correction",
@@ -978,7 +1013,7 @@ def _html_document(body: str, colors: dict) -> str:
           body {{
             color: {colors["text"]};
             background-color: {colors["surface"]};
-            font-family: {UI_FONT_STACK};
+            font-family: {MONOSPACE_FONT_STACK};
             font-size: 8.5pt;
             margin: 8px;
           }}
@@ -1306,7 +1341,7 @@ def _dialog_stylesheet(colors: dict) -> str:
     QDialog#selectedParcelDialog {{
         background-color: {colors["window"]};
         color: {colors["text"]};
-        font-family: {UI_FONT_STACK};
+        font-family: {MONOSPACE_FONT_STACK};
         font-size: 9pt;
     }}
     QLabel {{
@@ -1461,7 +1496,7 @@ def _dialog_stylesheet(colors: dict) -> str:
         background-color: {colors["surface"]};
         border: 1px solid {colors["accent"]};
         padding: 7px;
-        font-family: {UI_FONT_STACK};
+        font-family: {MONOSPACE_FONT_STACK};
         font-size: 8.5pt;
     }}
     """

@@ -30,6 +30,7 @@ if "." in __package__:
         RepairMethod,
         RepairMode,
         ZoneSelectionError,
+        measure_geodesic_area_m2,
         prepare_geometry,
         resolve_target_pl2000_crs,
     )
@@ -54,6 +55,7 @@ else:
         RepairMethod,
         RepairMode,
         ZoneSelectionError,
+        measure_geodesic_area_m2,
         prepare_geometry,
         resolve_target_pl2000_crs,
     )
@@ -96,6 +98,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
 
     OUTPUT_FIELD_NAMES = (
         "egib_po_m2",
+        "egib_qgis_m2",
         "egib_corr_m2",
         "egib_area_m2",
         "egib_area_ha",
@@ -138,6 +141,8 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
     def shortHelpString(self) -> str:
         return self.tr(
             "Oblicza powierzchnię działek z poprawką odwzorowawczą. "
+            "Oprócz głównego wyniku P zapisuje kartezjańskie P₀ oraz "
+            "niezależny pomiar geodezyjny QGIS na elipsoidzie GRS 80. "
             "Warstwa wejściowa nie jest modyfikowana; wynik powstaje w nowej "
             "warstwie PL-2000. Opcja bez wykrywania błędów pomija kontrolę "
             "GEOS i liczy z geometrii źródłowej. Opcja naprawy sprawdza "
@@ -239,7 +244,10 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 target_zone=target_selection.zone,
                 repair_mode=repair_mode,
             )
-            if not sink.addFeature(output_feature, QgsFeatureSink.FastInsert):
+            if not sink.addFeature(
+                output_feature,
+                QgsFeatureSink.Flag.FastInsert,
+            ):
                 raise QgsProcessingException(
                     self.tr("Nie można zapisać obiektu w warstwie wynikowej.")
                 )
@@ -289,6 +297,13 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                     epsg=prepared.target_epsg,
                 )
                 self._put_calculation(values, calculation)
+                values["egib_qgis_m2"] = _round_m2(
+                    measure_geodesic_area_m2(
+                        prepared.geometry_for_area,
+                        prepared.target_crs,
+                        context.transformContext(),
+                    )
+                )
                 if repair_mode is RepairMode.SOURCE_GEOMETRY:
                     values["egib_status"] = "source_geometry"
                 elif prepared.report.repair_method is not RepairMethod.NONE:
@@ -373,6 +388,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
 
         return (
             double_field("egib_po_m2", 2),
+            double_field("egib_qgis_m2", 2),
             double_field("egib_corr_m2", 2),
             double_field("egib_area_m2", 2),
             double_field("egib_area_ha", 4),

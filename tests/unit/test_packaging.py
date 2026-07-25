@@ -45,10 +45,16 @@ def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
         metadata.read_string(
             archive.read(f"{PLUGIN_PACKAGE_NAME}/metadata.txt").decode("utf-8")
         )
-        assert metadata["general"]["version"] == "1.0.0"
+        assert metadata["general"]["version"] == "1.0.1"
+        assert metadata["general"]["name"] == "Poprawka odwzorowawcza PL-2000"
         assert metadata["general"]["qgisminimumversion"] == "3.40"
         assert metadata["general"]["hasprocessingprovider"] == "yes"
         assert metadata["general"]["experimental"] == "False"
+
+        icon_data = archive.read(f"{PLUGIN_PACKAGE_NAME}/resources/icon.png")
+        assert icon_data[:8] == b"\x89PNG\r\n\x1a\n"
+        assert int.from_bytes(icon_data[16:20], "big") == 64
+        assert int.from_bytes(icon_data[20:24], "big") == 64
 
         for relative_path in RUNTIME_FILES:
             assert (

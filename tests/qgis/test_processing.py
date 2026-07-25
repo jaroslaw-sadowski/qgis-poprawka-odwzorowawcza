@@ -107,6 +107,7 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
     )
     for field_name in (
         "egib_po_m2",
+        "egib_qgis_m2",
         "egib_corr_m2",
         "egib_area_m2",
         "egib_orig_area_m2",
@@ -125,6 +126,7 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
     assert first["parcel_id"] == 1
     assert first["egib_status"] == "source_geometry"
     assert first["egib_po_m2"] == 10_000.00
+    assert first["egib_qgis_m2"] == 10_001.54
     assert first["egib_corr_m2"] == -1.54
     assert first["egib_area_m2"] == 10_001.54
     assert first["egib_area_ha"] == pytest.approx(1.0002)

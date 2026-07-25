@@ -1,10 +1,10 @@
-# Walidacja kandydata wydania 1.0.0
+# Walidacja kandydata wydania 1.0.1
 
-- Data: 2026-07-24
+- Data: 2026-07-25
 - Gałąź lokalna: `main`
 - Bazowy commit zgodny z `origin/main`:
-  `9bef7f097cf7a816e14ef2e5fd472b16d3349cb9`
-- Stan wydania: finalny opis i tagi `1.0.0` w drzewie przed commitem
+  `b46abfb51ef5feff4aa2725ea1b62cffb970a1fd`
+- Stan wydania: finalne zmiany `1.0.1` w drzewie przed commitem
 - Środowisko lokalne: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4
 
 Raport dotyczy bazowego commitu wskazanego powyżej oraz opisanych zmian
@@ -20,13 +20,32 @@ testów na wszystkich wspieranych platformach.
   skanera sekretów.
 - Ujednolicono motyw GUI, dodano okno „O wtyczce” i ikonę PNG dla
   repozytorium QGIS.
-- Ujednolicono oficjalną nazwę do „Poprawka odwzorowawcza”.
+- Ujednolicono oficjalną nazwę do „Poprawka odwzorowawcza PL-2000”.
+- Przygotowano aktualizację `1.0.1` z pełną nazwą we wszystkich elementach
+  widocznych dla użytkownika i poprawką checkera Qt6/QGIS 4.
 - Przygotowano pierwsze stabilne wydanie `1.0.0` i prostą instrukcję
   publikacji.
 - Wszystkie widoczne opisy metadanych wydania `1.0.0` przetłumaczono na
   język polski.
 - Opis publikacyjny uproszczono i ukierunkowano na potrzeby użytkownika;
-  dodano tag „Stowarzyszenie QGIS Polska”.
+  dodano tagi „powierzchnia” i „Stowarzyszenie QGIS Polska”.
+- Dodano porównawczy pomiar geodezyjny QGIS na elipsoidzie GRS 80 do
+  dialogu oraz warstwy Processing jako `egib_qgis_m2`.
+- Opisano `P₀` jako pole matematyczne/kartezjańskie i wyjaśniono w popupach
+  różnicę względem pomiaru geodezyjnego oraz głównego wyniku prawnego.
+- Wymuszono techniczny krój pisma na wszystkich kontrolkach Qt i raportach
+  wtyczki. Zmniejszono nagłówek okna „O wtyczce” i jego ikonę z 64 do 16 px.
+- Zmniejszono ikonę PNG wyświetlaną przez Menedżer wtyczek QGIS z 256×256
+  do 64×64 px i objęto jej wymiary testem paczki.
+- Zmieniono adres kontaktowy metadanych na odbierający pocztę alias
+  `github.com.amenity983@passfwd.com`.
+- Usunięto ustalenie checkera QGIS 4 dotyczące starego zapisu
+  `QgsFeatureSink.FastInsert`; używany jest zgodny zapis
+  `QgsFeatureSink.Flag.FastInsert`, dostępny również w QGIS 3.40.
+- Opis metadanych powiązano wprost z § 16 ust. 2 i załącznikiem nr 3
+  rozporządzenia EGiB (Dz.U. z 2024 r. poz. 219 ze zm.).
+- Potwierdzono, że `Vector` jest najlepiej dopasowaną z czterech kategorii
+  obsługiwanych przez oficjalne repozytorium QGIS.
 - Komunikaty GUI nie pokazują surowych wyjątków ani lokalnych ścieżek.
 - Uzupełniono metadane, jawny manifest paczki i testy nowych elementów.
 - Nie zmieniono wzoru, stałych, mapowania osi, stref, PGK, zaokrąglania ani
@@ -42,6 +61,8 @@ testów na wszystkich wspieranych platformach.
 | Stabilne wydanie 1.0.0 | 104/104 | 0 | 0 | 0 | 0 |
 | Polskie metadane 1.0.0 | 104/104 | 0 | 0 | 0 | 0 |
 | Opis produkcyjny i tagi | 104/104 | 0 | 0 | 0 | 0 |
+| Wynik geodezyjny i finalne GUI | 105/105 | 0 | 0 | 0 | 0 |
+| Nazwa PL-2000 i zgodność enumu Qt6 | 105/105 | 0 | 0 | 0 | 0 |
 
 Trzy bazowe ustalenia Ruff z pierwszej grupy zostały naprawione w drugiej:
 dwa stałe odczyty enum oraz format trzech plików. Nazwa
@@ -59,17 +80,17 @@ Końcowe kontrole źródeł:
 | detect-secrets 1.5.0 | 0 sekretów |
 | pip-audit 2.10.1 dla `requirements-dev.txt` | 0 znanych podatności |
 | actionlint 1.7.12 | workflow poprawny |
-| pełny pytest | 104/104 |
+| pełny pytest | 105/105 |
 
 ## Artefakt
 
 Końcowy ZIP z bieżącego drzewa zbudowano dwukrotnie:
 
 - plik kontrolny:
-  `dist/qgis_poprawka_odwzorowawcza-1.0.0.zip`;
-- rozmiar: 61 561 B;
+  `dist/qgis_poprawka_odwzorowawcza-1.0.1.zip`;
+- rozmiar: 54 123 B;
 - SHA-256:
-  `c8279ddfc6c8b2a11fc36dc52a4c0f650cb47c2174f950458309360f04794c79`;
+  `4ef93241e79839cabaff94cb3ced509e4cfb050a76943df26d82c8f5eb5ec215`;
 - zawartość: 24 pliki pod jednym katalogiem
   `qgis_poprawka_odwzorowawcza/`;
 - porównanie z jawnym manifestem: wszystkie pliki zgodne bajt w bajt;
@@ -82,19 +103,18 @@ testów, dokumentacji deweloperskiej, materiałów prawnych, plików cache,
 lokalnego `dist/`, konfiguracji GitHub ani zależności narzędziowych.
 
 Starego pliku `dist/qgis_poprawka_odwzorowawcza-0.1.0.zip` nie należy
-publikować. Po utworzeniu końcowego commitu i odtworzeniu taga trzeba
-ponownie zbudować paczkę `1.0.0`; jej suma musi pozostać zgodna z wartością
+publikować. Po utworzeniu końcowego commitu i taga trzeba ponownie zbudować
+paczkę `1.0.1`; jej suma musi pozostać zgodna z wartością
 powyżej.
 
 ## Kontrola repozytorium i historii
 
 - `main` i `origin/main` wskazują ten sam commit bazowy; zmiany wydania
-  `1.0.0` z finalnym opisem i tagami nie są jeszcze zatwierdzone.
+  `1.0.1` z finalną nazwą nie są jeszcze zatwierdzone.
 - Jedyna zdalna gałąź to `main`; brak zdalnych kandydatów do usunięcia.
-- Istniejący lokalny i zdalny tag `v1.0.0` wskazuje commit sprzed finalnej
-  korekty metadanych. Ponieważ GitHub Release i wydanie QGIS nie powstały, po
-  zatwierdzeniu zmian tag trzeba jednorazowo odtworzyć na finalnym commicie.
-- Historia ma 22 commity i jednego autora używającego adresu GitHub
+- Istniejący lokalny i zdalny tag `v1.0.0` pozostaje bez zmian. Po
+  zatwierdzeniu aktualizacji należy utworzyć nowy tag `v1.0.1`.
+- Historia bazowa ma 25 commitów i jednego autora używającego adresu GitHub
   `noreply`. Starsze niespójne komunikaty pozostają bez przepisywania
   historii; dla nowych zmian udokumentowano Conventional Commits.
 - Nie znaleziono sekretów, poświadczeń, prywatnych kluczy, wewnętrznych
@@ -143,7 +163,7 @@ Windows i macOS. Przed wysłaniem do oficjalnego repozytorium QGIS pozostają:
 - te same testy na QGIS 3.44 / macOS;
 - commit i push zmian wydania oraz zielony check `Source quality`;
 - odbudowanie ZIP-u z commitu wydania i potwierdzenie SHA-256;
-- odtworzenie taga `v1.0.0`, GitHub Release i wysłanie tego samego ZIP-u do
+- utworzenie taga `v1.0.1`, GitHub Release i wysłanie tego samego ZIP-u do
   QGIS.
 
 QGIS 4/Qt6 nie jest deklarowany i nie wolno rozszerzać

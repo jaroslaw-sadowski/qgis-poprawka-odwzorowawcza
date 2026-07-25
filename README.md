@@ -2,7 +2,7 @@
   <img src="resources/icon.svg" width="88" height="88" alt="">
 </p>
 
-# Poprawka odwzorowawcza
+# Poprawka odwzorowawcza PL-2000
 
 Wtyczka QGIS do obliczania ustawowego pola działki ewidencyjnej
 z powierzchniową poprawką odwzorowawczą w układzie PL-2000. Udostępnia
@@ -13,7 +13,7 @@ obliczeń seryjnych.
 > vibe coding. Kod, wzór, zachowanie na danych brzegowych i paczka wydaniowa
 > są weryfikowane testami automatycznymi, skanerami oraz ręcznym przeglądem.
 
-**Status:** kandydat stabilnego wydania `1.0.0`. Automatyczne testy wykonano
+**Status:** kandydat stabilnego wydania `1.0.1`. Automatyczne testy wykonano
 w QGIS 3.40.15 / Qt 5.15 na Linuksie. `metadata.txt` deklaruje QGIS
 3.40–3.x; QGIS 4 nie jest jeszcze deklarowany. Przed publikacją pozostaje
 ręczny test finalnego ZIP-u zgodnie z
@@ -24,6 +24,8 @@ ręczny test finalnego ZIP-u zgodnie z
 ## Najważniejsze możliwości
 
 - obliczenie `P = P₀ − ΔP₀` bez zaokrąglania wartości pośrednich;
+- porównanie kartezjańskiego `P₀`, głównego wyniku prawnego `P` oraz
+  niezależnego pomiaru geodezyjnego QGIS na elipsoidzie GRS 80;
 - automatyczne rozpoznanie strefy dla EPSG:2176–2179;
 - ręczny, jawny wybór strefy PL-2000 dla innych CRS;
 - dwa tryby geometrii: źródłowa kopia bez GEOS oraz kontrola z opcjonalną
@@ -37,7 +39,7 @@ ręczny test finalnego ZIP-u zgodnie z
 ### Oficjalne repozytorium QGIS
 
 Po zatwierdzeniu wydania otwórz w QGIS **Wtyczki → Zarządzanie i instalowanie
-wtyczek**, wyszukaj „Poprawka odwzorowawcza” i wybierz
+wtyczek**, wyszukaj „Poprawka odwzorowawcza PL-2000” i wybierz
 **Zainstaluj wtyczkę**.
 
 ### Kandydat wydania z ZIP
@@ -56,7 +58,7 @@ SHA-256.
 ### Jedna działka
 
 1. Aktywuj warstwę Polygon lub MultiPolygon i zaznacz dokładnie jeden obiekt.
-2. Uruchom **Wektor → Poprawka odwzorowawcza → Oblicz powierzchnię
+2. Uruchom **Wektor → Poprawka odwzorowawcza PL-2000 → Oblicz powierzchnię
    zaznaczonej działki** albo użyj przycisku na pasku narzędzi.
 3. Dla CRS innego niż EPSG:2176–2179 wskaż właściwą strefę PL-2000.
 4. Wybierz sposób obsługi geometrii i uruchom obliczenie.
@@ -83,6 +85,21 @@ schemat oraz uciąć pole `egib_warnings`.
 | Tryb naprawy | sprawdza GEOS i może naprawić wyłącznie kopię |
 | Limity | 10 000 części, 50 000 pierścieni, 500 000 współrzędnych |
 | Wynik seryjny | nowa warstwa; źródło pozostaje bez zmian |
+
+`P₀` jest polem matematycznym (kartezjańskim), które QGIS oblicza metodą
+`QgsGeometry.area()` w płaskim układzie PL-2000. Nie uwzględnia ono
+krzywizny Ziemi; funkcja wyrażeniowa `area(geometry)` również zawsze liczy
+planarnie. Głównym wynikiem wtyczki pozostaje `P = P₀ − ΔP₀` oraz `P`
+w hektarach, obliczone według przepisów EGiB.
+
+Dodatkowe pole geodezyjne QGIS jest mierzone przez
+`QgsDistanceArea.measureArea()` bezpośrednio na elipsoidzie GRS 80. Stanowi
+wartość porównawczą, a nie zamiennik wyniku według rozporządzenia. Może
+nieznacznie różnić się od `P`, ponieważ oba wyniki powstają innymi metodami.
+Odpowiada rodzajowi pomiaru wyrażenia `$area` przy ustawionej elipsoidzie,
+lecz wtyczka jawnie ustawia GRS 80 niezależnie od ustawień projektu.
+W algorytmie Processing wartości te zapisują odpowiednio pola
+`egib_po_m2`, `egib_area_m2` i `egib_qgis_m2`.
 
 Wynik nie zastępuje kontroli właściwego CRS, strefy, pochodzenia punktów
 granicznych ani aktualnego stanu prawnego. Szczegóły opisuje

@@ -11,6 +11,7 @@ from adapters import (
     GeometryInputError,
     extract_boundary_points,
     geometry_snapshot,
+    measure_geodesic_area_m2,
     transform_geometry_to_pl2000,
     validate_geometry_budget,
 )
@@ -53,6 +54,22 @@ def test_geometry_already_in_pl2000_is_still_copied() -> None:
 
     assert result.geometry is not source
     assert bytes(result.geometry.asWkb()) == bytes(source.asWkb())
+
+
+def test_geodesic_area_uses_qgis_engine_with_grs80() -> None:
+    geometry = QgsGeometry.fromWkt(
+        "POLYGON ((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950))"
+    )
+
+    result = measure_geodesic_area_m2(
+        geometry,
+        QgsCoordinateReferenceSystem("EPSG:2178"),
+        QgsCoordinateTransformContext(),
+    )
+
+    assert geometry.area() == 10_000.0
+    assert result == pytest.approx(10_001.54017795077)
 
 
 @pytest.mark.parametrize(
