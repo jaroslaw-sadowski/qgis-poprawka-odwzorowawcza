@@ -180,7 +180,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.OUTPUT,
-                self.tr("Wyniki z diagnostyką"),
+                self.tr("Wyniki z powierzchnią EGiB"),
                 Qgis.ProcessingSourceType.VectorPolygon,
             )
         )
