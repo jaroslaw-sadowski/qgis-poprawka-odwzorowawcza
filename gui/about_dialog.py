@@ -168,10 +168,7 @@ class AboutDialog(QDialog):
         checks.setWordWrap(True)
         layout.addWidget(checks)
 
-        english = QLabel(
-            "ENGLISH / EN\n\n"
-            + metadata["about"].partition("\nENGLISH / EN\n")[2]
-        )
+        english = QLabel("EN\n\n" + metadata["about"].partition("\nEN\n")[2])
         english.setObjectName("aboutEnglish")
         english.setWordWrap(True)
         layout.addWidget(english)

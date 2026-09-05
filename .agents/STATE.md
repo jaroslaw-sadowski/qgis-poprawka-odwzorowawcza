@@ -2,15 +2,21 @@
 
 ## Punkt zatrzymania
 
-Punkty 1–7 zakończone lokalnie. Użytkownik poprosił o potwierdzenie
-PEP 8/Ruff, zapisanie stanu i zakończenie pracy na teraz. Nie kontynuuj
-publikacji bez nowego polecenia.
+Punkty 1–7 zostały zatwierdzone w commicie
+`404cf69675157fa4ccfb4492f5ba2c6afebfb28a`. CI tego commitu przeszło.
+Użytkownik sprawdził paczkę w QGIS. Podczas przygotowywania publikacji
+powstał nieopublikowany draft GitHub Release `v1.1.0`.
 
-Przy zapisie HEAD: `c19a80249769d0f3eb418e0d429dcaaa35872f55` (punkt 6).
-Zmiany punktu 7 / wersji **1.1.0** oraz niniejsze materiały nie są jeszcze
-zacommitowane. Nie cofaj ich jako przypadkowego brudnego drzewa.
-Proponowany commit: `chore: prepare 1.1.0 release and clean repository`.
-Nie utworzono taga 1.1.0 ani GitHub Release, nie wysłano ZIP-a do QGIS.
+Użytkownik następnie wstrzymał publikację i zlecił krótsze metadane:
+krótki opis PL przed EN, bez dopisku o bezpłatności; około 100 słów opisu
+szczegółowego na język i changelog z punktami w nowych wierszach.
+Ta korekta i testy są lokalne, jeszcze niezacommitowane. Nowy ZIP 1.1.0
+czeka na ponowny test użytkownika. Dopiero potem publikacja GitHub i QGIS.
+
+Draft na GitHubie zawiera POPRZEDNIĄ paczkę i wskazuje commit 404cf69.
+Przed publikacją trzeba wymienić załączniki, sprawdzić nazwy pobieranych
+plików i zgodność sumy kontrolnej oraz wskazać commit nowej korekty z CI.
+Nie publikuj starego draftu bez tych zmian. Nie wysłano paczki do QGIS.
 
 ## Stan produktu i decyzje
 
@@ -39,8 +45,8 @@ Nie utworzono taga 1.1.0 ani GitHub Release, nie wysłano ZIP-a do QGIS.
 ## Wydanie i porządek
 
 Gotowe w `dist/`: `Poprawka odwzorowawcza PL-2000-1.1.0.zip` i `.zip.sha256`.
-25 plików, 59 440 bajtów. SHA-256:
-`710ee8dfc1c0764ecc428d7928c3c1f773c0f9457f9a19f6f7b917a33a773c87`.
+25 plików, 58 142 bajtów. SHA-256:
+`a690174d4feed81af8f1f07fd31d8f5df9bf2e42386f7a7c8c26800bf4da338b`.
 `dist/` jest ignorowany przez Git. Materiały agentów nie zmieniają ZIP-a.
 
 - [Opis release'u PL/EN](../docs/RELEASE_NOTES.md).
@@ -53,6 +59,11 @@ Zachowano dowody obliczeń, źródła prawne i historyczny audyt bezpieczeństwa
 Zaktualizowano politykę bezpieczeństwa i instrukcje wydania.
 
 ## Wyniki kontroli
+
+Po skróceniu metadanych ponownie: 225/225 testów na QGIS 3.40 i 4.2,
+Flake8, Ruff lint i formatowanie, Bandit oraz checker Qt6 — poprawne.
+Czytnik menedżera potwierdza kolejność PL/EN i 12 punktów changelogu.
+
 
 Finalne źródła 1.1.0: **225/225 testów** na każdym z dwóch środowisk Linux:
 QGIS 3.40.15 / Qt 5.15.18 i QGIS 4.2.2 / Qt 6.10.2, Python 3.14.4.
@@ -92,3 +103,18 @@ Niektóre narzędzia wskazywały usunięty katalog profilu QGIS: podawaj jawnie
 rozpakowany w `/tmp/pl2000-qgis4` z ustawieniami w
 `/tmp/pl2000-qgis4-env.sh`. Mogą już nie istnieć. Odtwarzaj środowisko według
 CONTRIBUTING i CI; nie podmieniaj aktywnej instalacji/profilu użytkownika.
+
+## Ręczna korekta metadanych i e-mail — 2026-09-05
+
+Uwzględniono ręcznie zmienioną treść użytkownika i nagłówki PL / EN.
+Dodano wcięcie kontynuacji wiersza angielskiego description, aby nie
+powstawał osobny klucz INI; poprawiono literówkę GitHun na GitHub.
+Odczyt angielskiej części w oknie informacji dostosowano do nagłówka EN.
+
+Adres w pobranej opublikowanej paczce QGIS 1.0.1 i nowym ZIP-ie:
+`github.com.amenity983@passfwd.com`. To jedyny adres e-mail znaleziony
+w zawartości nowego ZIP-a; występuje w metadata.txt. Weryfikacja nie
+obejmowała wysyłania wiadomości ani sprawdzania dostarczalności poczty.
+Ponownie: 225/225 testów na QGIS 3.40 i 4.2; Flake8, Ruff, Bandit,
+checker Qt6, CRC i powtarzalność ZIP-a — poprawne. Paczka czeka na test
+użytkownika. Draft GitHub nadal zawiera starszą paczkę; publikacja wstrzymana.

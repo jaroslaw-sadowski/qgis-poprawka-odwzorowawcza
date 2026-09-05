@@ -7,6 +7,9 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Skrócono opisy menedżera QGIS, ustawiono PL przed EN i zapisano
+  dziennik zmian w czytelnych punktach dla obu języków.
+
 - Opisy PL/EN wyjaśniają, jaki problem rozwiązuje wtyczka: obliczenie
   wymaganej poprawki w bezpłatnym QGIS, bez zakupu komercyjnego pakietu
   geodezyjnego; bezpłatny kod na licencji GNU GPL v2.

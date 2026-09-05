@@ -738,13 +738,11 @@ def test_about_english_description_matches_published_metadata():
     metadata = read_plugin_metadata(root)
     dialog = AboutDialog(plugin_root=root)
     english = dialog.findChild(QLabel, "aboutEnglish").text()
-    assert english == (
-        "ENGLISH / EN\n\n" + metadata["about"].partition("\nENGLISH / EN\n")[2]
-    )
+    assert english == ("EN\n\n" + metadata["about"].partition("\nEN\n")[2])
     assert "The author accepts no responsibility" in english
-    assert "does not send data outside QGIS" in english
+    assert "Does not send data outside QGIS" in english
     assert "§ 16(2)" in english
-    assert "Polish interface" in english
+    assert "More info at GitHub repo." in english
     assert (
         dialog.findChild(QLabel, "aboutSummary")
         .text()

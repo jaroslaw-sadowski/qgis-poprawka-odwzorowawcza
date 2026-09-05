@@ -2,14 +2,17 @@
 
 Stan: kandydat do wydania, przygotowany z commitu
 `c19a80249769d0f3eb418e0d429dcaaa35872f55` i zmian punktu 7.
-Nie utworzono taga ani nie opublikowano release'u.
+Po zatwierdzeniu punktu 7 (commit `404cf69`) utworzono nieopublikowany
+szkic release'u v1.1.0. Publikację wstrzymano na życzenie użytkownika;
+aktualna paczka zawiera późniejszą, lokalną korektę opisów metadanych.
+Załączniki i commit szkicu GitHub wymagają aktualizacji przed publikacją.
 
 ## Artefakt
 
 - Nazwa: `Poprawka odwzorowawcza PL-2000-1.1.0.zip`.
-- Rozmiar: 59 440 bajtów; 25 plików.
+- Rozmiar: 58 142 bajtów; 25 plików.
 - Jeden katalog instalacyjny: `qgis_poprawka_odwzorowawcza`.
-- SHA-256: `710ee8dfc1c0764ecc428d7928c3c1f773c0f9457f9a19f6f7b917a33a773c87`.
+- SHA-256: `a690174d4feed81af8f1f07fd31d8f5df9bf2e42386f7a7c8c26800bf4da338b`.
 - Obok paczki jest plik `.zip.sha256` do kontroli pobranego archiwum.
 - Nazwa publiczna, wersja, oba języki opisu i pary tagów są w metadanych.
   Zakres QGIS: `3.40–4.99`, bez nieużywanej flagi `supportsQt6`.
@@ -35,7 +38,7 @@ niezmienność danych wejściowych, GUI, Processing, GeoPackage i raport MD.
 Natywny czytnik menedżera akceptuje ZIP oraz odczytuje opisy PL/EN dla
 `pl_PL`, `en_US` i `de_DE` w obu generacjach QGIS.
 
-Dodatkowo finalny ZIP uruchomiono przez standardowy loader w pełnym
+Przed późniejszą korektą metadanych ZIP uruchomiono przez standardowy loader w pełnym
 QGIS Desktop 4.2.2, w czystym profilu i trybie `offscreen`. Potwierdzono:
 
 - załadowanie, akcję w menu Wtyczki i provider Processing;
@@ -101,3 +104,34 @@ Przed publikacją zatwierdź zmiany, sprawdź CI tego commitu i odbuduj
 identyczny ZIP. Opis do GitHub Release jest w [RELEASE_NOTES.md](RELEASE_NOTES.md),
 a kroki wysyłki w [PUBLISHING.md](PUBLISHING.md). Zmiana lokalnej paczki
 nie aktualizuje automatycznie strony GitHuba ani katalogu plugins.qgis.org.
+
+## Korekta opisów przed ponownym testem użytkownika
+
+Opis krótki zaczyna się od PL, następnie EN, bez dopisku o bezpłatności.
+Opis szczegółowy ma około 100 słów na język: funkcja i rozporządzenie,
+brak potrzeby zakupu programu geodezyjnego, vibe coding, lokalność,
+biblioteki QGIS, kontrole i odpowiedzialność; pozostałe informacje
+wskazuje odsyłacz do GitHuba. Changelog: sekcje POLSKI i ENGLISH, po
+sześć punktów w osobnych wierszach. README pozostają bez zmian.
+
+225/225 testów ponownie przeszło na QGIS 3.40 i 4.2. Natywny czytnik
+metadanych z ZIP-a sprawdza oba języki i zachowanie nowych linii
+changelogu dla pl_PL, en_US i de_DE. Ruff, Flake8, Bandit i checker Qt6
+przeszły; dwa buildy są identyczne i CRC jest poprawne.
+Aktualny artefakt jest opisany na początku tego raportu. Oczekuje na
+ponowne sprawdzenie użytkownika; nie publikowano korekty w GitHub ani QGIS.
+
+## Ręczna korekta metadanych i e-mail — 2026-09-05
+
+Uwzględniono ręcznie zmienioną treść użytkownika i nagłówki PL / EN.
+Dodano wcięcie kontynuacji wiersza angielskiego description, aby nie
+powstawał osobny klucz INI; poprawiono literówkę GitHun na GitHub.
+Odczyt angielskiej części w oknie informacji dostosowano do nagłówka EN.
+
+Adres w pobranej opublikowanej paczce QGIS 1.0.1 i nowym ZIP-ie:
+`github.com.amenity983@passfwd.com`. To jedyny adres e-mail znaleziony
+w zawartości nowego ZIP-a; występuje w metadata.txt. Weryfikacja nie
+obejmowała wysyłania wiadomości ani sprawdzania dostarczalności poczty.
+Ponownie: 225/225 testów na QGIS 3.40 i 4.2; Flake8, Ruff, Bandit,
+checker Qt6, CRC i powtarzalność ZIP-a — poprawne. Paczka czeka na test
+użytkownika. Draft GitHub nadal zawiera starszą paczkę; publikacja wstrzymana.

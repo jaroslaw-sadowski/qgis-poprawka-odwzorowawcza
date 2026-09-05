@@ -1,43 +1,18 @@
 [general]
 name=Poprawka odwzorowawcza PL-2000
-description=EN: Calculates parcel areas with the statutory PL-2000 correction; free and open source. | PL: Oblicza pole działek z poprawką PL-2000; bezpłatna i otwartoźródłowa.
-about=POLSKI / PL
-    Poprawka odwzorowawcza PL-2000 pomaga sprawdzać powierzchnie działek istniejących i projektowanych na potrzeby prac geodezyjnych i ewidencji gruntów.
-    Stosuje § 16 ust. 2 i wzór z załącznika nr 3 rozporządzenia z 27 lipca 2021 r. w sprawie ewidencji gruntów i budynków (Dz.U. 2024 poz. 219 ze zm.). Wynik podaje w m² i ha, z precyzją zapisu 0,0001 ha.
-    To inny sposób obliczenia niż natywne pole kartezjańskie i pomiar geodezyjny QGIS. Wszystkie trzy wartości pokazuje do porównania.
-    Udostępnia to obliczenie w bezpłatnym QGIS, bez kupowania komercyjnego pakietu geodezyjnego tylko do wyznaczenia tej poprawki. Wtyczka jest bezpłatna i otwartoźródłowa (GNU GPL v2); kod można sprawdzić, modyfikować i udostępniać na warunkach tej licencji.
-    Jedna działka: Wtyczki → Poprawka odwzorowawcza PL-2000. Wiele działek: ta sama nazwa w Processing. Raport jednej działki można zapisać do Markdown.
-    Sprawdza geometrię; opcjonalnie naprawia jej kopię. Wynik dla błędnej geometrii bez naprawy jest tylko diagnostyczny.
-    Działa lokalnie, nie wysyła danych na zewnątrz i nie zmienia warstwy źródłowej. Używa tylko bibliotek dostarczanych z QGIS i standardowego Pythona, bez dodatkowych zależności.
-    Projekt powstał metodą vibe coding, z pomocą AI. Autor nie bierze odpowiedzialności za wyniki ani skutki ich wykorzystania, w zakresie dopuszczonym prawem. Przed użyciem sprawdź dane, CRS i aktualność przepisów.
-    Lokalne kontrole według zaleceń QGIS — bez wykrytych problemów:
-    - Bandit: bezpieczeństwo kodu Python.
-    - detect-secrets: hasła, klucze i tokeny.
-    - Flake8: błędy i jakość kodu.
-    - Analiza ZIP-a: zawartość, struktura i uprawnienia plików.
-    Dodatkowo: Ruff, pip-audit, testy obliczeń, geometrii, eksportu i powtarzalności paczki. To kontrole lokalne, nie certyfikat QGIS.
-    Zalecenia: https://plugins.qgis.org/docs/security-scanning/tools
-    Przepisy: https://eli.gov.pl/eli/DU/2024/219/ogl
-    QGIS 3.40–3.x / 4.x. Interfejs polski. Zasięg: Polska, strefy PL-2000 5–8.
+description=PL: Oblicza pole działek z poprawką PL-2000 według polskich przepisów geodezyjnych.
+    | EN: Calculates parcel areas with the statutory PL-2000 correction.
+about=PL
+    Oblicza pole działek z poprawką PL-2000 według § 16 ust. 2 i załącznika nr 3 rozporządzenia z 27 lipca 2021 r. w sprawie ewidencji gruntów i budynków (Dz.U. 2024 poz. 219 ze zm.). Pozwala wykonać to obliczenie w QGIS bez zakupu płatnego programu geodezyjnego.
+    Powstała przy pomocy vibe codingu i AI. Nie wysyła danych na zewnątrz; korzysta tylko z bibliotek obecnych w QGIS i standardowego Pythona.
+    Przeszła lokalne testy bezpieczeństwa i jakości (Bandit, detect-secrets, Flake8, Ruff, analiza ZIP-a). Autor nie bierze odpowiedzialności za działanie wtyczki i wyniki.
+    Więcej informacji na repozytorium GitHub.
 
-    ENGLISH / EN
-    Poprawka odwzorowawcza PL-2000 helps check the areas of existing and proposed parcels for surveying and cadastral work in Poland.
-    It implements § 16(2) and the formula in Annex 3 of the Regulation of 27 July 2021 on the land and building register (Journal of Laws 2024, item 219, as amended). Results are shown in m² and ha, with a reporting precision of 0.0001 ha.
-    This calculation differs from QGIS's native Cartesian area and geodesic measurement. All three values are shown for comparison.
-    Makes this calculation available in free QGIS, without buying a commercial surveying package just to calculate this correction. The plugin is free and open source (GNU GPL v2); its code can be inspected, modified and redistributed under that license.
-    One parcel: Plugins → Poprawka odwzorowawcza PL-2000. Multiple parcels: the same name in Processing. The single-parcel report can be saved as Markdown.
-    Geometry is checked; optionally, its copy can be repaired. Results for invalid geometry without repair are diagnostic only.
-    Runs locally, does not send data outside QGIS and does not modify the source layer. Uses only libraries supplied with QGIS and the Python standard library, with no additional dependencies.
-    Developed through vibe coding, with AI assistance. The author accepts no responsibility for results or consequences of their use, to the extent permitted by law. Verify the data, CRS and current regulations before use.
-    Local checks following QGIS guidelines — no issues found:
-    - Bandit: Python code security.
-    - detect-secrets: passwords, keys and tokens.
-    - Flake8: code errors and quality.
-    - ZIP analysis: contents, structure and file permissions.
-    Additional checks: Ruff, pip-audit, calculations, geometry, export and reproducible packaging. These are local checks, not QGIS certification.
-    Guidelines: https://plugins.qgis.org/docs/security-scanning/tools
-    Regulations: https://eli.gov.pl/eli/DU/2024/219/ogl
-    QGIS 3.40–3.x / 4.x. Polish interface. Coverage: Poland, PL-2000 zones 5–8.
+    EN
+    Calculates parcel areas with the PL-2000 correction under § 16(2) and Annex 3 of Poland's Regulation of 27 July 2021 on the land and building register (Journal of Laws 2024, item 219, as amended). Makes this calculation available in QGIS without buying paid surveying software.
+    Developed with vibe coding and AI. Does not send data outside QGIS; uses only libraries supplied with QGIS and standard Python.
+    Passed local security and quality checks (Bandit, detect-secrets, Flake8, Ruff, ZIP analysis). The author accepts no responsibility for the plugin's operation or results.
+    More info at GitHub repo.
 version=1.1.0
 qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
@@ -48,8 +23,22 @@ repository=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 tracker=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/issues
 tags=kataster,cadastre,egib,land and building register,geodezja,geodesy,pole działki,parcel area,powierzchnia,area,odwzorowanie,projection,poprawka odwzorowawcza,projection correction,rozporządzenie egib,land and building register regulation,polska,poland,pl-2000
 icon=resources/icon.png
-changelog=1.1.0 / EN: QGIS 4 / Qt6 support; Markdown reports; geometry validation in both modes; area and mean boundary point from the same geometry; full GeoPackage parameter precision; direct Plugins menu action; Polish and English descriptions and tags. Free and open source under GNU GPL v2.
-    1.1.0 / PL: obsługa QGIS 4 / Qt6; raporty Markdown; kontrola geometrii w obu trybach; pole i punkt średni z tej samej geometrii; pełna precyzja parametrów w GeoPackage; bezpośredni wpis w menu Wtyczki; polskie i angielskie opisy oraz tagi. Bezpłatna, na otwartej licencji GNU GPL v2.
+changelog=1.1.0
+    POLSKI
+    • Obsługa QGIS 4 i Qt6.
+    • Eksport raportu do Markdown.
+    • Kontrola geometrii w obu trybach; pole i punkt średni z tej samej geometrii.
+    • Pełna precyzja parametrów w GeoPackage.
+    • Bezpośredni wpis w menu Wtyczki i ujednolicona nazwa.
+    • Polskie i angielskie opisy oraz tagi.
+
+    ENGLISH
+    • QGIS 4 and Qt6 support.
+    • Markdown report export.
+    • Geometry checks in both modes; area and mean point from the same geometry.
+    • Full parameter precision in GeoPackage.
+    • Direct Plugins menu entry and consistent naming.
+    • Polish and English descriptions and tags.
 hasProcessingProvider=yes
 experimental=False
 deprecated=False

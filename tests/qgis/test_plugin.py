@@ -198,21 +198,23 @@ def test_metadata_enables_processing_and_supports_qgis3_and_qgis4() -> None:
     assert metadata["qgismaximumversion"] == "4.99"
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "github.com.amenity983@passfwd.com"
-    assert metadata["description"].startswith("EN: Calculates parcel areas")
-    assert "PL: Oblicza pole działek" in metadata["description"]
+    assert metadata["description"].startswith("PL: Oblicza pole działek")
+    assert "EN: Calculates parcel areas" in metadata["description"]
+    assert ";" not in metadata["description"]
+    assert "\n| EN: Calculates" in metadata["description"]
+    assert "| en" not in metadata
     for text in (
         "§ 16 ust. 2",
         "załącznika nr 3",
         "Dz.U. 2024 poz. 219 ze zm.",
-        "nie wysyła danych na zewnątrz",
-        "nie zmienia warstwy źródłowej",
+        "Nie wysyła danych na zewnątrz",
         "vibe coding",
         "Autor nie bierze odpowiedzialności",
         "Bandit",
         "detect-secrets",
         "Flake8",
-        "Analiza ZIP-a",
-        "kontrole lokalne, nie certyfikat QGIS",
+        "analiza ZIP-a",
+        "lokalne testy bezpieczeństwa i jakości",
     ):
         assert text in metadata["about"]
     assert metadata["tags"] == (
@@ -222,16 +224,16 @@ def test_metadata_enables_processing_and_supports_qgis3_and_qgis4() -> None:
         "rozporządzenie egib,land and building register regulation,"
         "polska,poland,pl-2000"
     )
-    assert "ENGLISH / EN" in metadata["about"]
-    assert "POLSKI / PL" in metadata["about"]
+    assert "\nEN\n" in metadata["about"]
+    assert "PL\n" in metadata["about"]
     assert "§ 16(2)" in metadata["about"]
-    assert "Polish interface" in metadata["about"]
+    assert "Więcej informacji na repozytorium GitHub." in metadata["about"]
+    for section in metadata["about"].split("\nEN\n"):
+        assert len(section.split()) <= 150
     assert "The author accepts no responsibility" in metadata["about"]
     assert "category" not in metadata
     assert metadata["icon"] == "resources/icon.png"
-    assert metadata["changelog"].startswith(
-        "1.1.0 / EN: QGIS 4 / Qt6 support;"
-    )
+    assert metadata["changelog"].startswith("1.1.0\nPOLSKI\n• ")
     assert metadata["experimental"] == "False"
     assert metadata["deprecated"] == "False"
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
@@ -299,17 +301,19 @@ def test_native_qgis_installer_reads_both_languages_from_zip(
     for expected in ("EN: Calculates", "PL: Oblicza"):
         assert expected in installed["description"]
     for expected in (
-        "POLSKI / PL",
-        "ENGLISH / EN",
+        "PL\n",
+        "\nEN\n",
         "§ 16 ust. 2",
         "§ 16(2)",
-        "nie wysyła danych na zewnątrz",
-        "does not send data outside QGIS",
-        "nie certyfikat QGIS",
-        "not QGIS certification",
+        "Nie wysyła danych na zewnątrz",
+        "Does not send data outside QGIS",
+        "lokalne testy bezpieczeństwa i jakości",
+        "local security and quality checks",
     ):
         assert expected in installed["about"]
     assert "pole działki,parcel area" in installed["tags"]
     assert "powierzchnia,area" in installed["tags"]
-    assert "1.1.0 / EN:" in installed["changelog"]
-    assert "1.1.0 / PL:" in installed["changelog"]
+    assert installed["description"].startswith("PL: Oblicza")
+    assert installed["changelog"].startswith("1.1.0\nPOLSKI\n• ")
+    assert "\nENGLISH\n• QGIS 4 and Qt6 support." in installed["changelog"]
+    assert installed["changelog"].count("\n• ") == 12

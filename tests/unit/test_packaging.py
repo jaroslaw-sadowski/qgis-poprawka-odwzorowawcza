@@ -49,6 +49,9 @@ def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
             archive.read(f"{PLUGIN_PACKAGE_NAME}/metadata.txt").decode("utf-8")
         )
         assert metadata["general"]["version"] == "1.1.0"
+        assert metadata["general"]["email"] == (
+            "github.com.amenity983@passfwd.com"
+        )
         assert metadata["general"]["name"] == "Poprawka odwzorowawcza PL-2000"
         assert metadata["general"]["qgisminimumversion"] == "3.40"
         assert metadata["general"]["hasprocessingprovider"] == "yes"
@@ -62,11 +65,11 @@ def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
         assert "[English](README.en.md)" in polish
         assert "[Polski](README.md)" in english
         assert english.startswith("# Poprawka odwzorowawcza PL-2000\n")
-        assert "Polish interface" in metadata["general"]["about"]
+        assert "More info at GitHub repo." in (metadata["general"]["about"])
         assert "EN: Calculates" in metadata["general"]["description"]
         assert "PL: Oblicza" in metadata["general"]["description"]
-        assert "POLSKI / PL" in metadata["general"]["about"]
-        assert "ENGLISH / EN" in metadata["general"]["about"]
+        assert "PL\n" in metadata["general"]["about"]
+        assert "\nEN\n" in metadata["general"]["about"]
         for info in archive.infolist():
             assert (info.external_attr >> 16) == 0o100644
             assert not any(
