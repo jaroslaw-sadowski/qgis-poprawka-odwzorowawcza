@@ -15,6 +15,11 @@ To inny sposób obliczenia niż natywne pole kartezjańskie QGIS (na
 płaszczyźnie) i pomiar geodezyjny QGIS (na elipsoidzie). Wtyczka pokazuje
 wszystkie trzy wartości do porównania. Wyniki mogą się nieznacznie różnić.
 
+Wtyczka udostępnia to obliczenie w **bezpłatnym QGIS**, bez konieczności
+kupowania komercyjnego pakietu geodezyjnego tylko do wyznaczenia tej
+poprawki. Sama jest **bezpłatna i otwartoźródłowa (GNU GPL v2)**: kod można
+sprawdzić, modyfikować i udostępniać na warunkach [licencji](LICENSE).
+
 ## Jak używać
 
 Wymaga QGIS 3.40–3.x lub 4.x; instaluje się przez menedżer wtyczek,

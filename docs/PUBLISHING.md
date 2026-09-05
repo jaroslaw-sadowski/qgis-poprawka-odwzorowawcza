@@ -1,116 +1,62 @@
-# Publikacja wersji 1.0.1
+# Przygotowanie i publikacja wydania
 
-Ta instrukcja prowadzi od gotowego kodu do publikacji w oficjalnym
-repozytorium wtyczek QGIS. Do wysyłki służy wyłącznie paczka
-`Poprawka odwzorowawcza PL-2000-1.0.1.zip` zbudowana przez skrypt projektu.
-Nie używaj automatycznego archiwum „Source code” tworzonego przez GitHub.
+Aktualny kandydat: **1.1.0**. Nazwa publiczna: **Poprawka odwzorowawcza
+PL-2000**. Wydanie obejmuje QGIS 3.40–3.x i 4.x.
 
-Wersja 1.0.1 jest już opublikowana. Przed wysłaniem aktualizacji nadaj
-nowy numer w metadanych i changelogu; dostosuj poniższe przykłady nazw
-paczki oraz taga do tego numeru. Skrypt odczytuje nazwę i wersję z metadanych.
+## Paczka
 
-## 1. Przetestuj finalny ZIP
-
-Zbuduj paczkę:
+Po zatwierdzeniu zmian odbuduj ZIP z tego samego commitu, na którym
+powstanie tag wydania:
 
 ```bash
 python scripts/build_plugin_zip.py
-python -m zipfile -t \
-  "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
-sha256sum "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
+python -m zipfile -t "dist/Poprawka odwzorowawcza PL-2000-1.1.0.zip"
+cd dist
+sha256sum "Poprawka odwzorowawcza PL-2000-1.1.0.zip" > \
+  "Poprawka odwzorowawcza PL-2000-1.1.0.zip.sha256"
+sha256sum -c "Poprawka odwzorowawcza PL-2000-1.1.0.zip.sha256"
 ```
 
-W QGIS utwórz czysty profil testowy, a następnie:
+Do instalacji służy ten ZIP, zawierający jeden katalog Pythona
+`qgis_poprawka_odwzorowawcza`. Automatyczne archiwa GitHuba „Source code”
+zawierają repozytorium, a nie paczkę instalacyjną QGIS.
 
-1. Otwórz **Wtyczki → Zarządzanie i instalowanie wtyczek → Instaluj z ZIP**.
-2. Wskaż `Poprawka odwzorowawcza PL-2000-1.0.1.zip`.
-3. Włącz wtyczkę i sprawdź, czy QGIS nie pokazuje błędu.
-4. Oblicz wynik dla jednej zaznaczonej działki i sprawdź popupy `P₀`,
-   `P QGIS`, `P = P₀ − ΔP₀` oraz `P` w hektarach.
-5. Uruchom algorytm seryjny z panelu Processing i sprawdź między innymi pola
-   `egib_po_m2`, `egib_qgis_m2`, `egib_area_m2` oraz `egib_area_ha`.
-6. Zapisz raport jednej działki do Markdown i sprawdź polskie znaki,
-   wyniki oraz ostrzeżenia.
-7. Wyłącz, ponownie włącz i odinstaluj wtyczkę.
+## Sprawdzenie
 
-Powtórz ten test w QGIS 3.44/Qt5 i QGIS 4.x/Qt6 na Windows, Linux
-i macOS. Wyniki wpisz do
-`docs/RELEASE_VALIDATION.md`. Jeżeli którykolwiek test nie przejdzie, nie
-twórz taga i nie wysyłaj paczki.
+- Workflow **Quality** musi przejść dla commitu wydania: kontrola źródeł,
+  bezpieczeństwa i testy QGIS 3.44/Qt5 oraz 4.2/Qt6.
+- Wyniki i granice weryfikacji są w [raporcie](RELEASE_VALIDATION.md).
+- W czystym profilu QGIS zainstaluj ZIP przez **Wtyczki → Zarządzanie
+  i instalowanie wtyczek → Instaluj z ZIP**. Sprawdź obliczenie jednej
+  działki w obu trybach, raport MD, Processing do GeoPackage oraz
+  wyłączenie i ponowne włączenie wtyczki.
+- Sprawdź nazwę, wersję 1.1.0, oba języki opisu i pary tagów PL/EN.
+- Test na Linuxie nie potwierdza działania na Windows i macOS. Przy
+  sprawdzaniu tych platform dopisz rzeczywiste wyniki do raportu.
 
-## 2. Zatwierdź wydanie na GitHubie
+## GitHub Release
 
-Sprawdź zmiany, utwórz commit i wyślij `main`:
+1. Zatwierdź sprawdzone zmiany i wyślij commit do GitHuba.
+2. Po poprawnym CI utwórz tag `v1.1.0` na tym commicie.
+3. Utwórz release z tytułem **Poprawka odwzorowawcza PL-2000 1.1.0**.
+4. Użyj przygotowanego [opisu wydania PL/EN](RELEASE_NOTES.md).
+5. Dołącz `Poprawka odwzorowawcza PL-2000-1.1.0.zip` i odpowiadający mu
+   plik `.zip.sha256`; sprawdź sumę odbudowanej paczki, następnie opublikuj.
 
-```bash
-git status --short
-git add CHANGELOG.md README.md adapters/__init__.py adapters/geometry.py \
-  docs/LEGAL_BASIS.md docs/PUBLISHING.md docs/RELEASE_VALIDATION.md \
-  docs/images/dialog-preview.png gui/about_dialog.py gui/dialog.py \
-  gui/theme.py metadata.txt processing_provider/area_algorithm.py \
-  resources/icon.png \
-  tests/qgis/test_geometry.py tests/qgis/test_gui.py \
-  tests/qgis/test_plugin.py tests/qgis/test_processing.py \
-  tests/unit/test_packaging.py
-git commit -m "chore: release 1.0.1"
-git push origin main
-```
+## Repozytorium QGIS
 
-Poczekaj, aż GitHub Actions zakończy kontrolę **Quality** na zielono.
-Następnie odbuduj ZIP z zatwierdzonego commitu i ponownie sprawdź jego sumę:
+Wyślij ten sam ZIP przez [Upload a plugin](https://plugins.qgis.org/).
+Sprawdź w podglądzie nazwę, wersję, zakres `3.40–4.99`, oba opisy i tagi.
+Zgodność QGIS 4 określa zakres wersji; flaga `supportsQt6` nie jest używana.
 
-```bash
-python scripts/build_plugin_zip.py
-python -m zipfile -t \
-  "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
-sha256sum "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
-```
+Publiczny wpis ma historyczną nazwę „Poprawka odwzorowawcza”. Jeżeli portal
+nie przyjmie pełnej nazwy z metadanych, poproś administratora o jej zmianę;
+serwer uzależnia aktualizację nazwy od ustawienia `Allow update name`.
+Po zatwierdzeniu sprawdź wpis na stronie i instalację przez menedżer QGIS.
 
-Suma musi być zgodna z sumą zapisaną w raporcie walidacji.
+Nie zastępuj opublikowanej paczki inną zawartością pod tym samym numerem.
+Każda kolejna aktualizacja wymaga nowego numeru i odbudowania ZIP-a.
 
-## 3. Utwórz tag i GitHub Release
-
-Po zaliczeniu testów ręcznych i GitHub Actions utwórz tag na finalnym
-commicie:
-
-```bash
-git tag -a v1.0.1 -m "Poprawka odwzorowawcza PL-2000 1.0.1"
-git push origin v1.0.1
-```
-
-Na GitHubie:
-
-1. Otwórz **Releases → Draft a new release**.
-2. Wybierz tag `v1.0.1`.
-3. Ustaw tytuł `Poprawka odwzorowawcza PL-2000 1.0.1`.
-4. Skopiuj opis wersji `1.0.1` z `CHANGELOG.md`.
-5. Dołącz dokładnie plik
-   `dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip`.
-6. Opublikuj wydanie.
-
-## 4. Wyślij ZIP do QGIS
-
-Do publikacji potrzebny jest bezpłatny identyfikator OSGeo.
-
-1. Zaloguj się na [plugins.qgis.org](https://plugins.qgis.org/).
-2. Wybierz **Upload a plugin**.
-3. Wskaż ten sam plik ZIP, który został dołączony do GitHub Release.
-4. Sprawdź podgląd: nazwa „Poprawka odwzorowawcza PL-2000”, wersja `1.0.1`,
-   QGIS `3.40–4.99` i wydanie stabilne.
-5. Wyślij formularz i poczekaj na zatwierdzenie przez opiekuna repozytorium.
-
-Oficjalne wymagania i przebieg zatwierdzania opisują strony
-[Publishing a plugin](https://plugins.qgis.org/publish/) oraz
-[Plugin approval process](https://plugins.qgis.org/publish/#plugin-approval-process).
-
-## 5. Sprawdź publikację
-
-Po zatwierdzeniu:
-
-1. Otwórz czysty profil QGIS.
-2. Odśwież oficjalne repozytorium w Menedżerze wtyczek.
-3. Wyszukaj „Poprawka odwzorowawcza PL-2000”.
-4. Zainstaluj ją z repozytorium i powtórz krótki test jednej działki.
-
-Jeżeli po publikacji trzeba coś poprawić, zwiększ numer do `1.0.2`. Nie
-wysyłaj ponownie innej paczki z tym samym numerem wersji.
+Wymagania: [publikacja](https://plugins.qgis.org/docs/publish),
+[zatwierdzanie](https://plugins.qgis.org/docs/approval),
+[migracja QGIS 4](https://plugins.qgis.org/docs/migrate-qgis4).

@@ -1,5 +1,9 @@
 # Audyt bezpieczeństwa i jakości wtyczki QGIS
 
+Raport historyczny z 2026-07-24. Opisuje ówczesny stan, w tym pliki
+usunięte później z repozytorium. Aktualny wynik kontroli wydania znajduje
+się w [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md).
+
 > Raport punktowy dla commitu wskazanego poniżej. Wdrożenie rekomendacji
 > i aktualny stan kandydata wydania opisuje `RELEASE_VALIDATION.md`.
 

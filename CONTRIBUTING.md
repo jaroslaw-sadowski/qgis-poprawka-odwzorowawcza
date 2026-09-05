@@ -53,7 +53,7 @@ Kontrole niezależne od QGIS:
 ```bash
 ruff check --no-cache .
 ruff format --check --no-cache .
-flake8 . --exclude=legacy,__pycache__ --jobs 1
+flake8 . --exclude=__pycache__ --jobs 1
 bandit -r __init__.py compat.py plugin.py user_messages.py \
   adapters core gui processing_provider scripts
 git ls-files -z | \
@@ -71,8 +71,6 @@ python scripts/build_plugin_zip.py
 - Nie commituj ZIP, cache, środowisk wirtualnych ani wygenerowanych plików.
 - Pull request powinien mieć jeden cel, testy proporcjonalne do ryzyka
   i opis wpływu na dane użytkownika.
-- Nie zmieniaj `legacy/pow_QGIS_v1.py`; jest archiwalnym materiałem
-  referencyjnym i nie trafia do paczki.
 
 Przed wysłaniem zmian upewnij się, że pełny zestaw testów i skanerów
 przechodzi w obsługiwanym środowisku QGIS.

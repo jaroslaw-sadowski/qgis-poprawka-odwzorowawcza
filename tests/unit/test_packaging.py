@@ -18,7 +18,7 @@ from scripts.build_plugin_zip import (
 def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
     source_root = Path(__file__).resolve().parents[2]
     default_path = default_output_path(source_root)
-    assert default_path.name == "Poprawka odwzorowawcza PL-2000-1.0.1.zip"
+    assert default_path.name == "Poprawka odwzorowawcza PL-2000-1.1.0.zip"
     output_path = build_plugin_zip(source_root, tmp_path / default_path.name)
 
     with ZipFile(output_path) as archive:
@@ -48,7 +48,7 @@ def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
         metadata.read_string(
             archive.read(f"{PLUGIN_PACKAGE_NAME}/metadata.txt").decode("utf-8")
         )
-        assert metadata["general"]["version"] == "1.0.1"
+        assert metadata["general"]["version"] == "1.1.0"
         assert metadata["general"]["name"] == "Poprawka odwzorowawcza PL-2000"
         assert metadata["general"]["qgisminimumversion"] == "3.40"
         assert metadata["general"]["hasprocessingprovider"] == "yes"

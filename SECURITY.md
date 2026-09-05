@@ -2,10 +2,9 @@
 
 ## Obsługiwane wersje
 
-Do czasu pierwszej publikacji poprawki bezpieczeństwa są przygotowywane dla
-bieżącej gałęzi `main` i kandydata wersji `0.1.x`. Po opublikowaniu kolejnej
-wersji wspierane będzie najnowsze wydanie dostępne w oficjalnym repozytorium
-wtyczek QGIS.
+Poprawki bezpieczeństwa są przygotowywane dla bieżącej gałęzi `main`
+i najnowszego opublikowanego wydania. Używaj aktualnej wersji wtyczki
+z oficjalnego repozytorium QGIS lub GitHub Releases.
 
 ## Prywatne zgłaszanie podatności
 

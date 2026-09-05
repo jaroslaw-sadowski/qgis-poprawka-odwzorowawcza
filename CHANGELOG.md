@@ -3,9 +3,15 @@
 Wszystkie istotne zmiany projektu są dokumentowane w tym pliku. Projekt
 stosuje [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-09-05
 
 ### Changed
+
+- Opisy PL/EN wyjaśniają, jaki problem rozwiązuje wtyczka: obliczenie
+  wymaganej poprawki w bezpłatnym QGIS, bez zakupu komercyjnego pakietu
+  geodezyjnego; bezpłatny kod na licencji GNU GPL v2.
+- Usunięto stary skrypt, zakończone plany wdrożenia i nieużywany podgląd
+  okna. Uaktualniono instrukcję publikacji i politykę bezpieczeństwa.
 
 - Obsługa QGIS 4.x obok QGIS 3.40–3.x, potwierdzona na QGIS 4.2.2/Qt6.
   Metadane dopuszczają instalację do wersji 4.99; opisy PL/EN i okno
@@ -59,7 +65,7 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Testy zgodności GUI, Processing i GeoPackage, transformacji do czterech
   stref, źródła punktu P_GK, otworów, wielopoligonów i zaokrągleń.
 
-## [1.0.1] - 2026-07-25
+## 1.0.1 - 2026-07-25
 
 ### Changed
 
@@ -111,6 +117,5 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Bezpieczne komunikaty GUI, minimalne uprawnienia CI i akcje GitHub
   przypięte do pełnych identyfikatorów commitów.
 
-[Unreleased]: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/compare/v1.0.1...HEAD
-[1.0.1]: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/compare/v1.0.0...v1.0.1
+[1.1.0]: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/releases/tag/v1.0.0

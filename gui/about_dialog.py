@@ -106,7 +106,12 @@ class AboutDialog(QDialog):
             "i budynków (Dz.U. 2024 poz. 219 ze zm.). Pomaga sprawdzać "
             "powierzchnie działek istniejących i projektowanych. To inny "
             "sposób obliczenia niż natywne pole kartezjańskie i pomiar "
-            "geodezyjny QGIS; oba pokazuje dla porównania."
+            "geodezyjny QGIS; oba pokazuje dla porównania. "
+            "Udostępnia to obliczenie w bezpłatnym QGIS, bez kupowania "
+            "komercyjnego pakietu geodezyjnego tylko do wyznaczenia tej "
+            "poprawki. Wtyczka jest bezpłatna i otwartoźródłowa "
+            "(GNU GPL v2); kod można sprawdzić, modyfikować i udostępniać "
+            "na warunkach tej licencji."
         )
         summary.setObjectName("aboutSummary")
         summary.setWordWrap(True)

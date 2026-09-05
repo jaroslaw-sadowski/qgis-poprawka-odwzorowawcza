@@ -49,7 +49,7 @@ jobs:
         run: ruff format --check --no-cache .
 
       - name: Check Flake8
-        run: flake8 . --exclude=legacy,__pycache__ --jobs 1
+        run: flake8 . --exclude=__pycache__ --jobs 1
 
       - name: Scan runtime with Bandit
         run: >-

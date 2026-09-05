@@ -193,7 +193,7 @@ def test_metadata_enables_processing_and_supports_qgis3_and_qgis4() -> None:
 
     metadata = parser["general"]
     assert metadata["name"] == "Poprawka odwzorowawcza PL-2000"
-    assert metadata["version"] == "1.0.1"
+    assert metadata["version"] == "1.1.0"
     assert metadata["qgisminimumversion"] == "3.40"
     assert metadata["qgismaximumversion"] == "4.99"
     assert metadata["hasprocessingprovider"] == "yes"
@@ -230,7 +230,7 @@ def test_metadata_enables_processing_and_supports_qgis3_and_qgis4() -> None:
     assert "category" not in metadata
     assert metadata["icon"] == "resources/icon.png"
     assert metadata["changelog"].startswith(
-        '1.0.1 / EN: full name "Poprawka odwzorowawcza PL-2000"'
+        "1.1.0 / EN: QGIS 4 / Qt6 support;"
     )
     assert metadata["experimental"] == "False"
     assert metadata["deprecated"] == "False"
@@ -311,5 +311,5 @@ def test_native_qgis_installer_reads_both_languages_from_zip(
         assert expected in installed["about"]
     assert "pole działki,parcel area" in installed["tags"]
     assert "powierzchnia,area" in installed["tags"]
-    assert "1.0.1 / EN:" in installed["changelog"]
-    assert "1.0.1 / PL:" in installed["changelog"]
+    assert "1.1.0 / EN:" in installed["changelog"]
+    assert "1.1.0 / PL:" in installed["changelog"]

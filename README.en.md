@@ -15,6 +15,11 @@ This calculation differs from QGIS's native Cartesian area (on a plane)
 and geodesic measurement (on an ellipsoid). The plugin shows all three
 values for comparison. The results may differ slightly.
 
+The plugin makes this calculation available in **free QGIS**, without
+buying a commercial surveying package just to calculate this correction.
+The plugin itself is **free and open source (GNU GPL v2)**: its code can
+be inspected, modified and redistributed under the [license](LICENSE).
+
 ## How to use
 
 Requires QGIS 3.40–3.x or 4.x. Install through the plugin manager,
