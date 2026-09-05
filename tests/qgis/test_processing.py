@@ -286,3 +286,57 @@ def test_explicit_zone_transforms_non_pl2000_input_in_output_copy() -> None:
     assert result["egib_epsg"] == 2178
     assert result["egib_area_m2"] > 0
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
+
+
+@pytest.mark.parametrize("repair_mode_index", [0, 1])
+def test_auxiliary_failure_keeps_main_fields_status_and_next_feature(
+    monkeypatch,
+    repair_mode_index,
+):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))",
+        "MULTIPOLYGON (((7500000 5800000,7500200 5800200,"
+        "7500000 5800200,7500100 5800000,7500000 5800000)))",
+        "MULTIPOLYGON (((7500200 5800200,7500250 5800200,"
+        "7500250 5800250,7500200 5800250,7500200 5800200)))",
+    )
+    baseline, baseline_context = _run_algorithm(
+        layer, repair_mode_index=repair_mode_index
+    )
+    measure = algorithm_module.measure_geodesic_area_m2
+    calls = []
+
+    def fail_first_two_measurements(*args):
+        calls.append(1)
+        if len(calls) < 3:
+            raise GeometryTransformError("private/path/grid.gsb")
+        return measure(*args)
+
+    monkeypatch.setattr(
+        algorithm_module,
+        "measure_geodesic_area_m2",
+        fail_first_two_measurements,
+    )
+    output, context = _run_algorithm(
+        layer, repair_mode_index=repair_mode_index
+    )
+    assert baseline_context is not None and context is not None
+    assert len(calls) == 3
+    for index, (expected, actual) in enumerate(
+        zip(baseline.getFeatures(), output.getFeatures())
+    ):
+        assert bytes(actual.geometry().asWkb()) == bytes(
+            expected.geometry().asWkb()
+        )
+        for field in output.fields().names():
+            if field not in ("egib_qgis_m2", "egib_warnings"):
+                assert actual[field] == expected[field], field
+        if index < 2:
+            assert actual["egib_qgis_m2"] == NULL
+            assert "geodesic_measurement_failed" in actual["egib_warnings"]
+            assert "private/path" not in actual["egib_warnings"]
+            if expected["egib_warnings"] != NULL:
+                assert expected["egib_warnings"] in actual["egib_warnings"]
+        else:
+            assert actual.attributes() == expected.attributes()

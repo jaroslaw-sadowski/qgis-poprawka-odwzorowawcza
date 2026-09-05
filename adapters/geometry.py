@@ -1,6 +1,7 @@
 """Non-mutating PyQGIS geometry validation, traversal and transformation."""
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import FrozenSet, List, Optional, Tuple
 
 from qgis.core import (
@@ -75,11 +76,17 @@ def measure_geodesic_area_m2(
             "QGIS could not configure the GRS 80 ellipsoid"
         )
     try:
-        return calculator.measureArea(geometry)
+        area = calculator.measureArea(geometry)
     except QgsCsException as error:
         raise GeometryTransformError(
             f"failed to measure ellipsoidal area on GRS 80: {error}"
         ) from error
+
+    if not isfinite(area) or area < 0:
+        raise GeometryTransformError(
+            "QGIS returned an invalid ellipsoidal area"
+        )
+    return area
 
 
 def transform_geometry_to_pl2000(

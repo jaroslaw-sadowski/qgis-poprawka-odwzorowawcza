@@ -7,6 +7,11 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Nieudany pomocniczy pomiar QGIS na GRS 80 nie blokuje wyniku według
+  wzoru PL-2000; GUI i Processing zgłaszają osobne ostrzeżenie.
+- Zmiana ustawień oraz nieudane obliczenie usuwają stary raport i wyłączają
+  jego eksport.
+
 - Oba tryby sprawdzają poprawność geometrii GEOS. Tryb bez naprawy zachowuje
   granice źródłowe po transformacji do PL-2000, a wynik dla niepoprawnej
   geometrii oznacza jako diagnostyczny (`invalid_source_geometry`).
@@ -17,6 +22,12 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Zaktualizowano opisy trybów i wyjaśnienia diagnostyki w GUI i Processing.
 
 ### Added
+
+- Eksport bieżącego raportu pojedynczej działki do Markdown (UTF-8),
+  z zachowaniem prezentowanej precyzji, diagnostyki i ostrzeżeń; realizacja
+  części Markdown zgłoszenia #3. Zapis chroni istniejący plik przy błędzie.
+- Testy awarii pomiaru porównawczego, aktualności raportu i eksportu,
+  w tym anulowania oraz błędów otwarcia, zapisu i zatwierdzenia pliku.
 
 - Niezależne referencje wzoru obliczone dokładnie na ułamkach, wraz
   z odtwarzalnym generatorem i opisem podstawy prawnej.

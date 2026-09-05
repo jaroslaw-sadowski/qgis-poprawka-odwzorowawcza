@@ -1,5 +1,6 @@
 """Polish dialog for calculating one selected parcel."""
 
+import re
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -11,11 +12,12 @@ from qgis.core import (
     QgsFeature,
     QgsVectorLayer,
 )
-from qgis.PyQt.QtCore import QEvent
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtCore import QEvent, QIODevice, QSaveFile
+from qgis.PyQt.QtGui import QIcon, QTextDocument
 from qgis.PyQt.QtWidgets import (
     QComboBox,
     QDialog,
+    QFileDialog,
     QFormLayout,
     QFrame,
     QGroupBox,
@@ -43,12 +45,16 @@ if "." in __package__:
         measure_geodesic_area_m2,
         prepare_geometry,
     )
+    from ..compat import execute_dialog
     from ..core import (
         AreaCalculationError,
         AreaCalculationResult,
         calculate_area,
     )
-    from ..user_messages import safe_calculation_error_message
+    from ..user_messages import (
+        GEODESIC_MEASUREMENT_WARNING,
+        safe_calculation_error_message,
+    )
 else:
     from adapters import (
         GeometryInputError,
@@ -61,17 +67,22 @@ else:
         measure_geodesic_area_m2,
         prepare_geometry,
     )
+    from compat import execute_dialog
     from core import (
         AreaCalculationError,
         AreaCalculationResult,
         calculate_area,
     )
-    from user_messages import safe_calculation_error_message
+    from user_messages import (
+        GEODESIC_MEASUREMENT_WARNING,
+        safe_calculation_error_message,
+    )
 
 
 _PL2000_ZONE_BY_EPSG = {2176: 5, 2177: 6, 2178: 7, 2179: 8}
 
 _WARNING_LABELS = {
+    "geodesic_measurement_failed": GEODESIC_MEASUREMENT_WARNING,
     "geometry_not_repaired": (
         "Geometria jest niepoprawna i nie została naprawiona. "
         "Wynik ma charakter diagnostyczny."
@@ -116,6 +127,11 @@ _EVENT_TYPE_ENUM = getattr(QEvent, "Type", QEvent)
 _TOOLTIP_EVENT_TYPE = _EVENT_TYPE_ENUM.ToolTip
 
 _WARNING_DETAILS = {
+    "geodesic_measurement_failed": (
+        "QGIS nie mógł wykonać pomocniczego pomiaru na elipsoidzie GRS 80. "
+        "P₀, P_GK, poprawka i pole według wzoru PL-2000 są wyznaczane "
+        "niezależnie od tego pomiaru."
+    ),
     "geometry_not_repaired": (
         "Kontrola GEOS wykryła błąd topologiczny. Wybrany tryb nie "
         "naprawia geometrii. P₀ i P_GK pochodzą z niezmienionej kopii "
@@ -353,13 +369,18 @@ class SelectedParcelResult:
     preparation: GeometryPreparationResult
     calculation: Optional[AreaCalculationResult]
     qgis_geodesic_area_m2: Optional[float]
+    measurement_warnings: Tuple[str, ...] = ()
 
     @property
     def warnings(self) -> Tuple[str, ...]:
         calculation_warnings = (
             self.calculation.warnings if self.calculation is not None else ()
         )
-        return self.preparation.report.warnings + calculation_warnings
+        return (
+            self.preparation.report.warnings
+            + calculation_warnings
+            + self.measurement_warnings
+        )
 
 
 def calculate_selected_parcel(
@@ -381,21 +402,26 @@ def calculate_selected_parcel(
     )
     calculation = None
     qgis_geodesic_area_m2 = None
+    measurement_warnings = ()
     if preparation.calculation_allowed:
         calculation = calculate_area(
             po_m2=preparation.geometry_for_area.area(),
             boundary_points=preparation.boundary_points_for_calculation,
             epsg=preparation.target_epsg,
         )
-        qgis_geodesic_area_m2 = measure_geodesic_area_m2(
-            preparation.geometry_for_area,
-            preparation.target_crs,
-            transform_context,
-        )
+        try:
+            qgis_geodesic_area_m2 = measure_geodesic_area_m2(
+                preparation.geometry_for_area,
+                preparation.target_crs,
+                transform_context,
+            )
+        except (GeometryInputError, GeometryTransformError):
+            measurement_warnings = ("geodesic_measurement_failed",)
     return SelectedParcelResult(
         preparation=preparation,
         calculation=calculation,
         qgis_geodesic_area_m2=qgis_geodesic_area_m2,
+        measurement_warnings=measurement_warnings,
     )
 
 
@@ -415,6 +441,7 @@ class SelectedParcelDialog(QDialog):
         self._feature = QgsFeature(feature)
         self._transform_context = transform_context
         self.last_result: Optional[SelectedParcelResult] = None
+        self._report_markdown = ""
 
         self.setObjectName("selectedParcelDialog")
         self.setWindowTitle(
@@ -556,6 +583,12 @@ class SelectedParcelDialog(QDialog):
 
         button_layout = QHBoxLayout()
         button_layout.setSpacing(7)
+        self.export_button = QPushButton("Zapisz raport MD…")
+        self.export_button.setObjectName("exportReportButton")
+        self.export_button.setProperty("role", "secondary")
+        self.export_button.setEnabled(False)
+        self.export_button.setAutoDefault(False)
+        button_layout.addWidget(self.export_button)
         button_layout.addStretch(1)
         self.close_button = QPushButton("Zamknij")
         self.close_button.setObjectName("closeButton")
@@ -577,7 +610,12 @@ class SelectedParcelDialog(QDialog):
         button_layout.addWidget(self.calculate_button)
         layout.addLayout(button_layout)
 
+        self.export_button.clicked.connect(self.export_report)
         self.calculate_button.clicked.connect(self.calculate)
+        self.zone_combo.currentIndexChanged.connect(self._invalidate_result)
+        self.repair_mode_combo.currentIndexChanged.connect(
+            self._invalidate_result
+        )
         self.zone_combo.currentIndexChanged.connect(self._update_zone_tooltip)
         self.close_button.clicked.connect(self.reject)
         self._set_status("Gotowy do obliczenia.", "ready")
@@ -633,6 +671,7 @@ class SelectedParcelDialog(QDialog):
     def calculate(self) -> None:
         """Calculate and render the feature without editing its layer."""
 
+        self._invalidate_result()
         selected_zone = self.zone_combo.currentData()
         if self.zone_combo.isEnabled() and selected_zone is None:
             self._show_error(
@@ -666,6 +705,27 @@ class SelectedParcelDialog(QDialog):
         self.last_result = result
         self.result_text.set_hover_help(_report_hover_help(result))
         self.result_text.setHtml(_format_result_html(result, self._colors))
+        if result.calculation is not None:
+            document = QTextDocument()
+            source_crs = self._layer.crs()
+            document.setHtml(
+                _format_result_html(result, self._colors, for_export=True)
+            )
+            context = (
+                f"Warstwa: {self._layer.name()}\n\n"
+                f"Obiekt (FID): {self._feature.id()}\n\n"
+                f"CRS źródłowy: {source_crs.authid()} "
+                f"{source_crs.description()}\n\n"
+                "Obsługa geometrii: "
+                f"{self.repair_mode_combo.currentText()}"
+            )
+            # Qt 5 does not escape literal Markdown in arbitrary layer names.
+            context = re.sub(r"([\\`*_{}\[\]<>()#+.!|~-])", r"\\\1", context)
+            self._report_markdown = (
+                "# Raport obliczenia powierzchni PL-2000\n\n"
+                f"{context}\n\n{document.toMarkdown()}"
+            )
+            self.export_button.setEnabled(True)
         if result.calculation is None:
             self._set_status(
                 "Nie wyznaczono wyniku powierzchni.",
@@ -676,6 +736,11 @@ class SelectedParcelDialog(QDialog):
                 "Wynik diagnostyczny — geometria niepoprawna, bez naprawy.",
                 "warning",
             )
+        elif result.measurement_warnings:
+            self._set_status(
+                "Obliczono powierzchnię; pomiar porównawczy jest niedostępny.",
+                "warning",
+            )
         elif result.preparation.report.repair_method is RepairMethod.NONE:
             self._set_status("Obliczenie zakończone poprawnie.", "success")
         else:
@@ -684,8 +749,50 @@ class SelectedParcelDialog(QDialog):
                 "warning",
             )
 
-    def _show_error(self, message: str) -> None:
+    def _invalidate_result(self) -> None:
         self.last_result = None
+        self._report_markdown = ""
+        self.export_button.setEnabled(False)
+        self.result_text.set_hover_help({})
+        self.result_text.setHtml(_empty_result_html(self._colors))
+        QToolTip.hideText()
+        self._set_status(
+            "Oblicz powierzchnię dla bieżących ustawień.", "ready"
+        )
+
+    def export_report(self) -> None:
+        """Save the current report atomically as UTF-8 Markdown."""
+
+        if not self._report_markdown:
+            return
+        file_dialog = QFileDialog(self, "Zapisz raport Markdown")
+        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        file_dialog.setNameFilter("Markdown (*.md)")
+        file_dialog.setDefaultSuffix("md")
+        file_dialog.selectFile(f"raport-pl2000-{self._feature.id()}.md")
+        if not execute_dialog(file_dialog):
+            return
+        if not self._report_markdown:
+            return
+        destination = QSaveFile(file_dialog.selectedFiles()[0])
+        content = self._report_markdown.encode("utf-8")
+        if not destination.open(QIODevice.OpenModeFlag.WriteOnly):
+            saved = False
+        elif destination.write(content) != len(content):
+            destination.cancelWriting()
+            saved = False
+        else:
+            saved = destination.commit()
+        if not saved:
+            QMessageBox.warning(
+                self,
+                "Zapis raportu",
+                "Nie udało się zapisać raportu. Sprawdź uprawnienia "
+                "do katalogu i wolne miejsce na dysku.",
+            )
+
+    def _show_error(self, message: str) -> None:
+        self._invalidate_result()
         self._set_status("Obliczenie nie zostało wykonane.", "error")
         QMessageBox.warning(
             self,
@@ -708,6 +815,8 @@ def _zone_from_crs(crs: QgsCoordinateReferenceSystem) -> Optional[int]:
 def _format_result_html(
     result: SelectedParcelResult,
     colors: dict,
+    *,
+    for_export: bool = False,
 ) -> str:
     preparation = result.preparation
     report = preparation.report
@@ -734,7 +843,11 @@ def _format_result_html(
                 "result:qgis-geodesic",
                 "P QGIS",
                 "Pole geodezyjne QGIS na elipsoidzie GRS 80",
-                f"{_format_number(result.qgis_geodesic_area_m2, 2)} m²",
+                (
+                    f"{_format_number(result.qgis_geodesic_area_m2, 2)} m²"
+                    if result.qgis_geodesic_area_m2 is not None
+                    else "Niedostępne"
+                ),
             ),
             _result_row(
                 "result:correction",
@@ -932,7 +1045,7 @@ def _format_result_html(
             '<div class="no-warnings">Brak uwag do obliczenia.</div>'
         )
 
-    if parameter_content:
+    if parameter_content and not for_export:
         details_content = (
             '<table class="details-layout" width="100%" '
             'cellspacing="0" cellpadding="0"><tr>'
@@ -941,7 +1054,7 @@ def _format_result_html(
             "</tr></table>"
         )
     else:
-        details_content = geometry_content
+        details_content = parameter_content + geometry_content
 
     body = (
         '<div class="section-title first">WYNIK OBLICZENIA</div>'
@@ -949,6 +1062,16 @@ def _format_result_html(
         f"{details_content}"
         f"{warning_content}"
     )
+    if for_export:
+        # Markdown cannot represent nested layout tables or hover help.
+        body = re.sub(r"</?a\b[^>]*>", "", body)
+        body = re.sub(
+            r'<div class="section-title[^"]*">(.*?)</div>',
+            r"<h2>\1</h2>",
+            body,
+        )
+        body = re.sub(r'<div class="parameter-intro">.*?</div>', "", body)
+        return body
     return _html_document(body, colors)
 
 

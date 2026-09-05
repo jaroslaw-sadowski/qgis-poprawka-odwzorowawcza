@@ -187,3 +187,26 @@ def test_geometry_exactly_at_complexity_budget_is_accepted(
     monkeypatch.setattr(geometry_module, "MAX_BOUNDARY_COORDINATES", 5)
 
     validate_geometry_budget(geometry)
+
+
+@pytest.mark.parametrize("measurement", [float("nan"), float("inf"), -1.0])
+def test_unusable_ellipsoidal_measurement_is_an_expected_error(
+    monkeypatch,
+    measurement,
+):
+    class InvalidDistanceArea(geometry_module.QgsDistanceArea):
+        def measureArea(self, geometry):  # noqa: N802
+            return measurement
+
+    monkeypatch.setattr(
+        geometry_module, "QgsDistanceArea", InvalidDistanceArea
+    )
+    with pytest.raises(geometry_module.GeometryTransformError):
+        measure_geodesic_area_m2(
+            QgsGeometry.fromWkt(
+                "POLYGON ((7500000 5800000,7500100 5800000,"
+                "7500100 5800100,7500000 5800000))"
+            ),
+            QgsCoordinateReferenceSystem("EPSG:2178"),
+            QgsCoordinateTransformContext(),
+        )

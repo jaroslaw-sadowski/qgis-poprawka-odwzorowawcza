@@ -45,7 +45,10 @@ if "." in __package__:
         AreaCalculationResult,
         calculate_area,
     )
-    from ..user_messages import safe_calculation_error_message
+    from ..user_messages import (
+        GEODESIC_MEASUREMENT_WARNING,
+        safe_calculation_error_message,
+    )
 else:
     from adapters import (
         GeometryInputError,
@@ -70,7 +73,10 @@ else:
         AreaCalculationResult,
         calculate_area,
     )
-    from user_messages import safe_calculation_error_message
+    from user_messages import (
+        GEODESIC_MEASUREMENT_WARNING,
+        safe_calculation_error_message,
+    )
 
 
 class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
@@ -300,13 +306,23 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                     epsg=prepared.target_epsg,
                 )
                 self._put_calculation(values, calculation)
-                values["egib_qgis_m2"] = _round_m2(
-                    measure_geodesic_area_m2(
-                        prepared.geometry_for_area,
-                        prepared.target_crs,
-                        context.transformContext(),
+                measurement_warnings = ()
+                try:
+                    values["egib_qgis_m2"] = _round_m2(
+                        measure_geodesic_area_m2(
+                            prepared.geometry_for_area,
+                            prepared.target_crs,
+                            context.transformContext(),
+                        )
                     )
-                )
+                except (GeometryInputError, GeometryTransformError):
+                    measurement_warnings = ("geodesic_measurement_failed",)
+                    feedback.pushWarning(
+                        self.tr(
+                            f"Obiekt {source_feature.id()}: "
+                            f"{GEODESIC_MEASUREMENT_WARNING}"
+                        )
+                    )
                 if repair_mode is RepairMode.SOURCE_GEOMETRY:
                     values["egib_status"] = (
                         "source_geometry"
@@ -320,6 +336,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                 values["egib_warnings"] = self._joined_warnings(
                     prepared.report.warnings,
                     calculation.warnings,
+                    measurement_warnings,
                 )
             else:
                 values["egib_status"] = "calculation_not_allowed"

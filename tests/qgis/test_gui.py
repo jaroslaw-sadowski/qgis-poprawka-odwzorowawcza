@@ -400,3 +400,304 @@ def test_about_dialog_presents_authorship_privacy_and_disclosure() -> None:
     assert dialog.findChild(QLabel, "aboutIcon").width() == 18
     assert "font-size: 10.5pt" in dialog.styleSheet()
     assert dialog.height() == 440
+
+
+@pytest.fixture
+def calculated_dialog():
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    dialog = _dialog(layer)
+    assert not dialog.export_button.isEnabled()
+    dialog.calculate()
+    yield dialog
+    dialog.close()
+
+
+@pytest.mark.parametrize("repair_index", [0, 1])
+def test_auxiliary_failure_preserves_main_gui_result(
+    calculated_dialog, monkeypatch, repair_index
+):
+    dialog = calculated_dialog
+    expected = dialog.last_result.calculation
+
+    def fail_measurement(*args):
+        raise GeometryTransformError("private/path/grid.gsb")
+
+    monkeypatch.setattr(
+        dialog_module, "measure_geodesic_area_m2", fail_measurement
+    )
+    dialog.repair_mode_combo.setCurrentIndex(repair_index)
+    dialog.calculate()
+
+    assert dialog.last_result.calculation == expected
+    assert dialog.last_result.qgis_geodesic_area_m2 is None
+    assert "geodesic_measurement_failed" in dialog.last_result.warnings
+    assert dialog.status_card.property("state") == "warning"
+    assert "Niedostępne" in dialog.result_text.toPlainText()
+    assert "Nie wpływa to na wynik" in dialog.result_text.toPlainText()
+    assert "private/path" not in dialog.result_text.toPlainText()
+    assert "10001,54 m²" in dialog.result_text.toPlainText()
+    assert dialog.export_button.isEnabled()
+    assert "Niedostępne" in dialog._report_markdown
+    assert "Nie wpływa to na wynik" in " ".join(
+        dialog._report_markdown.split()
+    )
+
+
+def test_failed_recalculation_clears_display_and_export(
+    calculated_dialog, monkeypatch
+):
+    dialog = calculated_dialog
+
+    def fail_calculation(*args, **kwargs):
+        raise GeometryTransformError("missing grid")
+
+    monkeypatch.setattr(
+        dialog_module, "calculate_selected_parcel", fail_calculation
+    )
+    messages = []
+    monkeypatch.setattr(
+        dialog_module.QMessageBox,
+        "warning",
+        lambda *args: messages.append(args[-1]),
+    )
+    dialog.calculate()
+
+    assert len(messages) == 1
+    assert dialog.last_result is None
+    assert dialog._report_markdown == ""
+    assert not dialog.export_button.isEnabled()
+    assert "10001,54" not in dialog.result_text.toPlainText()
+    assert dialog.result_text._hover_help == {}
+    assert dialog.status_card.property("state") == "error"
+
+
+def test_repair_setting_invalidates_report_until_recalculation(
+    calculated_dialog,
+):
+    dialog = calculated_dialog
+    dialog.repair_mode_combo.setCurrentIndex(1)
+
+    assert dialog.last_result is None
+    assert dialog._report_markdown == ""
+    assert not dialog.export_button.isEnabled()
+    assert "10001,54" not in dialog.result_text.toPlainText()
+    assert dialog.result_text._hover_help == {}
+    assert dialog.status_card.property("state") == "ready"
+
+    dialog.calculate()
+    assert dialog.last_result is not None
+    assert dialog.export_button.isEnabled()
+    assert "Wykryj błędy" in dialog._report_markdown
+
+
+def test_zone_setting_invalidates_report_and_missing_zone_stays_empty(
+    monkeypatch,
+):
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((21 52,21.001 52,21.001 52.001,21 52.001,21 52)))",
+        crs="EPSG:4326",
+    )
+    dialog = _dialog(layer)
+    dialog.zone_combo.setCurrentIndex(dialog.zone_combo.findData(7))
+    dialog.calculate()
+    assert dialog.last_result is not None
+    assert dialog.export_button.isEnabled()
+
+    dialog.zone_combo.setCurrentIndex(dialog.zone_combo.findData(6))
+    assert dialog.last_result is None
+    assert not dialog.export_button.isEnabled()
+    assert "Raport obliczenia pojawi się tutaj" in (
+        dialog.result_text.toPlainText()
+    )
+    dialog.zone_combo.setCurrentIndex(0)
+    monkeypatch.setattr(dialog_module.QMessageBox, "warning", lambda *a: None)
+    dialog.calculate()
+    assert dialog.last_result is None
+    assert dialog._report_markdown == ""
+    assert dialog.status_card.property("state") == "error"
+
+
+@pytest.mark.parametrize("filename", ["raport", "raport.md", "raport.MD"])
+def test_markdown_export_saves_current_report_utf8_with_default_suffix(
+    calculated_dialog, monkeypatch, tmp_path, filename
+):
+    dialog = calculated_dialog
+    before = dialog.result_text.toHtml()
+    result = dialog.last_result
+
+    def choose_destination(file_dialog):
+        assert file_dialog.defaultSuffix() == "md"
+        assert not file_dialog.testOption(
+            dialog_module.QFileDialog.Option.DontConfirmOverwrite
+        )
+        file_dialog.selectFile(str(tmp_path / filename))
+        return 1
+
+    def unexpected_recalculation(*args, **kwargs):
+        pytest.fail("Export must not recalculate the result")
+
+    monkeypatch.setattr(dialog_module, "execute_dialog", choose_destination)
+    monkeypatch.setattr(
+        dialog_module, "calculate_selected_parcel", unexpected_recalculation
+    )
+    dialog.export_button.click()
+
+    destination = tmp_path / (
+        filename if "." in filename else filename + ".md"
+    )
+    text = destination.read_text(encoding="utf-8")
+    assert text == dialog._report_markdown
+    assert "# Raport obliczenia powierzchni PL-2000" in text
+    document = dialog_module.QTextDocument()
+    document.setMarkdown(text)
+    rendered = document.toPlainText()
+    for expected in (
+        "Warstwa: Działki",
+        "Obiekt (FID):",
+        "EPSG:2178",
+        "Sprawdź geometrię; licz bez naprawy",
+        "10000,00 m²",
+        "10001,54 m²",
+        "1,0002 ha",
+        "5800000,000 m",
+        "7500000,000 m",
+        "0,9999230000",
+        "PARAMETRY WZORU",
+        "STREFA I GEOMETRIA",
+        "UWAGI",
+        "Brak uwag",
+    ):
+        assert expected in rendered
+    for absent in ("param:", "result:", "diagnostic:", "warning:", "Najedź"):
+        assert absent not in text
+    assert "10001,539" not in text
+    assert dialog.result_text.toHtml() == before
+    assert dialog.last_result is result
+
+
+def test_cancelled_export_preserves_report_and_existing_file(
+    calculated_dialog,
+    monkeypatch,
+    tmp_path,
+):
+    destination = tmp_path / "existing.md"
+    destination.write_text("existing report", encoding="utf-8")
+    dialog = calculated_dialog
+    before = dialog._report_markdown
+
+    def cancel(file_dialog):
+        file_dialog.selectFile(str(destination))
+        return 0
+
+    monkeypatch.setattr(dialog_module, "execute_dialog", cancel)
+    dialog.export_report()
+    assert destination.read_text(encoding="utf-8") == "existing report"
+    assert dialog._report_markdown == before
+    assert dialog.export_button.isEnabled()
+
+
+@pytest.mark.parametrize("failure", ["open", "write", "commit"])
+def test_export_failure_does_not_destroy_existing_file_or_result(
+    calculated_dialog,
+    monkeypatch,
+    tmp_path,
+    failure,
+):
+    destination = tmp_path / "existing.md"
+    destination.write_text("existing report", encoding="utf-8")
+    dialog = calculated_dialog
+    before = dialog.last_result
+    warnings = []
+
+    def choose(file_dialog):
+        file_dialog.selectFile(str(destination))
+        return 1
+
+    class FailingSaveFile(dialog_module.QSaveFile):
+        def open(self, flags):
+            if failure == "open":
+                return False
+            return super().open(flags)
+
+        def write(self, content):
+            if failure == "write":
+                return super().write(content[:10])
+            return super().write(content)
+
+        def commit(self):
+            if failure == "commit":
+                self.cancelWriting()
+            return super().commit()
+
+    monkeypatch.setattr(dialog_module, "execute_dialog", choose)
+    monkeypatch.setattr(dialog_module, "QSaveFile", FailingSaveFile)
+    monkeypatch.setattr(
+        dialog_module.QMessageBox, "warning", lambda *a: warnings.append(a[-1])
+    )
+    dialog.export_report()
+    assert len(warnings) == 1
+    assert "Nie udało się zapisać" in warnings[0]
+    assert destination.read_text(encoding="utf-8") == "existing report"
+    assert dialog.last_result is before
+    assert dialog.export_button.isEnabled()
+    assert dialog._report_markdown
+
+
+@pytest.mark.parametrize("repair_index", [0, 1])
+def test_markdown_keeps_geometry_warnings_and_diagnostic_banner(repair_index):
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7500000 5800000,7500200 5800200,"
+        "7500000 5800200,7500100 5800000,7500000 5800000)))"
+    )
+    dialog = _dialog(layer)
+    dialog.repair_mode_combo.setCurrentIndex(repair_index)
+    dialog.calculate()
+    assert dialog.export_button.isEnabled()
+    for warning in dialog.last_result.warnings:
+        # Qt wraps long paragraphs, so compare words independently of layout.
+        expected = " ".join(dialog_module._warning_label(warning).split())
+        assert expected in " ".join(dialog._report_markdown.split())
+    assert ("WYNIK DIAGNOSTYCZNY" in dialog._report_markdown) == (
+        repair_index == 0
+    )
+    assert "warning:" not in dialog._report_markdown
+
+
+def test_export_without_current_report_does_not_open_file_dialog(
+    calculated_dialog,
+    monkeypatch,
+):
+    dialog = calculated_dialog
+    dialog.repair_mode_combo.setCurrentIndex(1)
+
+    def unexpected_dialog(*args):
+        pytest.fail("A stale report must not be offered for export")
+
+    monkeypatch.setattr(dialog_module, "execute_dialog", unexpected_dialog)
+    dialog.export_report()
+
+
+@pytest.mark.parametrize(
+    "layer_name",
+    [
+        "Działki <b>źródło</b> & [opis](https://example.invalid)",
+        "działki `nazwa` **2026** _archiwum_",
+    ],
+)
+def test_markdown_escapes_layer_name_and_keeps_calculation_context(layer_name):
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    layer.setName(layer_name)
+    dialog = _dialog(layer)
+    dialog.calculate()
+    before = dialog._report_markdown
+    document = dialog_module.QTextDocument()
+    document.setMarkdown(before)
+    assert layer.name() in " ".join(document.toPlainText().split())
+    layer.setName("Nowa nazwa")
+    assert dialog._report_markdown == before

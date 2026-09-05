@@ -62,6 +62,16 @@ SHA-256.
    zaznaczonej działki** albo użyj przycisku na pasku narzędzi.
 3. Dla CRS innego niż EPSG:2176–2179 wskaż właściwą strefę PL-2000.
 4. Wybierz sposób obsługi geometrii i uruchom obliczenie.
+5. Aby zachować raport, wybierz **Zapisz raport MD…** i wskaż plik Markdown.
+   Raport zawiera wyniki, parametry wzoru, diagnostykę i ostrzeżenia oraz
+   nazwę warstwy, identyfikator obiektu, CRS i wybrany tryb geometrii.
+   Liczby mają taką samą liczbę miejsc po przecinku jak w oknie.
+
+Zmiana strefy lub trybu geometrii usuwa poprzedni raport i wyłącza eksport
+do ponownego obliczenia. Tak samo działa nieudane obliczenie.
+Raport diagnostyczny dla błędnej geometrii można zapisać, lecz jego
+ostrzeżenia pozostają widoczne w pliku. Anulowanie lub błąd zapisu nie
+usuwa bieżącego wyniku; nieudany zapis nie nadpisuje istniejącego pliku.
 
 ### Wiele działek
 
@@ -115,6 +125,12 @@ Odpowiada rodzajowi pomiaru wyrażenia `$area` przy ustawionej elipsoidzie,
 lecz wtyczka jawnie ustawia GRS 80 niezależnie od ustawień projektu.
 W algorytmie Processing wartości te zapisują odpowiednio pola
 `egib_po_m2`, `egib_area_m2` i `egib_qgis_m2`.
+
+Jeśli pomocniczy pomiar QGIS jest niedostępny, wynik według wzoru PL-2000
+pozostaje dostępny. Raport pokazuje „Niedostępne” i ostrzeżenie. Processing
+zachowuje wynik oraz status geometrii, zapisuje `NULL` w `egib_qgis_m2`
+i dodaje `geodesic_measurement_failed` do `egib_warnings`; przetwarza
+również kolejne obiekty.
 
 Wynik nie zastępuje kontroli właściwego CRS, strefy, pochodzenia punktów
 granicznych ani aktualnego stanu prawnego. Szczegóły opisuje

@@ -18,6 +18,12 @@ else:
     from core import AreaCalculationError
 
 
+GEODESIC_MEASUREMENT_WARNING = (
+    "Pomiar porównawczy QGIS na elipsoidzie GRS 80 jest niedostępny. "
+    "Nie wpływa to na wynik obliczenia według wzoru PL-2000."
+)
+
+
 def safe_calculation_error_message(error: Exception) -> str:
     """Translate expected failures without exposing implementation details."""
 
@@ -57,4 +63,7 @@ def safe_calculation_error_message(error: Exception) -> str:
     return "Nie udało się wykonać operacji z powodu nieoczekiwanego błędu."
 
 
-__all__ = ["safe_calculation_error_message"]
+__all__ = [
+    "GEODESIC_MEASUREMENT_WARNING",
+    "safe_calculation_error_message",
+]
