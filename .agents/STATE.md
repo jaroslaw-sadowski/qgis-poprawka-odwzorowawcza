@@ -7,16 +7,13 @@ Punkty 1–7 zostały zatwierdzone w commicie
 Użytkownik sprawdził paczkę w QGIS. Podczas przygotowywania publikacji
 powstał nieopublikowany draft GitHub Release `v1.1.0`.
 
-Użytkownik następnie wstrzymał publikację i zlecił krótsze metadane:
-krótki opis PL przed EN, bez dopisku o bezpłatności; około 100 słów opisu
-szczegółowego na język i changelog z punktami w nowych wierszach.
-Ta korekta i testy są lokalne, jeszcze niezacommitowane. Nowy ZIP 1.1.0
-czeka na ponowny test użytkownika. Dopiero potem publikacja GitHub i QGIS.
-
-Draft na GitHubie zawiera POPRZEDNIĄ paczkę i wskazuje commit 404cf69.
-Przed publikacją trzeba wymienić załączniki, sprawdzić nazwy pobieranych
-plików i zgodność sumy kontrolnej oraz wskazać commit nowej korekty z CI.
-Nie publikuj starego draftu bez tych zmian. Nie wysłano paczki do QGIS.
+Użytkownik zatwierdził przygotowanie wydania GitHub 1.1.0 po sprawdzeniu
+wtyczki w QGIS. Ostatnie korekty metadanych i ich testy są przygotowywane
+do commitu, wysłania i CI. Publikacja wymaga zastąpienia obu starszych
+załączników draftu i wskazania finalnego commitu. Aktualny ZIP i jego
+suma są opisane poniżej. GitHub zamienia spacje w nazwach załączników na
+kropki, dlatego załączona suma musi zawierać nazwę pobieranego pliku.
+Do plugins.qgis.org nie wysłano nowej wersji.
 
 ## Stan produktu i decyzje
 
