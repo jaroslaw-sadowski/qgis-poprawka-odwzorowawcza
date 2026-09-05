@@ -28,7 +28,7 @@ ręczny test finalnego ZIP-u zgodnie z
   niezależnego pomiaru geodezyjnego QGIS na elipsoidzie GRS 80;
 - automatyczne rozpoznanie strefy dla EPSG:2176–2179;
 - ręczny, jawny wybór strefy PL-2000 dla innych CRS;
-- dwa tryby geometrii: źródłowa kopia bez GEOS oraz kontrola z opcjonalną
+- dwa tryby geometrii: kontrola GEOS bez naprawy oraz kontrola z opcjonalną
   naprawą kopii;
 - pełna diagnostyka w nowej warstwie wynikowej Processing;
 - brak modyfikacji warstwy wejściowej, komunikacji sieciowej i zależności
@@ -81,10 +81,25 @@ schemat oraz uciąć pole `egib_warnings`.
 | CRS | automatycznie EPSG:2176–2179; pozostałe wymagają wyboru strefy |
 | Geometria | Polygon/MultiPolygon; pierścienie krzywe są odrzucane |
 | Punkty PGK | wierzchołki geometrii, nie niezależny rejestr punktów EGiB |
-| Tryb domyślny | oblicza z kopii bez `isGeosValid()` i `makeValid()` |
-| Tryb naprawy | sprawdza GEOS i może naprawić wyłącznie kopię |
+| Tryb domyślny | sprawdza GEOS; liczy z kopii bez naprawy; błędna geometria daje wynik diagnostyczny |
+| Tryb naprawy | sprawdza GEOS i może naprawić kopię; pole i PGK pochodzą z poprawionej kopii |
 | Limity | 10 000 części, 50 000 pierścieni, 500 000 współrzędnych |
 | Wynik seryjny | nowa warstwa; źródło pozostaje bez zmian |
+
+W obu trybach najpierw transformowana jest kopia całego poligonu do
+PL-2000, następnie sprawdzana jest jej poprawność. W trybie bez naprawy
+`P₀` i `P_GK` pochodzą z tych samych niezmienionych granic po transformacji.
+W trybie naprawy obie wartości pochodzą z poprawionej kopii, łącznie
+z dodanymi i usuniętymi wierzchołkami. Średnia obejmuje unikalne pary XY
+ze wszystkich pierścieni i części; techniczne zamknięcie pierścienia nie
+jest dodatkowym punktem. Nie używamy centroidu powierzchniowego ani
+transformacji średniej obliczonej w źródłowym CRS.
+
+Wynik dla niepoprawnej geometrii bez naprawy ma wyraźne ostrzeżenie
+w raporcie i status `invalid_source_geometry` w Processing. Jest wyłącznie
+diagnostyczny. Geometrie puste, krzywe, nieskończone współrzędne i wyniki
+niedodatnie nadal są odrzucane. Naprawa GEOS nie potwierdza zgodności
+wygenerowanych punktów z dokumentacją granic działki.
 
 `P₀` jest polem matematycznym (kartezjańskim), które QGIS oblicza metodą
 `QgsGeometry.area()` w płaskim układzie PL-2000. Nie uwzględnia ono

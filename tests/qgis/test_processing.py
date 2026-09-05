@@ -70,7 +70,7 @@ def test_provider_registers_and_removes_algorithm() -> None:
     provider = EgibAreaProvider()
 
     assert CalculateEgibAreaAlgorithm.REPAIR_OPTIONS == (
-        "Nie wykrywaj błędów geometrii; licz obiekt źródłowy",
+        "Sprawdź geometrię; licz bez naprawy",
         "Wykryj błędy i spróbuj naprawić geometrię "
         "(uwaga: geometria wyniku może się zmienić)",
     )
@@ -136,7 +136,7 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
     assert first.geometry().isMultipart() is True
 
 
-def test_source_mode_calculates_without_geometry_validation() -> None:
+def test_source_mode_reports_invalid_geometry_without_repair() -> None:
     layer = _polygon_layer(
         "MULTIPOLYGON (((7500000 5800000,7500200 5800200,"
         "7500000 5800200,7500100 5800000,7500000 5800000)))"
@@ -146,10 +146,11 @@ def test_source_mode_calculates_without_geometry_validation() -> None:
     output, _context = _run_algorithm(layer, repair_mode_index=0)
     result = next(output.getFeatures())
 
-    assert result["egib_status"] == "source_geometry"
+    assert result["egib_status"] == "invalid_source_geometry"
+    assert "geometry_not_repaired" in result["egib_warnings"]
     assert result["egib_repair_method"] == "none"
-    assert result["egib_valid_before"] == NULL
-    assert result["egib_valid_after"] == NULL
+    assert result["egib_valid_before"] is False
+    assert result["egib_valid_after"] is False
     assert result["egib_po_m2"] == 10_000.00
     assert result["egib_area_m2"] is not NULL
     assert bytes(result.geometry().asWkb()) == source_wkb

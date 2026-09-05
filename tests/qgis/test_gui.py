@@ -56,7 +56,7 @@ def test_dialog_calculates_without_editing_source() -> None:
     assert "Automatycznie wykryto PL-2000" in dialog.zone_combo.toolTip()
     assert (
         dialog.repair_mode_combo.currentText()
-        == "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
+        == "Sprawdź geometrię; licz bez naprawy"
     )
     assert "Noto Sans" not in dialog.styleSheet()
     assert "Segoe UI" not in dialog.styleSheet()
@@ -94,7 +94,7 @@ def test_dialog_calculates_without_editing_source() -> None:
     assert "Wykryty EPSG:" in selection_text
     assert "Obiekt:" in selection_text
     repair_tooltip = dialog.repair_mode_combo.toolTip()
-    assert "pomija kontrolę GEOS" in repair_tooltip
+    assert "wykonuje kontrolę GEOS" in repair_tooltip
     assert "nie uruchamia makeValid()" in repair_tooltip
     assert "próbuje naprawić kopię" in repair_tooltip
 
@@ -174,7 +174,7 @@ def test_clicking_report_help_link_keeps_calculation_visible() -> None:
     assert dialog.last_result.calculation is not None
 
 
-def test_dialog_source_mode_calculates_without_geometry_check() -> None:
+def test_dialog_source_mode_reports_invalid_geometry_without_repair() -> None:
     layer = _layer_with_geometry(
         "MULTIPOLYGON (((7500000 5800000,7500200 5800200,"
         "7500000 5800200,7500100 5800000,7500000 5800000)))"
@@ -190,10 +190,10 @@ def test_dialog_source_mode_calculates_without_geometry_check() -> None:
         dialog.last_result.preparation.report.repair_method
         is RepairMethod.NONE
     )
-    assert dialog.last_result.preparation.report.validity_before is None
-    assert dialog.last_result.preparation.report.validity_after is None
-    assert "bez kontroli poprawności geometrii" in dialog.status_label.text()
-    assert "nie sprawdzano" in dialog.result_text.toPlainText()
+    assert dialog.last_result.preparation.report.validity_before is False
+    assert dialog.last_result.preparation.report.validity_after is False
+    assert "Wynik diagnostyczny" in dialog.status_label.text()
+    assert "WYNIK DIAGNOSTYCZNY" in dialog.result_text.toPlainText()
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
 

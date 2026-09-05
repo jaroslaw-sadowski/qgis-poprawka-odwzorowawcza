@@ -72,6 +72,10 @@ else:
 _PL2000_ZONE_BY_EPSG = {2176: 5, 2177: 6, 2178: 7, 2179: 8}
 
 _WARNING_LABELS = {
+    "geometry_not_repaired": (
+        "Geometria jest niepoprawna i nie została naprawiona. "
+        "Wynik ma charakter diagnostyczny."
+    ),
     "duplicate_boundary_points_removed": (
         "Usunięto powtarzające się współrzędne punktów przy wyznaczaniu P_GK."
     ),
@@ -105,13 +109,19 @@ _REPAIR_METHOD_LABELS = {
     RepairMethod.FAILED: "nieudana",
 }
 
-_REPAIR_OPTION_SOURCE = "Nie wykrywaj błędów geometrii; licz obiekt źródłowy"
+_REPAIR_OPTION_SOURCE = "Sprawdź geometrię; licz bez naprawy"
 _REPAIR_OPTION_AUTO = "Wykryj błędy i spróbuj naprawić geometrię"
 
 _EVENT_TYPE_ENUM = getattr(QEvent, "Type", QEvent)
 _TOOLTIP_EVENT_TYPE = _EVENT_TYPE_ENUM.ToolTip
 
 _WARNING_DETAILS = {
+    "geometry_not_repaired": (
+        "Kontrola GEOS wykryła błąd topologiczny. Wybrany tryb nie "
+        "naprawia geometrii. P₀ i P_GK pochodzą z niezmienionej kopii "
+        "po transformacji do PL-2000. Wynik nie potwierdza poprawnego "
+        "pola działki; wymaga sprawdzenia danych granicznych."
+    ),
     "duplicate_boundary_points_removed": (
         "Powtarzające się pary współrzędnych zostały usunięte przed "
         "obliczeniem średniej arytmetycznej. Każdy unikalny punkt graniczny "
@@ -137,9 +147,9 @@ _WARNING_DETAILS = {
         "Geometria na warstwie źródłowej nie została zmieniona."
     ),
     "repair_changed_boundary_vertices": (
-        "Naprawa dodała lub usunęła współrzędne na granicy poligonu. Pole "
-        "P₀ obliczono z naprawionej kopii, natomiast P_GK nadal pochodzi z "
-        "punktów geometrii sprzed naprawy."
+        "Naprawa dodała lub usunęła współrzędne na granicy poligonu. "
+        "P₀ i P_GK obliczono z tej samej naprawionej kopii. Punkty "
+        "utworzone przez naprawę wymagają weryfikacji z danymi granicznymi."
     ),
     "repair_changed_part_count": (
         "Po naprawie poligon ma inną liczbę części. Zmiana dotyczy wyłącznie "
@@ -268,13 +278,13 @@ _DIAGNOSTIC_DETAILS = {
     "diagnostic:valid-before": (
         "Kontrola GEOS przed naprawą",
         "Wynik testu poprawności topologicznej geometrii przed ewentualnym "
-        "makeValid(). Wartość „nie sprawdzano” oznacza świadomie wybraną "
-        "opcję obliczenia bez wykrywania błędów.",
+        "makeValid(), wykonywanego w obu trybach po transformacji "
+        "kopii do PL-2000.",
     ),
     "diagnostic:valid-after": (
         "Kontrola GEOS po naprawie",
-        "Wynik testu poprawności naprawionej kopii. „Nie sprawdzano” oznacza, "
-        "że kontrola i naprawa geometrii były wyłączone.",
+        "Poprawność kopii użytej do obliczeń. Jeśli naprawy nie "
+        "wykonywano, jest to ten sam wynik kontroli co przed naprawą.",
     ),
     "diagnostic:repair-method": (
         "Metoda naprawy",
@@ -371,10 +381,10 @@ def calculate_selected_parcel(
     )
     calculation = None
     qgis_geodesic_area_m2 = None
-    if preparation.statutory_result_allowed:
+    if preparation.calculation_allowed:
         calculation = calculate_area(
             po_m2=preparation.geometry_for_area.area(),
-            boundary_points=preparation.original_boundary_points,
+            boundary_points=preparation.boundary_points_for_calculation,
             epsg=preparation.target_epsg,
         )
         qgis_geodesic_area_m2 = measure_geodesic_area_m2(
@@ -661,9 +671,9 @@ class SelectedParcelDialog(QDialog):
                 "Nie wyznaczono wyniku powierzchni.",
                 "warning",
             )
-        elif repair_mode is RepairMode.SOURCE_GEOMETRY:
+        elif not result.preparation.report.validity_after:
             self._set_status(
-                "Obliczenie wykonano bez kontroli poprawności geometrii.",
+                "Wynik diagnostyczny — geometria niepoprawna, bez naprawy.",
                 "warning",
             )
         elif result.preparation.report.repair_method is RepairMethod.NONE:
@@ -754,6 +764,13 @@ def _format_result_html(
             f"{''.join(result_rows)}"
             "</table>"
         )
+        if report.validity_after is False:
+            result_content = (
+                '<div class="section-title warning-heading">'
+                "WYNIK DIAGNOSTYCZNY — NIEPOPRAWNA GEOMETRIA</div>"
+                "<div>Nie potwierdza pola działki ewidencyjnej. "
+                "Sprawdź dane graniczne.</div>"
+            ) + result_content
 
     parameter_content = ""
     if calculation is not None:
@@ -834,7 +851,7 @@ def _format_result_html(
         )
 
     repair_method_label = _REPAIR_METHOD_LABELS[report.repair_method]
-    if report.validity_before is None:
+    if report.repair_method is RepairMethod.NONE:
         repair_method_label = "nie wykonywano"
 
     geometry_items = (
@@ -1194,10 +1211,11 @@ def _report_hover_help(result: SelectedParcelResult) -> dict:
 
 def _repair_options_tooltip() -> str:
     source_description = (
-        "Wtyczka pomija kontrolę GEOS i nie uruchamia makeValid(). "
-        "P₀ jest obliczane z kopii geometrii obiektu źródłowego po "
-        "transformacji do PL-2000. Błędy topologiczne mogą więc wpłynąć "
-        "na wiarygodność pola. Nadal sprawdzane są podstawowe warunki "
+        "Wtyczka wykonuje kontrolę GEOS i nie uruchamia makeValid(). "
+        "P₀ i P_GK są obliczane z niezmienionej kopii geometrii obiektu "
+        "źródłowego po transformacji do PL-2000. Wynik dla błędnej "
+        "geometrii jest oznaczony jako diagnostyczny. Sprawdzane są "
+        "również podstawowe warunki "
         "techniczne: obecność poligonu, strefa PL-2000 oraz skończoność "
         "i dodatniość wyniku. "
         "Warstwa źródłowa nie jest modyfikowana."
@@ -1206,8 +1224,9 @@ def _repair_options_tooltip() -> str:
         "Wtyczka sprawdza geometrię za pomocą GEOS. Jeżeli wykryje błąd, "
         "próbuje naprawić kopię metodą Structure, a następnie Linework. "
         "Naprawa może zmienić pole, granicę, liczbę części lub pierścieni. "
-        "P_GK nadal pochodzi z punktów sprzed naprawy, a warstwa źródłowa "
-        "pozostaje bez zmian."
+        "P₀ i P_GK pochodzą z poprawionej kopii, a warstwa źródłowa "
+        "pozostaje bez zmian. Naprawa topologii nie potwierdza zgodności "
+        "nowych punktów z dokumentacją geodezyjną."
     )
     return (
         '<html><div style="width:430px">'
@@ -1226,10 +1245,11 @@ def _status_tooltip(message: str, state: str) -> str:
             "Wtyczka czeka na uruchomienie obliczenia. Sprawdź docelową "
             "strefę PL-2000 i sposób obsługi geometrii."
         )
-    elif "bez kontroli" in message:
+    elif "Wynik diagnostyczny" in message:
         details = (
-            "Wynik obliczono z kopii geometrii źródłowej bez testu GEOS "
-            "i bez makeValid(). Błędy topologiczne mogły wpłynąć na pole."
+            "GEOS wykrył błędy, ale wybrany tryb nie naprawia geometrii. "
+            "P₀ i P_GK obliczono z kopii źródłowej w PL-2000. "
+            "Wynik służy diagnostyce i wymaga sprawdzenia granic działki."
         )
     elif "naprawionej kopii" in message:
         details = (

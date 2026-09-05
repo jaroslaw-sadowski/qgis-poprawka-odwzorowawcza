@@ -91,7 +91,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
     ZONE_BY_INDEX = {1: 5, 2: 6, 3: 7, 4: 8}
 
     REPAIR_OPTIONS = (
-        "Nie wykrywaj błędów geometrii; licz obiekt źródłowy",
+        "Sprawdź geometrię; licz bez naprawy",
         "Wykryj błędy i spróbuj naprawić geometrię "
         "(uwaga: geometria wyniku może się zmienić)",
     )
@@ -144,9 +144,12 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
             "Oprócz głównego wyniku P zapisuje kartezjańskie P₀ oraz "
             "niezależny pomiar geodezyjny QGIS na elipsoidzie GRS 80. "
             "Warstwa wejściowa nie jest modyfikowana; wynik powstaje w nowej "
-            "warstwie PL-2000. Opcja bez wykrywania błędów pomija kontrolę "
-            "GEOS i liczy z geometrii źródłowej. Opcja naprawy sprawdza "
-            "geometrię i może zmienić jej kopię w warstwie wynikowej."
+            "warstwie PL-2000. Oba tryby sprawdzają poprawność GEOS. "
+            "Tryb bez naprawy liczy z niezmienionej kopii po transformacji; "
+            "wynik dla błędnej geometrii jest tylko diagnostyczny. "
+            "Tryb naprawy może zmienić kopię w warstwie wynikowej. "
+            "P₀ i P_GK zawsze pochodzą z tej samej geometrii: "
+            "bez naprawy — źródłowej, po naprawie — poprawionej."
         )
 
     def createInstance(self) -> "CalculateEgibAreaAlgorithm":
@@ -290,10 +293,10 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
             values["egib_epsg"] = prepared.target_epsg
             output_geometry = QgsGeometry(prepared.geometry_for_area)
 
-            if prepared.statutory_result_allowed:
+            if prepared.calculation_allowed:
                 calculation = calculate_area(
                     po_m2=prepared.geometry_for_area.area(),
-                    boundary_points=prepared.original_boundary_points,
+                    boundary_points=prepared.boundary_points_for_calculation,
                     epsg=prepared.target_epsg,
                 )
                 self._put_calculation(values, calculation)
@@ -305,7 +308,11 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
                 if repair_mode is RepairMode.SOURCE_GEOMETRY:
-                    values["egib_status"] = "source_geometry"
+                    values["egib_status"] = (
+                        "source_geometry"
+                        if prepared.report.validity_after
+                        else "invalid_source_geometry"
+                    )
                 elif prepared.report.repair_method is not RepairMethod.NONE:
                     values["egib_status"] = "repaired"
                 else:
@@ -394,10 +401,12 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
             double_field("egib_area_ha", 4),
             integer_field("egib_zone"),
             integer_field("egib_epsg"),
-            double_field("egib_pgk_x", 3),
-            double_field("egib_pgk_y", 3),
-            double_field("egib_sigma", 8),
-            double_field("egib_scale", 10),
+            # Preserve raw parameters when a sink respects field precision.
+            # Display rounding belongs to the GUI, not these audit fields.
+            QgsField("egib_pgk_x", FIELD_TYPE_DOUBLE),
+            QgsField("egib_pgk_y", FIELD_TYPE_DOUBLE),
+            QgsField("egib_sigma", FIELD_TYPE_DOUBLE),
+            QgsField("egib_scale", FIELD_TYPE_DOUBLE),
             string_field("egib_status", 40),
             boolean_field("egib_valid_before"),
             boolean_field("egib_valid_after"),

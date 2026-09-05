@@ -65,14 +65,18 @@ class GeometryRepairReport:
 
 @dataclass(frozen=True)
 class GeometryPreparationResult:
-    """A PL-2000 geometry, original points and its auditable repair report."""
+    """One PL-2000 geometry for both area and PGK, with a repair report.
+
+    Calculation permission is technical, not certification of boundary
+    data. An invalid, unrepaired source yields only a diagnostic result.
+    """
 
     geometry_for_area: QgsGeometry
-    original_boundary_points: Tuple[Pl2000BoundaryPoint, ...]
+    boundary_points_for_calculation: Tuple[Pl2000BoundaryPoint, ...]
     target_crs: QgsCoordinateReferenceSystem
     target_epsg: int
     zone: int
-    statutory_result_allowed: bool
+    calculation_allowed: bool
     report: GeometryRepairReport
 
 
@@ -87,7 +91,7 @@ class GeometryRepairError(RuntimeError):
 @dataclass(frozen=True)
 class _RepairResult:
     geometry: QgsGeometry
-    statutory_result_allowed: bool
+    calculation_allowed: bool
     report: GeometryRepairReport
 
 
@@ -112,13 +116,18 @@ def prepare_geometry(
         validate_easting_zone(point.easting_y, transformed.zone)
 
     repair_result = _repair_geometry(transformed.geometry, repair_mode)
+    # Area and PGK must describe the same boundary, including any vertices
+    # introduced or removed by makeValid. Never mutate the source geometry.
+    boundary_points = extract_boundary_points(repair_result.geometry)
+    for point in boundary_points:
+        validate_easting_zone(point.easting_y, transformed.zone)
     return GeometryPreparationResult(
         geometry_for_area=repair_result.geometry,
-        original_boundary_points=original_boundary_points,
+        boundary_points_for_calculation=boundary_points,
         target_crs=transformed.target_crs,
         target_epsg=transformed.target_epsg,
         zone=transformed.zone,
-        statutory_result_allowed=repair_result.statutory_result_allowed,
+        calculation_allowed=repair_result.calculation_allowed,
         report=repair_result.report,
     )
 
@@ -132,23 +141,24 @@ def _repair_geometry(
     original_geometry = QgsGeometry(geometry)
     original_snapshot = geometry_snapshot(original_geometry)
     input_warnings = _geometry_input_warnings(original_snapshot)
+    validity_before = original_geometry.isGeosValid()
 
     if repair_mode is RepairMode.SOURCE_GEOMETRY:
         report = _build_report(
-            validity_before=None,
-            validity_after=None,
+            validity_before=validity_before,
+            validity_after=validity_before,
             repair_method=RepairMethod.NONE,
             original=original_snapshot,
             repaired=original_snapshot,
-            warnings=input_warnings,
+            warnings=input_warnings
+            + (() if validity_before else ("geometry_not_repaired",)),
         )
         return _RepairResult(
             geometry=QgsGeometry(original_geometry),
-            statutory_result_allowed=True,
+            calculation_allowed=True,
             report=report,
         )
 
-    validity_before = original_geometry.isGeosValid()
     if validity_before:
         report = _build_report(
             validity_before=True,
@@ -160,7 +170,7 @@ def _repair_geometry(
         )
         return _RepairResult(
             geometry=QgsGeometry(original_geometry),
-            statutory_result_allowed=True,
+            calculation_allowed=True,
             report=report,
         )
 
@@ -201,7 +211,7 @@ def _repair_geometry(
         )
         return _RepairResult(
             geometry=QgsGeometry(candidate),
-            statutory_result_allowed=True,
+            calculation_allowed=True,
             report=report,
         )
 

@@ -5,6 +5,24 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Oba tryby sprawdzają poprawność geometrii GEOS. Tryb bez naprawy zachowuje
+  granice źródłowe po transformacji do PL-2000, a wynik dla niepoprawnej
+  geometrii oznacza jako diagnostyczny (`invalid_source_geometry`).
+- W trybie naprawy pole P₀ i punkt średni P_GK pochodzą z tej samej
+  poprawionej kopii, z uwzględnieniem dodanych i usuniętych wierzchołków.
+- Usunięto ograniczenie liczby miejsc dziesiętnych w polach P_GK, sigma
+  i skali, aby GeoPackage zachowywał pełne parametry obliczenia.
+- Zaktualizowano opisy trybów i wyjaśnienia diagnostyki w GUI i Processing.
+
+### Added
+
+- Niezależne referencje wzoru obliczone dokładnie na ułamkach, wraz
+  z odtwarzalnym generatorem i opisem podstawy prawnej.
+- Testy zgodności GUI, Processing i GeoPackage, transformacji do czterech
+  stref, źródła punktu P_GK, otworów, wielopoligonów i zaokrągleń.
+
 ## [1.0.1] - 2026-07-25
 
 ### Changed
