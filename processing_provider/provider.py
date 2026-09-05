@@ -16,7 +16,7 @@ class EgibAreaProvider(QgsProcessingProvider):
         return "egib_area"
 
     def name(self) -> str:
-        return self.tr("Powierzchnia działki EGiB")
+        return self.tr("Poprawka odwzorowawcza PL-2000")
 
     def longName(self) -> str:
         return self.name()

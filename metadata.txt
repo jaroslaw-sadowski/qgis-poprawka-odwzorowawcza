@@ -1,7 +1,21 @@
 [general]
 name=Poprawka odwzorowawcza PL-2000
-description=Pomaga obliczyć pole działki ewidencyjnej z uwzględnieniem poprawki odwzorowawczej PL-2000.
-about=Wtyczka powstała z myślą o geodetach i użytkownikach danych EGiB, którzy chcą w QGIS szybko obliczyć pole działki z uwzględnieniem poprawki odwzorowawczej PL-2000. Obliczenia realizują zasady z § 16 ust. 2 oraz załącznika nr 3 do rozporządzenia w sprawie ewidencji gruntów i budynków (Dz.U. z 2024 r. poz. 219 ze zm.). Wtyczka umożliwia pracę z jedną wybraną działką lub wieloma działkami, a czytelne komunikaty pomagają ocenić dane i wynik. Oprócz głównego wyniku według rozporządzenia pokazuje kartezjańskie P₀ i niezależny pomiar geodezyjny QGIS na elipsoidzie GRS 80. Wszystko odbywa się lokalnie, bez wysyłania danych i bez zmieniania warstwy źródłowej. Projekt jest otwarty, rozwijany z wykorzystaniem narzędzi AI i weryfikowany testami, kontrolami bezpieczeństwa oraz przeglądem człowieka.
+description=Oblicza pole działek z poprawką PL-2000 według polskich przepisów, dla jednej działki lub całej warstwy.
+about=Poprawka odwzorowawcza PL-2000 pomaga sprawdzać powierzchnie działek istniejących i projektowanych na potrzeby prac geodezyjnych i ewidencji gruntów.
+    Stosuje § 16 ust. 2 i wzór z załącznika nr 3 rozporządzenia z 27 lipca 2021 r. w sprawie ewidencji gruntów i budynków (Dz.U. 2024 poz. 219 ze zm.). Wynik podaje w m² i ha, z precyzją zapisu 0,0001 ha.
+    To inny sposób obliczenia niż natywne pole kartezjańskie i pomiar geodezyjny QGIS. Wszystkie trzy wartości pokazuje do porównania.
+    Jedna działka: Wtyczki → Poprawka odwzorowawcza PL-2000. Wiele działek: ta sama nazwa w Processing. Raport jednej działki można zapisać do Markdown.
+    Sprawdza geometrię; opcjonalnie naprawia jej kopię. Wynik dla błędnej geometrii bez naprawy jest tylko diagnostyczny.
+    Działa lokalnie, nie wysyła danych na zewnątrz i nie zmienia warstwy źródłowej. Używa tylko bibliotek dostarczanych z QGIS i standardowego Pythona, bez dodatkowych zależności.
+    Projekt powstał metodą vibe coding, z pomocą AI. Autor nie bierze odpowiedzialności za wyniki ani skutki ich wykorzystania, w zakresie dopuszczonym prawem. Przed użyciem sprawdź dane, CRS i aktualność przepisów.
+    Lokalne kontrole według zaleceń QGIS — bez wykrytych problemów:
+    - Bandit: bezpieczeństwo kodu Python.
+    - detect-secrets: hasła, klucze i tokeny.
+    - Flake8: błędy i jakość kodu.
+    - Analiza ZIP-a: zawartość, struktura i uprawnienia plików.
+    Dodatkowo: Ruff, pip-audit, testy obliczeń, geometrii, eksportu i powtarzalności paczki. To kontrole lokalne, nie certyfikat QGIS.
+    Zalecenia: https://plugins.qgis.org/docs/security-scanning/tools
+    Przepisy: https://eli.gov.pl/eli/DU/2024/219/ogl
 version=1.0.1
 qgisMinimumVersion=3.40
 qgisMaximumVersion=3.99
@@ -10,7 +24,6 @@ email=github.com.amenity983@passfwd.com
 homepage=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 repository=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 tracker=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/issues
-category=Vector
 tags=kataster,egib,pl-2000,geodezja,pole działki,powierzchnia,polska,Stowarzyszenie QGIS Polska
 icon=resources/icon.png
 changelog=1.0.1: pełna nazwa „Poprawka odwzorowawcza PL-2000” w metadanych, menu i oknach oraz poprawiona zgodność flagi FastInsert z Qt6/QGIS 4.

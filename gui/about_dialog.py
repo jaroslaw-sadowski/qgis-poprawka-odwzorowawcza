@@ -11,7 +11,9 @@ from qgis.PyQt.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -54,14 +56,25 @@ class AboutDialog(QDialog):
         colors = theme_colors(self)
 
         self.setObjectName("aboutDialog")
-        self.setWindowTitle(f"O wtyczce — {metadata['name']}")
+        self.setWindowTitle(metadata["name"])
         self.setWindowIcon(QIcon(str(root / "resources" / "icon.svg")))
         self.setModal(True)
         self.setMinimumWidth(560)
-        self.resize(640, 440)
+        self.resize(640, 600)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 22, 24, 20)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setObjectName("aboutScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        content = QWidget()
+        content.setObjectName("aboutContent")
+        layout = QVBoxLayout(content)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetMinAndMaxSize)
+        scroll.setWidget(content)
+        outer_layout.addWidget(scroll, 1)
+        layout.setContentsMargins(24, 22, 24, 12)
         layout.setSpacing(14)
 
         header = QHBoxLayout()
@@ -85,8 +98,12 @@ class AboutDialog(QDialog):
         layout.addLayout(header)
 
         summary = QLabel(
-            "Oblicza ustawowe pole działki ewidencyjnej z powierzchniową "
-            "poprawką odwzorowawczą w układzie PL-2000."
+            "Oblicza pole działki z poprawką PL-2000 według § 16 ust. 2 "
+            "i załącznika nr 3 rozporządzenia w sprawie ewidencji gruntów "
+            "i budynków (Dz.U. 2024 poz. 219 ze zm.). Pomaga sprawdzać "
+            "powierzchnie działek istniejących i projektowanych. To inny "
+            "sposób obliczenia niż natywne pole kartezjańskie i pomiar "
+            "geodezyjny QGIS; oba pokazuje dla porównania."
         )
         summary.setObjectName("aboutSummary")
         summary.setWordWrap(True)
@@ -101,7 +118,9 @@ class AboutDialog(QDialog):
         privacy_title.setObjectName("aboutCardTitle")
         privacy_text = QLabel(
             "Wtyczka działa lokalnie, nie łączy się z siecią, nie wymaga "
-            "konta i nigdy nie modyfikuje warstwy wejściowej."
+            "konta i nie modyfikuje warstwy wejściowej. Korzysta tylko "
+            "z bibliotek dostarczanych z QGIS i standardowego Pythona; "
+            "nie wymaga instalowania dodatkowych zależności."
         )
         privacy_text.setObjectName("aboutCardText")
         privacy_text.setWordWrap(True)
@@ -119,29 +138,44 @@ class AboutDialog(QDialog):
         layout.addWidget(details)
 
         disclosure = QLabel(
-            "Projekt powstaje z wykorzystaniem podejścia vibe coding. "
-            "Zmiany są weryfikowane testami, skanerami bezpieczeństwa "
-            "i ręcznym przeglądem."
+            "Projekt powstał metodą vibe coding, z pomocą AI. "
+            "Autor nie bierze odpowiedzialności za wyniki ani skutki ich "
+            "wykorzystania, w zakresie dopuszczonym prawem. "
+            "Przed użyciem sprawdź dane, CRS i wynik."
         )
         disclosure.setObjectName("aboutDisclosure")
         disclosure.setWordWrap(True)
         layout.addWidget(disclosure)
 
+        checks = QLabel(
+            "Lokalne kontrole według zaleceń QGIS — bez wykrytych problemów:\n"
+            "• Bandit: bezpieczeństwo kodu Python.\n"
+            "• detect-secrets: hasła, klucze i tokeny.\n"
+            "• Flake8: błędy i jakość kodu.\n"
+            "• ZIP: zawartość, uprawnienia i struktura paczki.\n"
+            "Dodatkowo: Ruff, pip-audit oraz testy obliczeń i integracji.\n"
+            "Są to kontrole lokalne, nie certyfikat QGIS."
+        )
+        checks.setObjectName("aboutChecks")
+        checks.setWordWrap(True)
+        layout.addWidget(checks)
+
         button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(24, 0, 24, 20)
         button_layout.addStretch(1)
         close_button = QPushButton("Zamknij")
         close_button.setObjectName("aboutCloseButton")
         close_button.setDefault(True)
         close_button.clicked.connect(self.accept)
         button_layout.addWidget(close_button)
-        layout.addLayout(button_layout)
+        outer_layout.addLayout(button_layout)
 
         self.setStyleSheet(_about_stylesheet(colors))
 
 
 def _about_stylesheet(colors: dict) -> str:
     return f"""
-    QDialog#aboutDialog {{
+    QDialog#aboutDialog, QWidget#aboutContent {{
         background-color: {colors["window"]};
         color: {colors["text"]};
         font-family: {MONOSPACE_FONT_STACK};

@@ -9,9 +9,11 @@ from qgis.core import (
     QgsProcessingContext,
     QgsProcessingException,
     QgsProcessingFeedback,
+    QgsProcessingRegistry,
     QgsProcessingUtils,
     QgsVectorLayer,
 )
+from qgis.gui import QgsProcessingToolboxModel
 
 import adapters.geometry as geometry_module
 import processing_provider.area_algorithm as algorithm_module
@@ -80,6 +82,11 @@ def test_provider_registers_and_removes_algorithm() -> None:
         algorithm = registry.algorithmById("egib_area:calculate_egib_area")
         assert algorithm is not None
         assert algorithm.provider().id() == "egib_area"
+        assert algorithm.displayName() == "Poprawka odwzorowawcza PL-2000"
+        assert provider.name() == algorithm.displayName()
+        assert provider.longName() == algorithm.displayName()
+        assert algorithm.group() == ""
+        assert algorithm.groupId() == ""
     finally:
         assert registry.removeProvider(provider) is True
 
@@ -340,3 +347,16 @@ def test_auxiliary_failure_keeps_main_fields_status_and_next_feature(
                 assert expected["egib_warnings"] in actual["egib_warnings"]
         else:
             assert actual.attributes() == expected.attributes()
+
+
+def test_processing_toolbox_has_no_redundant_group():
+    registry = QgsProcessingRegistry()
+    assert registry.addProvider(EgibAreaProvider())
+    model = QgsProcessingToolboxModel(registry=registry)
+    assert model.rowCount() == 1
+    provider = model.index(0, 0)
+    assert provider.data() == "Poprawka odwzorowawcza PL-2000"
+    assert model.rowCount(provider) == 1
+    algorithm = model.index(0, 0, provider)
+    assert algorithm.data() == provider.data()
+    assert model.rowCount(algorithm) == 0

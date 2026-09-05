@@ -7,6 +7,13 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Bezpośredni wpis w menu Wtyczki i ikona na pasku wtyczek; informacje
+  „O wtyczce” dostępne w oknie obliczenia, bez dodatkowych podmenu.
+- Ujednolicono nazwę widoczną w menu, Processing, oknach, raporcie i nazwie
+  ZIP-a: „Poprawka odwzorowawcza PL-2000”. Usunięto podgrupę Processing.
+- Skrócono README i opis w menedżerze QGIS: zastosowanie, przepisy,
+  prywatność, vibe coding, odpowiedzialność oraz wykonane kontrole.
+
 - Nieudany pomocniczy pomiar QGIS na GRS 80 nie blokuje wyniku według
   wzoru PL-2000; GUI i Processing zgłaszają osobne ostrzeżenie.
 - Zmiana ustawień oraz nieudane obliczenie usuwają stary raport i wyłączają

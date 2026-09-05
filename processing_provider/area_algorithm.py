@@ -136,13 +136,13 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
         return "calculate_egib_area"
 
     def displayName(self) -> str:
-        return self.tr("Oblicz powierzchnię działek EGiB")
+        return self.tr("Poprawka odwzorowawcza PL-2000")
 
     def group(self) -> str:
-        return self.tr("Powierzchnia działki EGiB")
+        return ""
 
     def groupId(self) -> str:
-        return "egib_area"
+        return ""
 
     def shortHelpString(self) -> str:
         return self.tr(
@@ -189,7 +189,7 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.OUTPUT,
-                self.tr("Wyniki z diagnostyką"),
+                self.tr("Poprawka odwzorowawcza PL-2000"),
                 Qgis.ProcessingSourceType.VectorPolygon,
             )
         )

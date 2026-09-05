@@ -170,3 +170,37 @@ QGIS 4/Qt6 nie jest deklarowany i nie wolno rozszerzać
 `qgisMaximumVersion` przed rzeczywistym testem. Do czasu zamknięcia powyższych
 bramek ocena kandydata brzmi:
 **AUTOMATYCZNIE ZWALIDOWANY — OCZEKUJE NA TESTY RĘCZNE**.
+
+## Punkt 3 — 2026-09-05
+
+Aktualizacja lokalna względem commitu `7132437`: bezpośrednie menu Wtyczki,
+jednolita nazwa „Poprawka odwzorowawcza PL-2000”, usunięta podgrupa
+Processing, uproszczone README i metadane oraz czytelne okno informacji.
+Powyższy raport lipcowy pozostaje zapisem historycznym.
+
+Środowisko: Linux, QGIS 3.40.15, Qt 5.15.18, Python 3.14.4.
+
+- Pytest: **219/219**, w tym menu bez podmenu, brak duplikatów po ponownej
+  rejestracji, usuwanie własnych wpisów, drzewo Processing oraz nazwy
+  wtyczki zaimportowanej z wygenerowanego ZIP-a.
+- Bandit i Flake8: bez ustaleń w źródłach oraz rozpakowanej paczce.
+- detect-secrets: pełny skan plików rozpakowanej paczki, bez ustaleń.
+- Ruff i formatowanie: bez ustaleń.
+- pip-audit: brak znanych podatności zależności developerskich.
+- Analiza ZIP-a: 24 pliki z jawnego manifestu, jeden katalog pakietu,
+  uprawnienia `0644`, brak plików ukrytych, symlinków, cache, dodatkowych
+  programów wykonywalnych i niepożądanych plików binarnych; CRC poprawne.
+- Dwa niezależne zbudowania dają identyczne archiwa.
+- Podgląd okna informacji: pełny tekst dostępny także przy małym rozmiarze
+  okna dzięki przewijaniu; sprawdzony również testem układu.
+
+Domyślna nazwa: `Poprawka odwzorowawcza PL-2000-1.0.1.zip`.
+Nazwa wyświetlana pochodzi z `metadata.txt`; techniczny katalog importu
+Pythona oraz identyfikatory algorytmu pozostają kompatybilne z istniejącymi
+instalacjami i modelami.
+
+Kontrole odpowiadają zakresom opisanym w
+[zaleceniach QGIS](https://plugins.qgis.org/docs/security-scanning/tools).
+Analiza plików jest lokalną kontrolą manifestu i nagłówków ZIP, nie wynikiem
+serwerowego skanera plugins.qgis.org. Paczki nie wysłano do repozytorium
+QGIS; nie wykonano nowych testów na Windows, macOS ani QGIS 4/Qt6.

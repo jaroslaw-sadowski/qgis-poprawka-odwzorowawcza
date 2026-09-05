@@ -10,13 +10,16 @@ from scripts.build_plugin_zip import (
     PLUGIN_PACKAGE_NAME,
     RUNTIME_FILES,
     build_plugin_zip,
+    default_output_path,
     validated_runtime_file,
 )
 
 
 def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
     source_root = Path(__file__).resolve().parents[2]
-    output_path = build_plugin_zip(source_root, tmp_path / "plugin.zip")
+    default_path = default_output_path(source_root)
+    assert default_path.name == "Poprawka odwzorowawcza PL-2000-1.0.1.zip"
+    output_path = build_plugin_zip(source_root, tmp_path / default_path.name)
 
     with ZipFile(output_path) as archive:
         names = archive.namelist()
@@ -50,6 +53,23 @@ def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
         assert metadata["general"]["qgisminimumversion"] == "3.40"
         assert metadata["general"]["hasprocessingprovider"] == "yes"
         assert metadata["general"]["experimental"] == "False"
+
+        assert archive.read(f"{PLUGIN_PACKAGE_NAME}/README.md").startswith(
+            b"# Poprawka odwzorowawcza PL-2000\n"
+        )
+        for info in archive.infolist():
+            assert (info.external_attr >> 16) == 0o100644
+            assert not any(
+                part.startswith(".") for part in Path(info.filename).parts
+            )
+            assert Path(info.filename).suffix in (
+                ".py",
+                ".md",
+                ".txt",
+                ".png",
+                ".svg",
+                "",
+            )
 
         icon_data = archive.read(f"{PLUGIN_PACKAGE_NAME}/resources/icon.png")
         assert icon_data[:8] == b"\x89PNG\r\n\x1a\n"

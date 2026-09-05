@@ -31,6 +31,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+from .about_dialog import AboutDialog
 from .theme import MONOSPACE_FONT_STACK, technical_font, theme_colors
 
 if "." in __package__:
@@ -444,9 +445,7 @@ class SelectedParcelDialog(QDialog):
         self._report_markdown = ""
 
         self.setObjectName("selectedParcelDialog")
-        self.setWindowTitle(
-            "Poprawka odwzorowawcza PL-2000 — zaznaczona działka"
-        )
+        self.setWindowTitle("Poprawka odwzorowawcza PL-2000")
         icon_path = (
             Path(__file__).resolve().parents[1] / "resources" / "icon.svg"
         )
@@ -589,17 +588,22 @@ class SelectedParcelDialog(QDialog):
         self.export_button.setEnabled(False)
         self.export_button.setAutoDefault(False)
         button_layout.addWidget(self.export_button)
+        self.about_button = QPushButton("O wtyczce…")
+        self.about_button.setObjectName("aboutButton")
+        self.about_button.setProperty("role", "secondary")
+        self.about_button.setAutoDefault(False)
+        button_layout.addWidget(self.about_button)
         button_layout.addStretch(1)
         self.close_button = QPushButton("Zamknij")
         self.close_button.setObjectName("closeButton")
         self.close_button.setProperty("role", "secondary")
-        self.calculate_button = QPushButton("Oblicz powierzchnię")
+        self.calculate_button = QPushButton("Przelicz")
         self.calculate_button.setObjectName("calculateButton")
         self.calculate_button.setProperty("role", "primary")
         self.calculate_button.setDefault(True)
         self.calculate_button.setToolTip(
             _tooltip_html(
-                "Oblicz powierzchnię",
+                "Przelicz",
                 "Tworzy roboczą kopię geometrii, w razie potrzeby "
                 "transformuje ją w locie do wybranej strefy PL-2000, "
                 "stosuje wybraną obsługę geometrii i wyświetla raport. "
@@ -610,6 +614,7 @@ class SelectedParcelDialog(QDialog):
         button_layout.addWidget(self.calculate_button)
         layout.addLayout(button_layout)
 
+        self.about_button.clicked.connect(self._show_about)
         self.export_button.clicked.connect(self.export_report)
         self.calculate_button.clicked.connect(self.calculate)
         self.zone_combo.currentIndexChanged.connect(self._invalidate_result)
@@ -722,7 +727,7 @@ class SelectedParcelDialog(QDialog):
             # Qt 5 does not escape literal Markdown in arbitrary layer names.
             context = re.sub(r"([\\`*_{}\[\]<>()#+.!|~-])", r"\\\1", context)
             self._report_markdown = (
-                "# Raport obliczenia powierzchni PL-2000\n\n"
+                "# Poprawka odwzorowawcza PL-2000\n\n"
                 f"{context}\n\n{document.toMarkdown()}"
             )
             self.export_button.setEnabled(True)
@@ -749,6 +754,9 @@ class SelectedParcelDialog(QDialog):
                 "warning",
             )
 
+    def _show_about(self) -> None:
+        execute_dialog(AboutDialog(self))
+
     def _invalidate_result(self) -> None:
         self.last_result = None
         self._report_markdown = ""
@@ -756,9 +764,7 @@ class SelectedParcelDialog(QDialog):
         self.result_text.set_hover_help({})
         self.result_text.setHtml(_empty_result_html(self._colors))
         QToolTip.hideText()
-        self._set_status(
-            "Oblicz powierzchnię dla bieżących ustawień.", "ready"
-        )
+        self._set_status("Uruchom obliczenie dla bieżących ustawień.", "ready")
 
     def export_report(self) -> None:
         """Save the current report atomically as UTF-8 Markdown."""
@@ -1139,7 +1145,7 @@ def _empty_result_html(colors: dict) -> str:
         '<div class="welcome">'
         '<div class="welcome-mark">P = P₀ − ΔP₀</div>'
         '<div class="welcome-title">Raport obliczenia pojawi się tutaj</div>'
-        "<div>Sprawdź ustawienia i wybierz „Oblicz powierzchnię”.</div>"
+        "<div>Sprawdź ustawienia i wybierz „Przelicz”.</div>"
         "</div>"
     )
     return _html_document(body, colors)

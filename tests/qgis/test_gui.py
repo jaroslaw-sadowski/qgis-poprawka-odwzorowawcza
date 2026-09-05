@@ -10,6 +10,7 @@ from qgis.PyQt.QtWidgets import (
     QComboBox,
     QGroupBox,
     QLabel,
+    QScrollArea,
     QTextBrowser,
 )
 
@@ -46,10 +47,7 @@ def test_dialog_calculates_without_editing_source() -> None:
     source_wkb = bytes(next(layer.getFeatures()).geometry().asWkb())
     dialog = _dialog(layer)
 
-    assert (
-        dialog.windowTitle()
-        == "Poprawka odwzorowawcza PL-2000 — zaznaczona działka"
-    )
+    assert dialog.windowTitle() == "Poprawka odwzorowawcza PL-2000"
     assert dialog.zone_combo.isEnabled() is False
     assert "Wykryto PL-2000" in dialog.zone_combo.currentText()
     assert "strefa 7" in dialog.zone_combo.currentText()
@@ -399,7 +397,7 @@ def test_about_dialog_presents_authorship_privacy_and_disclosure() -> None:
     )
     assert dialog.findChild(QLabel, "aboutIcon").width() == 18
     assert "font-size: 10.5pt" in dialog.styleSheet()
-    assert dialog.height() == 440
+    assert dialog.height() == 600
 
 
 @pytest.fixture
@@ -550,7 +548,7 @@ def test_markdown_export_saves_current_report_utf8_with_default_suffix(
     )
     text = destination.read_text(encoding="utf-8")
     assert text == dialog._report_markdown
-    assert "# Raport obliczenia powierzchni PL-2000" in text
+    assert "# Poprawka odwzorowawcza PL-2000" in text
     document = dialog_module.QTextDocument()
     document.setMarkdown(text)
     rendered = document.toPlainText()
@@ -701,3 +699,35 @@ def test_markdown_escapes_layer_name_and_keeps_calculation_context(layer_name):
     assert layer.name() in " ".join(document.toPlainText().split())
     layer.setName("Nowa nazwa")
     assert dialog._report_markdown == before
+
+
+def test_about_information_opens_from_calculator(
+    calculated_dialog, monkeypatch
+):
+    opened = []
+    monkeypatch.setattr(
+        dialog_module, "execute_dialog", lambda dialog: opened.append(dialog)
+    )
+    calculated_dialog.about_button.click()
+    assert len(opened) == 1
+    assert opened[0].windowTitle() == "Poprawka odwzorowawcza PL-2000"
+    assert opened[0].objectName() == "aboutDialog"
+    assert "Bandit" in opened[0].findChild(QLabel, "aboutChecks").text()
+    assert (
+        "Autor nie bierze odpowiedzialności"
+        in opened[0].findChild(QLabel, "aboutDisclosure").text()
+    )
+    assert calculated_dialog.last_result is not None
+
+
+def test_about_text_is_readable_in_a_small_window():
+    dialog = AboutDialog()
+    dialog.resize(560, 400)
+    dialog.show()
+    QApplication.processEvents()
+    scroll = dialog.findChild(QScrollArea, "aboutScroll")
+    assert scroll.verticalScrollBar().maximum() > 0
+    for label in dialog.findChildren(QLabel):
+        if label.wordWrap():
+            assert label.height() >= label.heightForWidth(label.width())
+    dialog.close()

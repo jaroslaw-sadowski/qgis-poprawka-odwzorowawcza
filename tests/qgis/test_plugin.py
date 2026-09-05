@@ -10,7 +10,7 @@ from qgis.core import (
     QgsGeometry,
     QgsVectorLayer,
 )
-from qgis.PyQt.QtWidgets import QWidget
+from qgis.PyQt.QtWidgets import QMenu, QWidget
 
 import plugin as plugin_module
 from plugin import EgibAreaPlugin
@@ -21,9 +21,8 @@ class FakeIface:
     def __init__(self) -> None:
         self.window = QWidget()
         self.layer = None
-        self.menu_actions = []
+        self.menu = QMenu("Wtyczki", self.window)
         self.toolbar_actions = []
-        self.removed_menu_actions = []
         self.removed_toolbar_actions = []
 
     def mainWindow(self):
@@ -32,16 +31,13 @@ class FakeIface:
     def activeLayer(self):
         return self.layer
 
-    def addPluginToVectorMenu(self, menu_name, action) -> None:
-        self.menu_actions.append((menu_name, action))
+    def pluginMenu(self):
+        return self.menu
 
-    def addVectorToolBarIcon(self, action) -> None:
+    def addToolBarIcon(self, action) -> None:
         self.toolbar_actions.append(action)
 
-    def removePluginVectorMenu(self, menu_name, action) -> None:
-        self.removed_menu_actions.append((menu_name, action))
-
-    def removeVectorToolBarIcon(self, action) -> None:
+    def removeToolBarIcon(self, action) -> None:
         self.removed_toolbar_actions.append(action)
 
 
@@ -71,50 +67,39 @@ def test_plugin_registers_action_provider_and_unloads(monkeypatch) -> None:
         lambda dialog: opened_dialogs.append(dialog) or 0,
     )
 
+    other_action = iface.menu.addAction("Inna wtyczka")
+    plugin.initGui()
     plugin.initGui()
     try:
         assert plugin.action is not None
-        assert plugin.about_action is not None
         assert plugin.action.objectName() == "egibSelectedParcelAction"
-        assert plugin.about_action.objectName() == "egibAboutAction"
         assert plugin.action.icon().isNull() is False
-        assert iface.menu_actions == [
-            (plugin.MENU_NAME, plugin.action),
-            (plugin.MENU_NAME, plugin.about_action),
-        ]
+        assert iface.menu.actions() == [other_action, plugin.action]
+        assert plugin.action.menu() is None
         assert iface.toolbar_actions == [plugin.action]
-        assert plugin.MENU_NAME == "&Poprawka odwzorowawcza PL-2000"
+        assert plugin.action.text() == "Poprawka odwzorowawcza PL-2000"
         assert (
             registry.algorithmById("egib_area:calculate_egib_area") is not None
         )
 
-        plugin.about_action.trigger()
-        assert opened_dialogs[0].objectName() == "aboutDialog"
-        assert "O wtyczce" in opened_dialogs[0].windowTitle()
-        assert plugin.about_dialog is None
-
         iface.layer = _selected_layer()
         plugin.action.trigger()
-        assert len(opened_dialogs) == 2
+        assert len(opened_dialogs) == 1
         assert (
-            opened_dialogs[1]
+            opened_dialogs[0]
             .windowTitle()
             .startswith("Poprawka odwzorowawcza PL-2000")
         )
         assert plugin.dialog is None
     finally:
         action = plugin.action
-        about_action = plugin.about_action
         plugin.unload()
 
     assert registry.algorithmById("egib_area:calculate_egib_area") is None
-    assert iface.removed_menu_actions == [
-        (plugin.MENU_NAME, action),
-        (plugin.MENU_NAME, about_action),
-    ]
+    plugin.unload()
+    assert iface.menu.actions() == [other_action]
     assert iface.removed_toolbar_actions == [action]
     assert plugin.action is None
-    assert plugin.about_action is None
     assert plugin.provider is None
 
 
@@ -212,22 +197,27 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert metadata["qgismaximumversion"] == "3.99"
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "github.com.amenity983@passfwd.com"
-    assert metadata["description"].startswith(
-        "Pomaga obliczyć pole działki ewidencyjnej"
-    )
-    assert "geodetach i użytkownikach danych EGiB" in metadata["about"]
-    assert "§ 16 ust. 2" in metadata["about"]
-    assert "załącznika nr 3" in metadata["about"]
-    assert "Dz.U. z 2024 r. poz. 219 ze zm." in metadata["about"]
-    assert "jedną wybraną działką lub wieloma działkami" in metadata["about"]
-    assert "bez wysyłania danych" in metadata["about"]
-    assert "bez zmieniania warstwy źródłowej" in metadata["about"]
-    assert "narzędzi AI" in metadata["about"]
+    assert metadata["description"].startswith("Oblicza pole działek")
+    for text in (
+        "§ 16 ust. 2",
+        "załącznika nr 3",
+        "Dz.U. 2024 poz. 219 ze zm.",
+        "nie wysyła danych na zewnątrz",
+        "nie zmienia warstwy źródłowej",
+        "vibe coding",
+        "Autor nie bierze odpowiedzialności",
+        "Bandit",
+        "detect-secrets",
+        "Flake8",
+        "Analiza ZIP-a",
+        "kontrole lokalne, nie certyfikat QGIS",
+    ):
+        assert text in metadata["about"]
     assert metadata["tags"] == (
         "kataster,egib,pl-2000,geodezja,pole działki,powierzchnia,polska,"
         "Stowarzyszenie QGIS Polska"
     )
-    assert metadata["category"] == "Vector"
+    assert "category" not in metadata
     assert metadata["icon"] == "resources/icon.png"
     assert metadata["changelog"].startswith(
         "1.0.1: pełna nazwa „Poprawka odwzorowawcza PL-2000”"
@@ -247,6 +237,18 @@ def test_built_zip_imports_as_qgis_plugin_package(
     monkeypatch.syspath_prepend(str(tmp_path))
 
     package = importlib.import_module(PLUGIN_PACKAGE_NAME)
-    instance = package.classFactory(FakeIface())
-
-    assert instance.__class__.__name__ == "EgibAreaPlugin"
+    iface = FakeIface()
+    instance = package.classFactory(iface)
+    instance.initGui()
+    try:
+        expected = "Poprawka odwzorowawcza PL-2000"
+        assert iface.menu.actions() == [instance.action]
+        assert instance.action.text() == expected
+        assert instance.provider.name() == expected
+        algorithm = instance.provider.algorithms()[0]
+        assert algorithm.displayName() == expected
+        assert algorithm.group() == ""
+        assert algorithm.groupId() == ""
+    finally:
+        instance.unload()
+    assert not iface.menu.actions()

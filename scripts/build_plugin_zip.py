@@ -175,7 +175,8 @@ def default_output_path(source_root: Path) -> Path:
     metadata = configparser.ConfigParser()
     metadata.read(source_root / "metadata.txt", encoding="utf-8")
     version = metadata["general"]["version"]
-    return source_root / "dist" / f"{PLUGIN_PACKAGE_NAME}-{version}.zip"
+    name = metadata["general"]["name"]
+    return source_root / "dist" / f"{name}-{version}.zip"
 
 
 def _write_file(
