@@ -204,3 +204,52 @@ Kontrole odpowiadają zakresom opisanym w
 Analiza plików jest lokalną kontrolą manifestu i nagłówków ZIP, nie wynikiem
 serwerowego skanera plugins.qgis.org. Paczki nie wysłano do repozytorium
 QGIS; nie wykonano nowych testów na Windows, macOS ani QGIS 4/Qt6.
+
+## Punkt 4 — 2026-09-05
+
+Zmiany względem `9581ef2`: dwujęzyczne description, about i changelog,
+tagi tematyczne w parach polski–angielski bez tagu organizacji, README z pełną
+wersją README.en.md oraz angielski opis w oknie informacji.
+Nazwa własna i interfejs obliczeń pozostają polskie.
+
+### Widoczność języków
+
+- Oba języki są w standardowych polach metadanych, bez nadpisywania ich
+  kluczami zależnymi od języka programu. Polski szczegółowy opis jest
+  pierwszy; krótki opis zaczyna się po angielsku, zgodnie z
+  [wymogiem QGIS](https://plugins.qgis.org/docs/publish).
+- Parser zainstalowanego menedżera QGIS (`Plugins.getInstalledPlugin`)
+  odczytał oba języki z rozpakowanego ZIP-a dla `pl_PL`, `en_US` i `de_DE`.
+  Test nie zmienia ustawień użytkownika i nie pobiera danych z sieci.
+- Oficjalny serwer odczytuje standardowe pola z metadata.txt, aktualizuje
+  description/about z nowej wersji, a strona i katalog XML wyświetlają je
+  bez wyboru języka. Sprawdzono kod QGIS-Plugins-Website, commit
+  `d7ff1ffd460f9d63052954ae5ee4e1bdc58e1e65`:
+  [walidator](https://github.com/qgis/QGIS-Plugins-Website/blob/d7ff1ffd460f9d63052954ae5ee4e1bdc58e1e65/qgis-app/plugins/validator.py),
+  [aktualizacja wpisu](https://github.com/qgis/QGIS-Plugins-Website/blob/d7ff1ffd460f9d63052954ae5ee4e1bdc58e1e65/qgis-app/plugins/views.py),
+  [szablon strony](https://github.com/qgis/QGIS-Plugins-Website/blob/d7ff1ffd460f9d63052954ae5ee4e1bdc58e1e65/qgis-app/plugins/templates/plugins/plugin_detail.html).
+- Oba README są w ZIP-ie i mają wzajemne odsyłacze względne, działające
+  również po rozpakowaniu. Angielski tekst okna informacji pochodzi
+  bezpośrednio z angielskiej części metadanych.
+
+### Wyniki i granice weryfikacji
+
+223 testy przeszły na QGIS 3.40.15 / Qt 5.15.18 / Python 3.14.4.
+Parser QGIS zgłasza ostrzeżenia o przestarzałym `codecs.open` w Pythonie
+3.14; nie są to błędy wtyczki. Ruff, Flake8, Bandit, detect-secrets oraz
+pip-audit nie wykazały problemów. Paczka zawiera 25 plików; sprawdzono
+manifest, uprawnienia, CRC oraz identyczność dwóch niezależnych buildów.
+
+Nie wykonano publikacji ani testu nowego wydania na działającym serwerze.
+[Publiczny wpis](https://plugins.qgis.org/plugins/qgis_poprawka_odwzorowawcza/)
+w chwili sprawdzania miał wersję 1.0.1, stare polskie opisy oraz nazwę
+„Poprawka odwzorowawcza”. Przy publikacji końcowej należy:
+
+1. Nadać aktualizacji nowy numer wersji i odbudować ZIP z zatwierdzonego kodu.
+2. Uzgodnić zmianę nazwy wpisu na „Poprawka odwzorowawcza PL-2000”, jeżeli
+   portal jej nie przyjmie. Serwer zmienia nazwę z metadanych wyłącznie przy
+   włączonym `Allow update name`, domyślnie wyłączonym. Zwykły formularz
+   edycji wtyczki nie udostępnia tego pola; może być potrzebny administrator.
+3. Po publikacji sprawdzić nazwę, oba opisy i tagi na stronie oraz po
+   aktualizacji przez menedżer QGIS. Poprawna nazwa i treść lokalnego ZIP-a
+   nie zmieniają automatycznie istniejącego wpisu na portalu.

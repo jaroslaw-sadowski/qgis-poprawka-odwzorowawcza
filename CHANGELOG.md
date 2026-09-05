@@ -7,6 +7,11 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Standardowe pola description, about i changelog zawierają polski
+  i angielski tekst, widoczny niezależnie od języka menedżera QGIS.
+- Tagi tematyczne są w parach polski–angielski; PL-2000 jest wspólny
+  dla obu języków. Usunięto tag organizacji.
+
 - Bezpośredni wpis w menu Wtyczki i ikona na pasku wtyczek; informacje
   „O wtyczce” dostępne w oknie obliczenia, bez dodatkowych podmenu.
 - Ujednolicono nazwę widoczną w menu, Processing, oknach, raporcie i nazwie
@@ -29,6 +34,10 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Zaktualizowano opisy trybów i wyjaśnienia diagnostyki w GUI i Processing.
 
 ### Added
+
+- Angielskie README dołączone także do ZIP-a, z odsyłaczami między językami.
+- Angielski opis w oknie „O wtyczce”, pobierany z metadanych; polski opis
+  i interfejs pozostają domyślne.
 
 - Eksport bieżącego raportu pojedynczej działki do Markdown (UTF-8),
   z zachowaniem prezentowanej precyzji, diagnostyki i ostrzeżeń; realizacja

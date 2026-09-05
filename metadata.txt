@@ -1,7 +1,8 @@
 [general]
 name=Poprawka odwzorowawcza PL-2000
-description=Oblicza pole działek z poprawką PL-2000 według polskich przepisów, dla jednej działki lub całej warstwy.
-about=Poprawka odwzorowawcza PL-2000 pomaga sprawdzać powierzchnie działek istniejących i projektowanych na potrzeby prac geodezyjnych i ewidencji gruntów.
+description=EN: Calculates parcel areas in Poland using the statutory PL-2000 correction. | PL: Oblicza pole działek w Polsce z poprawką PL-2000 według przepisów.
+about=POLSKI / PL
+    Poprawka odwzorowawcza PL-2000 pomaga sprawdzać powierzchnie działek istniejących i projektowanych na potrzeby prac geodezyjnych i ewidencji gruntów.
     Stosuje § 16 ust. 2 i wzór z załącznika nr 3 rozporządzenia z 27 lipca 2021 r. w sprawie ewidencji gruntów i budynków (Dz.U. 2024 poz. 219 ze zm.). Wynik podaje w m² i ha, z precyzją zapisu 0,0001 ha.
     To inny sposób obliczenia niż natywne pole kartezjańskie i pomiar geodezyjny QGIS. Wszystkie trzy wartości pokazuje do porównania.
     Jedna działka: Wtyczki → Poprawka odwzorowawcza PL-2000. Wiele działek: ta sama nazwa w Processing. Raport jednej działki można zapisać do Markdown.
@@ -16,6 +17,25 @@ about=Poprawka odwzorowawcza PL-2000 pomaga sprawdzać powierzchnie działek ist
     Dodatkowo: Ruff, pip-audit, testy obliczeń, geometrii, eksportu i powtarzalności paczki. To kontrole lokalne, nie certyfikat QGIS.
     Zalecenia: https://plugins.qgis.org/docs/security-scanning/tools
     Przepisy: https://eli.gov.pl/eli/DU/2024/219/ogl
+    QGIS 3.40–3.x. Interfejs polski. Zasięg: Polska, strefy PL-2000 5–8.
+
+    ENGLISH / EN
+    Poprawka odwzorowawcza PL-2000 helps check the areas of existing and proposed parcels for surveying and cadastral work in Poland.
+    It implements § 16(2) and the formula in Annex 3 of the Regulation of 27 July 2021 on the land and building register (Journal of Laws 2024, item 219, as amended). Results are shown in m² and ha, with a reporting precision of 0.0001 ha.
+    This calculation differs from QGIS's native Cartesian area and geodesic measurement. All three values are shown for comparison.
+    One parcel: Plugins → Poprawka odwzorowawcza PL-2000. Multiple parcels: the same name in Processing. The single-parcel report can be saved as Markdown.
+    Geometry is checked; optionally, its copy can be repaired. Results for invalid geometry without repair are diagnostic only.
+    Runs locally, does not send data outside QGIS and does not modify the source layer. Uses only libraries supplied with QGIS and the Python standard library, with no additional dependencies.
+    Developed through vibe coding, with AI assistance. The author accepts no responsibility for results or consequences of their use, to the extent permitted by law. Verify the data, CRS and current regulations before use.
+    Local checks following QGIS guidelines — no issues found:
+    - Bandit: Python code security.
+    - detect-secrets: passwords, keys and tokens.
+    - Flake8: code errors and quality.
+    - ZIP analysis: contents, structure and file permissions.
+    Additional checks: Ruff, pip-audit, calculations, geometry, export and reproducible packaging. These are local checks, not QGIS certification.
+    Guidelines: https://plugins.qgis.org/docs/security-scanning/tools
+    Regulations: https://eli.gov.pl/eli/DU/2024/219/ogl
+    QGIS 3.40–3.x. Polish interface. Coverage: Poland, PL-2000 zones 5–8.
 version=1.0.1
 qgisMinimumVersion=3.40
 qgisMaximumVersion=3.99
@@ -24,9 +44,10 @@ email=github.com.amenity983@passfwd.com
 homepage=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 repository=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 tracker=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/issues
-tags=kataster,egib,pl-2000,geodezja,pole działki,powierzchnia,polska,Stowarzyszenie QGIS Polska
+tags=kataster,cadastre,egib,land and building register,geodezja,geodesy,pole działki,parcel area,powierzchnia,area,odwzorowanie,projection,poprawka odwzorowawcza,projection correction,rozporządzenie egib,land and building register regulation,polska,poland,pl-2000
 icon=resources/icon.png
-changelog=1.0.1: pełna nazwa „Poprawka odwzorowawcza PL-2000” w metadanych, menu i oknach oraz poprawiona zgodność flagi FastInsert z Qt6/QGIS 4.
+changelog=1.0.1 / EN: full name "Poprawka odwzorowawcza PL-2000" in metadata, menus and windows; FastInsert flag compatibility with Qt6/QGIS 4.
+    1.0.1 / PL: pełna nazwa „Poprawka odwzorowawcza PL-2000” w metadanych, menu i oknach oraz poprawiona zgodność flagi FastInsert z Qt6/QGIS 4.
 hasProcessingProvider=yes
 experimental=False
 deprecated=False

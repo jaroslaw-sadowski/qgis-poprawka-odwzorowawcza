@@ -1,5 +1,7 @@
 # Poprawka odwzorowawcza PL-2000
 
+**Polski** · [English](README.en.md)
+
 Wtyczka QGIS do obliczania pola działek z uwzględnieniem poprawki
 odwzorowawczej PL-2000. Pomaga sprawdzać powierzchnie działek istniejących
 i projektowanych na potrzeby prac geodezyjnych i ewidencji gruntów.
@@ -16,6 +18,9 @@ wszystkie trzy wartości do porównania. Wyniki mogą się nieznacznie różnić
 ## Jak używać
 
 Wymaga QGIS 3.40–3.x; instaluje się przez menedżer wtyczek, także z ZIP-a.
+Interfejs jest polski. Wtyczka obejmuje Polskę, strefy PL-2000 5–8.
+Opisy po polsku i angielsku są dostępne w menedżerze wtyczek i oknie
+**O wtyczce…**.
 
 - **Jedna działka:** zaznacz poligon i wybierz **Wtyczki → Poprawka
   odwzorowawcza PL-2000** lub ikonę na pasku wtyczek. Wskaż strefę, jeśli

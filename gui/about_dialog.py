@@ -37,6 +37,7 @@ def read_plugin_metadata(plugin_root: Path) -> dict:
         "author": metadata["author"],
         "license": "GNU GPL v2",
         "repository": metadata["repository"],
+        "about": metadata["about"],
     }
 
 
@@ -159,6 +160,14 @@ class AboutDialog(QDialog):
         checks.setObjectName("aboutChecks")
         checks.setWordWrap(True)
         layout.addWidget(checks)
+
+        english = QLabel(
+            "ENGLISH / EN\n\n"
+            + metadata["about"].partition("\nENGLISH / EN\n")[2]
+        )
+        english.setObjectName("aboutEnglish")
+        english.setWordWrap(True)
+        layout.addWidget(english)
 
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(24, 0, 24, 20)

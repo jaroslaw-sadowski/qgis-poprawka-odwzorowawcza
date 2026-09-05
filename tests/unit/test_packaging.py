@@ -57,6 +57,16 @@ def test_plugin_zip_has_one_clean_installable_root(tmp_path: Path) -> None:
         assert archive.read(f"{PLUGIN_PACKAGE_NAME}/README.md").startswith(
             b"# Poprawka odwzorowawcza PL-2000\n"
         )
+        polish = archive.read(f"{PLUGIN_PACKAGE_NAME}/README.md").decode()
+        english = archive.read(f"{PLUGIN_PACKAGE_NAME}/README.en.md").decode()
+        assert "[English](README.en.md)" in polish
+        assert "[Polski](README.md)" in english
+        assert english.startswith("# Poprawka odwzorowawcza PL-2000\n")
+        assert "Polish interface" in metadata["general"]["about"]
+        assert "EN: Calculates" in metadata["general"]["description"]
+        assert "PL: Oblicza" in metadata["general"]["description"]
+        assert "POLSKI / PL" in metadata["general"]["about"]
+        assert "ENGLISH / EN" in metadata["general"]["about"]
         for info in archive.infolist():
             assert (info.external_attr >> 16) == 0o100644
             assert not any(

@@ -30,6 +30,7 @@ RUNTIME_FILES = (
     "processing_provider/area_algorithm.py",
     "processing_provider/provider.py",
     "README.md",
+    "README.en.md",
     "resources/icon.png",
     "resources/icon.svg",
     "user_messages.py",

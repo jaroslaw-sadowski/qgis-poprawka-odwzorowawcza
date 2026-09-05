@@ -3,6 +3,7 @@ import importlib
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
 from qgis.core import (
     Qgis,
     QgsApplication,
@@ -197,7 +198,8 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert metadata["qgismaximumversion"] == "3.99"
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "github.com.amenity983@passfwd.com"
-    assert metadata["description"].startswith("Oblicza pole działek")
+    assert metadata["description"].startswith("EN: Calculates parcel areas")
+    assert "PL: Oblicza pole działek" in metadata["description"]
     for text in (
         "§ 16 ust. 2",
         "załącznika nr 3",
@@ -214,13 +216,21 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     ):
         assert text in metadata["about"]
     assert metadata["tags"] == (
-        "kataster,egib,pl-2000,geodezja,pole działki,powierzchnia,polska,"
-        "Stowarzyszenie QGIS Polska"
+        "kataster,cadastre,egib,land and building register,geodezja,geodesy,"
+        "pole działki,parcel area,powierzchnia,area,odwzorowanie,projection,"
+        "poprawka odwzorowawcza,projection correction,"
+        "rozporządzenie egib,land and building register regulation,"
+        "polska,poland,pl-2000"
     )
+    assert "ENGLISH / EN" in metadata["about"]
+    assert "POLSKI / PL" in metadata["about"]
+    assert "§ 16(2)" in metadata["about"]
+    assert "Polish interface" in metadata["about"]
+    assert "The author accepts no responsibility" in metadata["about"]
     assert "category" not in metadata
     assert metadata["icon"] == "resources/icon.png"
     assert metadata["changelog"].startswith(
-        "1.0.1: pełna nazwa „Poprawka odwzorowawcza PL-2000”"
+        '1.0.1 / EN: full name "Poprawka odwzorowawcza PL-2000"'
     )
     assert metadata["experimental"] == "False"
     assert metadata["deprecated"] == "False"
@@ -252,3 +262,54 @@ def test_built_zip_imports_as_qgis_plugin_package(
     finally:
         instance.unload()
     assert not iface.menu.actions()
+
+
+@pytest.mark.parametrize("locale", ["pl_PL", "en_US", "de_DE"])
+def test_native_qgis_installer_reads_both_languages_from_zip(
+    tmp_path,
+    monkeypatch,
+    locale,
+):
+    # Use QGIS's own installed-plugin reader, without changing user settings.
+    monkeypatch.syspath_prepend(
+        str(Path(QgsApplication.pkgDataPath()) / "python")
+    )
+    installer_data = importlib.import_module(
+        "pyplugin_installer.installer_data"
+    )
+
+    class LocaleSettings:
+        def value(self, key, default=None, value_type=None):
+            return {
+                "locale/overrideFlag": True,
+                "locale/userLocale": locale,
+            }.get(key, default)
+
+    monkeypatch.setattr(installer_data, "QgsSettings", LocaleSettings)
+    root = Path(__file__).resolve().parents[2]
+    archive_path = build_plugin_zip(root, tmp_path / "plugin.zip")
+    with ZipFile(archive_path) as archive:
+        archive.extractall(tmp_path)
+    installed = installer_data.Plugins().getInstalledPlugin(
+        PLUGIN_PACKAGE_NAME, str(tmp_path / PLUGIN_PACKAGE_NAME), False
+    )
+    assert installed["error"] == ""
+    assert installed["installed"] is True
+    assert installed["name"] == "Poprawka odwzorowawcza PL-2000"
+    for expected in ("EN: Calculates", "PL: Oblicza"):
+        assert expected in installed["description"]
+    for expected in (
+        "POLSKI / PL",
+        "ENGLISH / EN",
+        "§ 16 ust. 2",
+        "§ 16(2)",
+        "nie wysyła danych na zewnątrz",
+        "does not send data outside QGIS",
+        "nie certyfikat QGIS",
+        "not QGIS certification",
+    ):
+        assert expected in installed["about"]
+    assert "pole działki,parcel area" in installed["tags"]
+    assert "powierzchnia,area" in installed["tags"]
+    assert "1.0.1 / EN:" in installed["changelog"]
+    assert "1.0.1 / PL:" in installed["changelog"]
