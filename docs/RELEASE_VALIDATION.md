@@ -253,3 +253,90 @@ w chwili sprawdzania miał wersję 1.0.1, stare polskie opisy oraz nazwę
 3. Po publikacji sprawdzić nazwę, oba opisy i tagi na stronie oraz po
    aktualizacji przez menedżer QGIS. Poprawna nazwa i treść lokalnego ZIP-a
    nie zmieniają automatycznie istniejącego wpisu na portalu.
+
+## Punkt 6 — 2026-09-05: QGIS 4 / Qt6
+
+Zmiany względem `ef6c952`: zakres `qgisMinimumVersion=3.40` i
+`qgisMaximumVersion=4.99`, spójne opisy PL/EN i okno informacji oraz pełne
+testy PyQGIS w CI dla obu generacji QGIS. Kod obliczeń, naprawy, eksportu
+oraz istniejące funkcje zgodności Qt5/Qt6 nie wymagały zmian.
+
+### Rzeczywiste środowiska i wyniki
+
+| Środowisko Linux, Python 3.14.4 | Pełny zestaw pytest |
+| --- | --- |
+| QGIS 3.40.15, Qt 5.15.18 | 225/225 |
+| QGIS 4.2.2, Qt 6.10.2, PyQt 6.10.2 | 225/225 |
+
+QGIS 4.2.2 pochodzi z oficjalnego repozytorium `qgis.org/ubuntu`, pakiety
+`1:4.2.2+44resolute`. Pakiety oraz brakujące zależności rozpakowano do
+osobnego katalogu testowego. Systemowy QGIS 3 i profil użytkownika nie były
+podmieniane. Testy wskazywały właściwe biblioteki przez `QGIS_PREFIX_PATH`,
+`PYTHONPATH` i `LD_LIBRARY_PATH`.
+
+- Zestaw obejmuje niezależne referencje obliczeń, wszystkie strefy PL-2000,
+  sprawdzanie geometrii w obu trybach, punkt średni przed/po naprawie,
+  niezmienność źródła, zapis precyzji w GeoPackage oraz raport Markdown.
+- Natywny czytnik menedżera wtyczek akceptuje finalny ZIP i odczytuje oba
+  języki w lokalizacjach `pl_PL`, `en_US` i `de_DE`, na QGIS 3 i 4.
+  Przed zmianą metadanych QGIS 4 odrzucał tę samą paczkę jako niezgodną.
+- Dodano testy rzeczywistego modalnego dialogu: uruchomienie pętli zdarzeń,
+  zatwierdzenie i anulowanie, bez zastępowania Qt atrapą.
+- QGIS 4 dodaje do modelu Processing wbudowaną sekcję „Input parameters”.
+  Test wyszukuje teraz provider przez natywne `indexForProvider`, zamiast
+  zakładać, że cały model ma dokładnie jeden wiersz. Nadal sprawdza jeden
+  algorytm bez pośredniej grupy i jego właściwy identyfikator.
+
+### Uruchomienie pełnej aplikacji QGIS 4
+
+Dodatkowy test wykonano w rzeczywistym QGIS Desktop 4.2.2, z osobnym
+profilem oraz renderowaniem `offscreen`. Wykorzystano rozpakowany ZIP,
+standardowy loader `qgis.utils` i rzeczywisty `iface`, bez atrapy aplikacji.
+Potwierdzono:
+
+1. Załadowanie i włączenie wtyczki, bezpośrednią akcję w menu Wtyczki oraz
+   rejestrację providera Processing.
+2. Otwarcie kalkulatora z akcji, obliczenie w obu trybach i wynik
+   `10001,54 m²` dla kwadratu 100 × 100 m na południku osiowym strefy 7;
+   geometria źródłowa pozostała identyczna bajtowo.
+3. Eksport przez rzeczywiste okno zapisu pliku i `QSaveFile`; zapisany
+   raport UTF-8 jest identyczny z bieżącym raportem okna.
+4. Otwarcie i zamknięcie okna informacji oraz podgląd renderowania GUI.
+5. Wywołanie algorytmu przez `processing.run`, zapis do GeoPackage i
+   odczyt oczekiwanego wyniku `egib_area_m2`.
+6. Wyłączenie, ponowne włączenie i wyłączenie; provider poprawnie znika
+   z rejestru.
+
+### Kontrole paczki i automatyzacja
+
+- Oficjalny skrypt używany przez
+  [pyqgis4-checker](https://github.com/qgis/pyqgis4-checker) uruchomiono
+  w Qt6 na kodzie rozpakowanej paczki (25 plików w archiwum),
+  bez importowalnego PyQt5.
+  Tryb `--dry_run` nie zgłosił propozycji zmian ani błędów.
+  Archiwalny plik `legacy/pow_QGIS_v1.py` nie jest częścią ZIP-a i nie był
+  objęty tym skanem.
+- Ruff, kontrola formatowania, Flake8, Bandit, detect-secrets i pip-audit:
+  bez wykrytych problemów. Kompilacja utrzymywanego kodu przeszła.
+- Testy paczki sprawdzają manifest, uprawnienia, nazwy i metadane;
+  CRC jest poprawne, dwa zbudowania dały identyczne archiwa.
+- Workflow Quality ma dodatkową macierz QGIS 3.44.11/Qt5 i 4.2.2/Qt6,
+  w oficjalnych obrazach przypiętych digestem. Sprawdza rzeczywiste wersje
+  bibliotek przed uruchomieniem wszystkich testów. PyQGIS i pytest są już
+  w obrazach; wtyczka nie dostaje nowych zależności.
+- Sprawdzono składnię YAML i zawartego kodu Python. Zdalne wykonanie nowego
+  zadania GitHub Actions nastąpi dopiero po wysłaniu zmian do GitHuba;
+  powyższe wyniki pytest pochodzą z testów lokalnych.
+
+Zgodnie z [aktualnymi zasadami migracji QGIS](https://plugins.qgis.org/docs/migrate-qgis4)
+zgodność deklaruje zakres wersji. Nie dodano usuniętej flagi `supportsQt6`.
+Sprawdzono również, że czytniki metadanych wydań QGIS 4.0.0 i 4.0.3 nie
+wymagają tej flagi; nie uruchamiano jednak tych wydań.
+
+Ostrzeżenia `codecs.open` pochodzą z menedżera QGIS 3 na Pythonie 3.14.
+QGIS 4 przy zamykaniu procesu testowego wypisuje komunikaty
+`QThreadStorage`; pełny zestaw i test Desktop kończą się kodem 0.
+Renderowanie `offscreen` zgłasza ograniczenia `propagateSizeHints`.
+Nie wykonano testów na Windows ani macOS, ani publikacji w repozytorium
+QGIS. Numer wydania nadal wynosi 1.0.1; przed publikacją aktualizacji trzeba
+nadać nowy numer i zbudować paczkę z zatwierdzonego kodu.

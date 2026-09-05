@@ -17,7 +17,8 @@ values for comparison. The results may differ slightly.
 
 ## How to use
 
-Requires QGIS 3.40–3.x. Install through the plugin manager, including from ZIP.
+Requires QGIS 3.40–3.x or 4.x. Install through the plugin manager,
+including from ZIP.
 The interface is in Polish. The plugin covers Poland, PL-2000 zones 5–8.
 Descriptions in Polish and English are available in the plugin manager
 and the plugin's **O wtyczce…** (About) window.

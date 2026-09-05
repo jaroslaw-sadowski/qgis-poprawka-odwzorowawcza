@@ -90,7 +90,9 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(3)
         title_label = QLabel(metadata["name"])
         title_label.setObjectName("aboutTitle")
-        version_label = QLabel(f"Wersja {metadata['version']} · QGIS 3.40–3.x")
+        version_label = QLabel(
+            f"Wersja {metadata['version']} · QGIS 3.40–3.x / 4.x"
+        )
         version_label.setObjectName("aboutVersion")
         title_layout.addWidget(title_label)
         title_layout.addWidget(version_label)

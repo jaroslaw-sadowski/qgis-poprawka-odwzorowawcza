@@ -17,7 +17,8 @@ wszystkie trzy wartości do porównania. Wyniki mogą się nieznacznie różnić
 
 ## Jak używać
 
-Wymaga QGIS 3.40–3.x; instaluje się przez menedżer wtyczek, także z ZIP-a.
+Wymaga QGIS 3.40–3.x lub 4.x; instaluje się przez menedżer wtyczek,
+także z ZIP-a.
 Interfejs jest polski. Wtyczka obejmuje Polskę, strefy PL-2000 5–8.
 Opisy po polsku i angielsku są dostępne w menedżerze wtyczek i oknie
 **O wtyczce…**.

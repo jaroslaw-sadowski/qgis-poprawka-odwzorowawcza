@@ -74,3 +74,46 @@ jobs:
           python scripts/build_plugin_zip.py --output /tmp/plugin-second.zip
           cmp /tmp/plugin-first.zip /tmp/plugin-second.zip
           python -m zipfile -t /tmp/plugin-first.zip
+
+  qgis-tests:
+    name: QGIS ${{ matrix.version }} / Qt ${{ matrix.qt }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: "3.44.11"
+            qt: "5"
+            image: qgis/qgis:3.44.11@sha256:e016b5296b99f0b07760b883888bc4ba615c0099feae9432374b4c83e8e073cc
+          - version: "4.2.2"
+            qt: "6"
+            image: qgis/qgis:4.2.2@sha256:6ffe6b31646247f2e179cb2cc32bb4df215eedc99f387ad59a6cc88ebfe23e21
+    container:
+      image: ${{ matrix.image }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+      QGIS_PREFIX_PATH: /usr
+      PYTHONDONTWRITEBYTECODE: "1"
+      EXPECTED_QGIS_VERSION: ${{ matrix.version }}
+      EXPECTED_QT_MAJOR: ${{ matrix.qt }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Verify actual QGIS and Qt versions
+        run: |
+          python3 - <<'PY'
+          import os
+          from qgis.core import Qgis
+          from qgis.PyQt.QtCore import QT_VERSION_STR
+          print(f"QGIS {Qgis.QGIS_VERSION}, Qt {QT_VERSION_STR}")
+          assert Qgis.QGIS_VERSION.split("-")[0] == os.environ["EXPECTED_QGIS_VERSION"]
+          assert QT_VERSION_STR.split(".")[0] == os.environ["EXPECTED_QT_MAJOR"]
+          PY
+
+      - name: Run all tests with native PyQGIS
+        run: python3 -m pytest -p no:cacheprovider -q

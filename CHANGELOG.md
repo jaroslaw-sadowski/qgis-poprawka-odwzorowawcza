@@ -7,6 +7,10 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Obsługa QGIS 4.x obok QGIS 3.40–3.x, potwierdzona na QGIS 4.2.2/Qt6.
+  Metadane dopuszczają instalację do wersji 4.99; opisy PL/EN i okno
+  informacji pokazują ten sam zakres obsługi.
+
 - Standardowe pola description, about i changelog zawierają polski
   i angielski tekst, widoczny niezależnie od języka menedżera QGIS.
 - Tagi tematyczne są w parach polski–angielski; PL-2000 jest wspólny
@@ -34,6 +38,11 @@ stosuje [Semantic Versioning](https://semver.org/).
 - Zaktualizowano opisy trybów i wyjaśnienia diagnostyki w GUI i Processing.
 
 ### Added
+
+- Pełne testy PyQGIS w CI dla QGIS 3.44.11/Qt5 i 4.2.2/Qt6.
+  Testy korzystają z właściwego prefiksu instalacji i sprawdzają natywne
+  otwieranie oraz zamykanie dialogu. Kontrola płaskiego układu Processing
+  uwzględnia wbudowaną sekcję parametrów wejściowych w QGIS 4.
 
 - Angielskie README dołączone także do ZIP-a, z odsyłaczami między językami.
 - Angielski opis w oknie „O wtyczce”, pobierany z metadanych; polski opis

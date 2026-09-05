@@ -2,8 +2,12 @@
 
 Ta instrukcja prowadzi od gotowego kodu do publikacji w oficjalnym
 repozytorium wtyczek QGIS. Do wysyłki służy wyłącznie paczka
-`qgis_poprawka_odwzorowawcza-1.0.1.zip` zbudowana przez skrypt projektu.
+`Poprawka odwzorowawcza PL-2000-1.0.1.zip` zbudowana przez skrypt projektu.
 Nie używaj automatycznego archiwum „Source code” tworzonego przez GitHub.
+
+Wersja 1.0.1 jest już opublikowana. Przed wysłaniem aktualizacji nadaj
+nowy numer w metadanych i changelogu; dostosuj poniższe przykłady nazw
+paczki oraz taga do tego numeru. Skrypt odczytuje nazwę i wersję z metadanych.
 
 ## 1. Przetestuj finalny ZIP
 
@@ -12,22 +16,25 @@ Zbuduj paczkę:
 ```bash
 python scripts/build_plugin_zip.py
 python -m zipfile -t \
-  dist/qgis_poprawka_odwzorowawcza-1.0.1.zip
-sha256sum dist/qgis_poprawka_odwzorowawcza-1.0.1.zip
+  "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
+sha256sum "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
 ```
 
 W QGIS utwórz czysty profil testowy, a następnie:
 
 1. Otwórz **Wtyczki → Zarządzanie i instalowanie wtyczek → Instaluj z ZIP**.
-2. Wskaż `qgis_poprawka_odwzorowawcza-1.0.1.zip`.
+2. Wskaż `Poprawka odwzorowawcza PL-2000-1.0.1.zip`.
 3. Włącz wtyczkę i sprawdź, czy QGIS nie pokazuje błędu.
 4. Oblicz wynik dla jednej zaznaczonej działki i sprawdź popupy `P₀`,
    `P QGIS`, `P = P₀ − ΔP₀` oraz `P` w hektarach.
 5. Uruchom algorytm seryjny z panelu Processing i sprawdź między innymi pola
    `egib_po_m2`, `egib_qgis_m2`, `egib_area_m2` oraz `egib_area_ha`.
-6. Wyłącz, ponownie włącz i odinstaluj wtyczkę.
+6. Zapisz raport jednej działki do Markdown i sprawdź polskie znaki,
+   wyniki oraz ostrzeżenia.
+7. Wyłącz, ponownie włącz i odinstaluj wtyczkę.
 
-Powtórz ten test w QGIS 3.44 na Windows, Linux i macOS. Wyniki wpisz do
+Powtórz ten test w QGIS 3.44/Qt5 i QGIS 4.x/Qt6 na Windows, Linux
+i macOS. Wyniki wpisz do
 `docs/RELEASE_VALIDATION.md`. Jeżeli którykolwiek test nie przejdzie, nie
 twórz taga i nie wysyłaj paczki.
 
@@ -55,8 +62,8 @@ Następnie odbuduj ZIP z zatwierdzonego commitu i ponownie sprawdź jego sumę:
 ```bash
 python scripts/build_plugin_zip.py
 python -m zipfile -t \
-  dist/qgis_poprawka_odwzorowawcza-1.0.1.zip
-sha256sum dist/qgis_poprawka_odwzorowawcza-1.0.1.zip
+  "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
+sha256sum "dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip"
 ```
 
 Suma musi być zgodna z sumą zapisaną w raporcie walidacji.
@@ -78,7 +85,7 @@ Na GitHubie:
 3. Ustaw tytuł `Poprawka odwzorowawcza PL-2000 1.0.1`.
 4. Skopiuj opis wersji `1.0.1` z `CHANGELOG.md`.
 5. Dołącz dokładnie plik
-   `dist/qgis_poprawka_odwzorowawcza-1.0.1.zip`.
+   `dist/Poprawka odwzorowawcza PL-2000-1.0.1.zip`.
 6. Opublikuj wydanie.
 
 ## 4. Wyślij ZIP do QGIS
@@ -89,7 +96,7 @@ Do publikacji potrzebny jest bezpłatny identyfikator OSGeo.
 2. Wybierz **Upload a plugin**.
 3. Wskaż ten sam plik ZIP, który został dołączony do GitHub Release.
 4. Sprawdź podgląd: nazwa „Poprawka odwzorowawcza PL-2000”, wersja `1.0.1`,
-   QGIS `3.40–3.99` i wydanie stabilne.
+   QGIS `3.40–4.99` i wydanie stabilne.
 5. Wyślij formularz i poczekaj na zatwierdzenie przez opiekuna repozytorium.
 
 Oficjalne wymagania i przebieg zatwierdzania opisują strony

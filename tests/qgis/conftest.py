@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from qgis.core import QgsApplication
 
@@ -9,7 +11,9 @@ def qgis_application():
     application = existing_application
 
     if owns_application:
-        QgsApplication.setPrefixPath("/usr", True)
+        QgsApplication.setPrefixPath(
+            os.environ.get("QGIS_PREFIX_PATH", "/usr"), True
+        )
         application = QgsApplication([], False)
         application.initQgis()
 

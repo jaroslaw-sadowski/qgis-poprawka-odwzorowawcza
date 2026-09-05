@@ -353,10 +353,14 @@ def test_processing_toolbox_has_no_redundant_group():
     registry = QgsProcessingRegistry()
     assert registry.addProvider(EgibAreaProvider())
     model = QgsProcessingToolboxModel(registry=registry)
-    assert model.rowCount() == 1
-    provider = model.index(0, 0)
+    # QGIS 4 also has a built-in "Input parameters" root in this model.
+    provider = model.indexForProvider("egib_area")
+    assert provider.isValid()
     assert provider.data() == "Poprawka odwzorowawcza PL-2000"
     assert model.rowCount(provider) == 1
     algorithm = model.index(0, 0, provider)
     assert algorithm.data() == provider.data()
+    assert model.algorithmForIndex(algorithm).id() == (
+        "egib_area:calculate_egib_area"
+    )
     assert model.rowCount(algorithm) == 0

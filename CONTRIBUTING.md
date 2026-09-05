@@ -42,6 +42,12 @@ PYTHONPATH=/usr/lib/python3/dist-packages \
 pytest -p no:cacheprovider
 ```
 
+Pełny zestaw uruchamiaj zarówno w QGIS 3/Qt5, jak i QGIS 4/Qt6.
+Workflow Quality wykonuje go w oficjalnych obrazach QGIS 3.44.11 i 4.2.2,
+przypiętych do konkretnych digestów. Obrazy zawierają już PyQGIS i pytest.
+W instalacji poza `/usr` ustaw `QGIS_PREFIX_PATH` na jej katalog główny
+oraz `PYTHONPATH` na jej moduły PyQGIS. Nie mieszaj bibliotek QGIS 3 i 4.
+
 Kontrole niezależne od QGIS:
 
 ```bash

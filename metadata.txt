@@ -17,7 +17,7 @@ about=POLSKI / PL
     Dodatkowo: Ruff, pip-audit, testy obliczeń, geometrii, eksportu i powtarzalności paczki. To kontrole lokalne, nie certyfikat QGIS.
     Zalecenia: https://plugins.qgis.org/docs/security-scanning/tools
     Przepisy: https://eli.gov.pl/eli/DU/2024/219/ogl
-    QGIS 3.40–3.x. Interfejs polski. Zasięg: Polska, strefy PL-2000 5–8.
+    QGIS 3.40–3.x / 4.x. Interfejs polski. Zasięg: Polska, strefy PL-2000 5–8.
 
     ENGLISH / EN
     Poprawka odwzorowawcza PL-2000 helps check the areas of existing and proposed parcels for surveying and cadastral work in Poland.
@@ -35,10 +35,10 @@ about=POLSKI / PL
     Additional checks: Ruff, pip-audit, calculations, geometry, export and reproducible packaging. These are local checks, not QGIS certification.
     Guidelines: https://plugins.qgis.org/docs/security-scanning/tools
     Regulations: https://eli.gov.pl/eli/DU/2024/219/ogl
-    QGIS 3.40–3.x. Polish interface. Coverage: Poland, PL-2000 zones 5–8.
+    QGIS 3.40–3.x / 4.x. Polish interface. Coverage: Poland, PL-2000 zones 5–8.
 version=1.0.1
 qgisMinimumVersion=3.40
-qgisMaximumVersion=3.99
+qgisMaximumVersion=4.99
 author=Jarosław Sadowski
 email=github.com.amenity983@passfwd.com
 homepage=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza

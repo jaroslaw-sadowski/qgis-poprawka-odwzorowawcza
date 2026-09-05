@@ -185,7 +185,7 @@ def test_qgis_class_factory_imports_plugin_as_a_package(monkeypatch) -> None:
     assert instance.__class__.__name__ == "EgibAreaPlugin"
 
 
-def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
+def test_metadata_enables_processing_and_supports_qgis3_and_qgis4() -> None:
     repository_root = Path(__file__).resolve().parents[2]
     metadata_path = repository_root / "metadata.txt"
     parser = configparser.ConfigParser()
@@ -195,7 +195,7 @@ def test_metadata_is_processing_enabled_but_not_yet_marked_for_qgis4() -> None:
     assert metadata["name"] == "Poprawka odwzorowawcza PL-2000"
     assert metadata["version"] == "1.0.1"
     assert metadata["qgisminimumversion"] == "3.40"
-    assert metadata["qgismaximumversion"] == "3.99"
+    assert metadata["qgismaximumversion"] == "4.99"
     assert metadata["hasprocessingprovider"] == "yes"
     assert metadata["email"] == "github.com.amenity983@passfwd.com"
     assert metadata["description"].startswith("EN: Calculates parcel areas")

@@ -1,3 +1,7 @@
+import pytest
+from qgis.PyQt.QtCore import QTimer
+from qgis.PyQt.QtWidgets import QDialog
+
 from compat import _resolve_field_types, _resolve_qaction, execute_dialog
 
 
@@ -68,3 +72,18 @@ def test_dialog_execution_supports_qt6_and_legacy_qt5_names() -> None:
 
     assert execute_dialog(Qt6Dialog()) == 6
     assert execute_dialog(Qt5Dialog()) == 5
+
+
+@pytest.mark.parametrize("accepted", [False, True])
+def test_native_modal_dialog_executes_and_returns_result(accepted) -> None:
+    dialog = QDialog()
+    finish = dialog.accept if accepted else dialog.reject
+    expected = (
+        QDialog.DialogCode.Accepted
+        if accepted
+        else QDialog.DialogCode.Rejected
+    )
+    QTimer.singleShot(0, finish)
+
+    assert execute_dialog(dialog) == expected
+    assert not dialog.isVisible()
