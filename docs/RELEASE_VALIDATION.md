@@ -1,11 +1,10 @@
 # Walidacja wydania 1.1.0 — 2026-09-05
 
-Stan: kandydat do wydania, przygotowany z commitu
-`c19a80249769d0f3eb418e0d429dcaaa35872f55` i zmian punktu 7.
-Po zatwierdzeniu punktu 7 (commit `404cf69`) utworzono nieopublikowany
-szkic release'u v1.1.0. Publikację wstrzymano na życzenie użytkownika;
-aktualna paczka zawiera późniejszą, lokalną korektę opisów metadanych.
-Załączniki i commit szkicu GitHub wymagają aktualizacji przed publikacją.
+Stan: [wydanie GitHub v1.1.0 opublikowane](https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/releases/tag/v1.1.0)
+5 września 2026 r., jako stabilne i najnowsze. Tag wskazuje commit
+`6dc50de8de58bd70f35a12692354dcfb67cd2c5b`, obejmujący zatwierdzone korekty
+metadanych. Użytkownik sprawdził wtyczkę w QGIS i zatwierdził publikację.
+Do plugins.qgis.org nie wysłano nowej wersji.
 
 ## Artefakt
 
@@ -70,8 +69,9 @@ a nie certyfikat ani wynik skanowania nowej wersji na plugins.qgis.org.
 
 [CI bazowego commitu c19a802](https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/actions/runs/33973305815)
 zakończyło się poprawnie we wszystkich trzech zadaniach: Source quality,
-QGIS 3.44.11/Qt5 oraz QGIS 4.2.2/Qt6. CI finalnego commitu 1.1.0 trzeba
-uruchomić po wysłaniu zmian. Powyższe wyniki finalnej wersji są lokalne.
+QGIS 3.44.11/Qt5 oraz QGIS 4.2.2/Qt6.
+[CI finalnego commitu 6dc50de](https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/actions/runs/33980039690)
+również zakończyło się powodzeniem.
 
 ## Porządek i zakres wydania
 
@@ -100,10 +100,13 @@ pochodzą z menedżera QGIS 3 na Pythonie 3.14; komunikaty `QThreadStorage`
 i `propagateSizeHints` pochodzą z QGIS/Qt w środowisku testowym.
 Testy i uruchomienie Desktop zakończyły się kodem 0.
 
-Przed publikacją zatwierdź zmiany, sprawdź CI tego commitu i odbuduj
-identyczny ZIP. Opis do GitHub Release jest w [RELEASE_NOTES.md](RELEASE_NOTES.md),
-a kroki wysyłki w [PUBLISHING.md](PUBLISHING.md). Zmiana lokalnej paczki
-nie aktualizuje automatycznie strony GitHuba ani katalogu plugins.qgis.org.
+Po poprawnym CI odbudowano identyczny ZIP i zweryfikowano pobrane
+załączniki GitHub przez SHA-256 i porównanie bajtowe. GitHub zastąpił
+spacje kropkami w nazwie pliku: `Poprawka.odwzorowawcza.PL-2000-1.1.0.zip`;
+dołączona suma kontrolna uwzględnia tę nazwę. Tag i załączniki wydania
+zweryfikowano po publikacji. Opis wydania: [RELEASE_NOTES.md](RELEASE_NOTES.md).
+Kolejny krok: wysłanie tego samego ZIP-a do katalogu QGIS według
+[PUBLISHING.md](PUBLISHING.md).
 
 ## Korekta opisów przed ponownym testem użytkownika
 
@@ -118,8 +121,8 @@ sześć punktów w osobnych wierszach. README pozostają bez zmian.
 metadanych z ZIP-a sprawdza oba języki i zachowanie nowych linii
 changelogu dla pl_PL, en_US i de_DE. Ruff, Flake8, Bandit i checker Qt6
 przeszły; dwa buildy są identyczne i CRC jest poprawne.
-Aktualny artefakt jest opisany na początku tego raportu. Oczekuje na
-ponowne sprawdzenie użytkownika; nie publikowano korekty w GitHub ani QGIS.
+Aktualny artefakt jest opisany na początku tego raportu. Po sprawdzeniu
+użytkownika został opublikowany w GitHub Release 1.1.0.
 
 ## Ręczna korekta metadanych i e-mail — 2026-09-05
 
@@ -133,5 +136,15 @@ Adres w pobranej opublikowanej paczce QGIS 1.0.1 i nowym ZIP-ie:
 w zawartości nowego ZIP-a; występuje w metadata.txt. Weryfikacja nie
 obejmowała wysyłania wiadomości ani sprawdzania dostarczalności poczty.
 Ponownie: 225/225 testów na QGIS 3.40 i 4.2; Flake8, Ruff, Bandit,
-checker Qt6, CRC i powtarzalność ZIP-a — poprawne. Paczka czeka na test
-użytkownika. Draft GitHub nadal zawiera starszą paczkę; publikacja wstrzymana.
+checker Qt6, CRC i powtarzalność ZIP-a — poprawne. Użytkownik zaakceptował
+paczkę; opublikowany GitHub Release zawiera ten finalny ZIP.
+
+## Ostateczna kontrola nazwy i nowych linii
+
+Pełna nazwa „Poprawka odwzorowawcza PL-2000” jest spójna w metadanych,
+menu, GUI, Processing, raporcie i nazwie paczki. Krótki opis zachowuje
+kolejność PL, następnie EN. Menedżer QGIS 3.44 i 4.2 renderuje go jako
+HTML bez zamiany nowych linii na znaczniki podziału; Qt5 i Qt6 scalają
+nową linię do spacji. Nie wymuszano podziału przez HTML, którego
+[zasady metadanych QGIS](https://docs.qgis.org/3.44/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#metadata-txt)
+nie dopuszczają. Opis szczegółowy i changelog mają osobne wiersze.
