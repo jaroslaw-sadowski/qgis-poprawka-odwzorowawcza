@@ -6,7 +6,8 @@ Opublikowano stabilne, najnowsze wydanie [GitHub v1.1.0](https://github.com/jaro
 Tag wskazuje `6dc50de8de58bd70f35a12692354dcfb67cd2c5b`; CI tego commitu
 przeszło (run `33980039690`). Użytkownik sprawdził wtyczkę w QGIS i zlecił
 publikację. Pobrane załączniki przeszły kontrolę SHA-256 oraz porównanie
-bajtowe z lokalnym ZIP-em. Do plugins.qgis.org nie wysłano nowej wersji.
+bajtowe z lokalnym ZIP-em. Użytkownik potwierdził wgranie paczki 1.1.0 do plugins.qgis.org.
+Status zatwierdzenia przez administratorów nie był weryfikowany.
 Nie przesuwaj opublikowanego tagu; późniejsze zmiany dokumentacji nie
 zmieniają paczki wydania.
 
@@ -85,8 +86,9 @@ ani macOS nie były testowane. Ostrzeżenia QGIS/Qt opisuje raport walidacji.
 ## Wznowienie
 
 1. Sprawdź aktualne polecenie użytkownika, `git status` i HEAD.
-2. GitHub 1.1.0 jest opublikowany. Następny krok użytkownika: przesłanie
-   tego samego ZIP-a na plugins.qgis.org według instrukcji publikacji.
+2. GitHub 1.1.0 jest opublikowany, a użytkownik potwierdził wgranie paczki
+   do plugins.qgis.org. Sesja zakończona; brak zleconych dalszych prac.
+   Zgłoszenia #3 i #4 zamknięto z odpowiedziami PL/EN.
 3. Portal QGIS może zachować dawną nazwę „Poprawka odwzorowawcza”. Zmiana
    wpisu zależy od `Allow update name`; może wymagać administratora.
 4. Aktualizacje developerskie PR #1 i #6 to osobne zmiany; nie zakładaj,

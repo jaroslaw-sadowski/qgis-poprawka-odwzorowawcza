@@ -4,7 +4,8 @@ Stan: [wydanie GitHub v1.1.0 opublikowane](https://github.com/jaroslaw-sadowski/
 5 września 2026 r., jako stabilne i najnowsze. Tag wskazuje commit
 `6dc50de8de58bd70f35a12692354dcfb67cd2c5b`, obejmujący zatwierdzone korekty
 metadanych. Użytkownik sprawdził wtyczkę w QGIS i zatwierdził publikację.
-Do plugins.qgis.org nie wysłano nowej wersji.
+Użytkownik potwierdził wgranie paczki 1.1.0 do plugins.qgis.org.
+Status zatwierdzenia przez administratorów nie był weryfikowany.
 
 ## Artefakt
 
@@ -105,8 +106,8 @@ załączniki GitHub przez SHA-256 i porównanie bajtowe. GitHub zastąpił
 spacje kropkami w nazwie pliku: `Poprawka.odwzorowawcza.PL-2000-1.1.0.zip`;
 dołączona suma kontrolna uwzględnia tę nazwę. Tag i załączniki wydania
 zweryfikowano po publikacji. Opis wydania: [RELEASE_NOTES.md](RELEASE_NOTES.md).
-Kolejny krok: wysłanie tego samego ZIP-a do katalogu QGIS według
-[PUBLISHING.md](PUBLISHING.md).
+Użytkownik potwierdził przesłanie paczki do katalogu QGIS. Nie sprawdzano
+jeszcze decyzji administratorów. Instrukcja: [PUBLISHING.md](PUBLISHING.md).
 
 ## Korekta opisów przed ponownym testem użytkownika
 
