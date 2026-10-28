@@ -2,6 +2,17 @@
 
 ## Bieżąca praca — lokalny kandydat 1.1.1
 
+- Po commicie 280da22 użytkownik zgłosił błąd wczytywania wyniku
+  tymczasowego z okna Processing (QGIS 3.40.15). Odtworzono dokładny
+  komunikat: guard parameterAsOutputLayer rejestrował nieistniejący
+  wpis memory: obok prawdziwego wyniku UUID. Minimalna poprawka używa
+  natywnego QgsProcessingParameters.parameterAsOutputLayer z testOnly=True,
+  bez efektów ubocznych. Trzy nowe regresje używają wrappera GUI z projektem
+  i rzeczywistego handleAlgorithmResults, sprawdzając załadowane wyniki
+  TEMPORARY_OUTPUT, memory: i GPKG. Wcześniej dwa warianty memory zawodziły;
+  po poprawce wszystkie przechodzą. Nie zmieniono obliczeń.
+  Użytkownik zlecił lokalny commit poprawki z opisem przyczyny i testów.
+  Bez pushu, tagu i publikacji.
 - Na zlecenie użytkownika wdrożono poprawki z audytu: ochrona źródeł
   przed nadpisaniem w Processing, obsługa fid i kolizji nazw, kontrola
   końcowego zapisu, ostrzeżenie SHP, polskie opisy pól i układ tabeli
@@ -19,14 +30,15 @@
   dopisywane przez writer, zapis nowej tabeli GPKG oraz ponowny odczyt
   rzeczywistych nazw PO_* i aliasów. Zachowano też źródłowe atrybuty
   egib_*, jeśli istniały na wejściu; wtyczka nie generuje nowych egib_*.
-  Pełny suite: 280/280 na QGIS 3.40.15/Qt5.15.18 i 280/280
+  Pełny suite po poprawce wczytywania: 283/283 na QGIS 3.40.15/Qt5.15.18 i 283/283
   na rzeczywistym QGIS 4.2.2/Qt6.10.2, lokalnie Linux/Python 3.14.4.
 - Ruff 0.16.0, formatowanie, Flake8 7.3.0, Bandit, detect-secrets,
   pip-audit, kompilacja i oficjalny checker Qt6 poprawne; skanery
-  sprawdziły też ZIP.
+  sprawdziły też ZIP. Po poprawce ponowiono lint, format, Flake8, Bandit,
+  detect-secrets, kompilację i checker Qt6; zależności bez zmian.
   Workflow Quality skanuje teraz również rozpakowaną paczkę.
-- ZIP 1.1.1 i suma w dist/, 25 plików, 63 067 B; SHA-256
-  aa35fd2b39e59b52ddf08dfb3482f29492c445bc83e1c1bbba0a315996dd5df6.
+- ZIP 1.1.1 i suma w dist/, 25 plików, 63 127 B; SHA-256
+  f4622139c732e4fb76b12763b3d1e70bb5a0f7eea7cd016ed4c0ce9842bcb25a.
   Zastępuje wcześniejszy lokalny kandydat z samymi aliasami egib_*.
   Dwa buildy identyczne. Starej paczki 1.1.0 nie zastępowano.
 - QGIS 4 rozpakowano do /tmp/pl2000-qgis4; env:

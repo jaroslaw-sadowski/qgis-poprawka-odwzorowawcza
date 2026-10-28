@@ -214,10 +214,24 @@ Transformacja zastępcza jest oznaczana również dla wcześniejszych części
 wielopoligonu; po naprawie ponownie sprawdzane są limity geometrii.
 Wzór, osie, P_GK i zaokrąglenia pozostają bez zmian.
 
+Po commicie 280da22 użytkownik zgłosił błąd wczytywania wyniku
+tymczasowego z okna Processing na QGIS 3.40.15. Odtworzono dokładny
+komunikat: odczyt celu przez parameterAsOutputLayer w kontroli zapisu
+rejestrował dodatkową, nieistniejącą warstwę memory: obok poprawnego
+wyniku UUID. Zastosowano natywne
+QgsProcessingParameters.parameterAsOutputLayer z testOnly=True,
+które nie zmienia listy wyników do wczytania. Trzy nowe testy używają
+definicji wyniku z projektem, tak jak GUI, i rzeczywistego
+processing.gui.Postprocessing.handleAlgorithmResults. Przed poprawką
+TEMPORARY_OUTPUT i memory: odtwarzały błąd, a GPKG przechodził;
+po poprawce wszystkie trzy warianty wczytują jedną warstwę z poprawnymi
+wartościami i aliasami. Poniższe wyniki i ZIP obejmują tę poprawkę.
+Użytkownik zlecił jej lokalny commit, bez pushu, tagu i publikacji.
+
 | Lokalne środowisko Linux, Python 3.14.4 | Wynik |
 | --- | --- |
-| QGIS 3.40.15 / Qt 5.15.18 | 280/280 testów, kod 0 |
-| QGIS 4.2.2 / Qt 6.10.2 | 280/280 testów, kod 0 |
+| QGIS 3.40.15 / Qt 5.15.18 | 283/283 testów, kod 0 |
+| QGIS 4.2.2 / Qt 6.10.2 | 283/283 testów, kod 0 |
 
 Nowe przypadki sprawdzają rzeczywisty zapis i niezmienność źródeł, wybór
 zaznaczonych obiektów, URI, dowiązania i rozszerzenia dopisywane przez QGIS,
@@ -230,6 +244,7 @@ Testy nie wymagają rozluźnienia tolerancji istniejących referencji.
 Ruff 0.16.0 (lint i format), Flake8 7.3.0, Bandit 1.9.4,
 detect-secrets 1.5.0, pip-audit 2.10.1 i kompilacja zakończyły się poprawnie.
 pip-audit nie wykrył znanych podatności w zależnościach developerskich.
+Po poprawce wczytywania ponowiono pozostałe kontrole; zależności nie zmieniły się.
 Bandit, Flake8 i detect-secrets objęły również rozpakowany ZIP;
 pełny skan sekretów wszystkich 25 plików nie wykrył zgłoszeń.
 Workflow Quality wykonuje te kontrole także na gotowej paczce.
@@ -237,8 +252,8 @@ Oficjalny skrypt pyqgis4-checker uruchomiony w Qt6 w trybie dry_run
 nie zgłosił zmian; nie zastępuje to powyższych testów rzeczywistego QGIS 4.
 
 Paczka: `Poprawka odwzorowawcza PL-2000-1.1.1.zip`, 25 plików,
-63 067 bajtów. SHA-256:
-`aa35fd2b39e59b52ddf08dfb3482f29492c445bc83e1c1bbba0a315996dd5df6`.
+63 127 bajtów. SHA-256:
+`f4622139c732e4fb76b12763b3d1e70bb5a0f7eea7cd016ed4c0ce9842bcb25a`.
 Dwa buildy są identyczne; CRC i suma kontrolna poprawne. Do runtime
 nie dodano zależności, narzędzi developerskich ani materiałów agentów.
 

@@ -20,6 +20,8 @@ stosuje [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Wczytywanie wyników tymczasowych z okna Processing: kontrola celu
+  zapisu nie rejestruje już dodatkowej, nieistniejącej warstwy `memory:`.
 - Blokada nadpisania pliku lub istniejącej tabeli danych źródłowych;
   nowa tabela w tym samym GeoPackage pozostaje dozwolona.
 - Zachowanie źródłowego `fid` pod niekolidującą nazwą w GeoPackage,

@@ -1,11 +1,17 @@
+from importlib import import_module
+from pathlib import Path
+
 import pytest
 from qgis.core import (
+    QgsApplication,
     QgsFeature,
     QgsGeometry,
     QgsProcessing,
     QgsProcessingContext,
     QgsProcessingFeedback,
+    QgsProcessingOutputLayerDefinition,
     QgsProcessingUtils,
+    QgsProject,
     QgsVectorLayer,
 )
 
@@ -101,6 +107,54 @@ def test_po_field_names_and_polish_headings_persist_with_table_layout(
     assert not columns["PO_uwagi"]
     assert columns["PO_wierz_po"]
     assert columns["PO_PGK_X"]
+    assert parcels.fields().names() == ["numer"]
+
+
+@pytest.mark.parametrize(
+    "destination", [QgsProcessing.TEMPORARY_OUTPUT, "memory:", "results.gpkg"]
+)
+def test_processing_dialog_loads_only_the_actual_result(
+    parcels, tmp_path, monkeypatch, destination
+):
+    monkeypatch.syspath_prepend(
+        str(Path(QgsApplication.pkgDataPath()) / "python" / "plugins")
+    )
+    postprocessing = import_module("processing.gui.Postprocessing")
+    project = QgsProject()
+    context = QgsProcessingContext()
+    context.setProject(project)
+    feedback = QgsProcessingFeedback()
+    algorithm = CalculateEgibAreaAlgorithm()
+    if destination.endswith(".gpkg"):
+        destination = str(tmp_path / destination)
+    # The Processing dialog wraps the destination to request automatic loading.
+    output_definition = QgsProcessingOutputLayerDefinition(
+        destination, project
+    )
+    output_definition.destinationName = "Wynik obliczeń"
+    parameters = {
+        algorithm.INPUT: parcels,
+        algorithm.OUTPUT: output_definition,
+    }
+    results, ok = algorithm.run(
+        parameters, context, feedback, catchExceptions=False
+    )
+    assert ok
+    assert postprocessing.handleAlgorithmResults(
+        algorithm, context, feedback, parameters
+    )
+    assert list(context.layersToLoadOnCompletion()) == [
+        results[algorithm.OUTPUT]
+    ]
+    assert len(project.mapLayers()) == 1
+    output = next(iter(project.mapLayers().values()))
+    assert output.isValid()
+    assert output.name() == "Wynik obliczeń"
+    assert output.featureCount() == 3
+    assert next(output.getFeatures())["PO_P_m2"] == 10_001.54
+    assert output.fields().field("PO_P_ha").alias() == (
+        "PO_P_ha — Powierzchnia po poprawce P [ha]"
+    )
     assert parcels.fields().names() == ["numer"]
 
 

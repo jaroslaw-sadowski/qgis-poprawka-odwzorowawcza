@@ -22,6 +22,7 @@ from qgis.core import (
     QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
+    QgsProcessingParameters,
     QgsProcessingUtils,
     QgsProviderRegistry,
     QgsVectorFileWriter,
@@ -443,8 +444,12 @@ class CalculateEgibAreaAlgorithm(QgsProcessingAlgorithm):
     ) -> str:
         """Check file destinations before a sink can overwrite source data."""
 
-        destination = self.parameterAsOutputLayer(
-            parameters, self.OUTPUT, context
+        # Checking the destination must not register a second layer to load.
+        destination = QgsProcessingParameters.parameterAsOutputLayer(
+            self.parameterDefinition(self.OUTPUT),
+            parameters.get(self.OUTPUT),
+            context,
+            testOnly=True,
         )
         encoded, provider, uri = QgsProcessingUtils.decodeProviderKeyAndUri(
             destination
