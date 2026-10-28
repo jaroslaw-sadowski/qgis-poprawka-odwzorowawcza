@@ -96,7 +96,9 @@ płatnych programów, których nie udało się potwierdzić.
 
 ## Granice weryfikacji i publikacja
 
-Nie wykonano testów na Windows ani macOS. Ostrzeżenia `codecs.open`
+Na etapie walidacji z 5 września nie wykonano testów na Windows ani macOS.
+Późniejszy ręczny test Windows 11 opisano w uzupełnieniu poniżej.
+Ostrzeżenia `codecs.open`
 pochodzą z menedżera QGIS 3 na Pythonie 3.14; komunikaty `QThreadStorage`
 i `propagateSizeHints` pochodzą z QGIS/Qt w środowisku testowym.
 Testy i uruchomienie Desktop zakończyły się kodem 0.
@@ -149,3 +151,103 @@ HTML bez zamiany nowych linii na znaczniki podziału; Qt5 i Qt6 scalają
 nową linię do spacji. Nie wymuszano podziału przez HTML, którego
 [zasady metadanych QGIS](https://docs.qgis.org/3.44/en/docs/pyqgis_developer_cookbook/plugins/plugins.html#metadata-txt)
 nie dopuszczają. Opis szczegółowy i changelog mają osobne wiersze.
+
+## Uzupełnienie po publikacji — 2026-09-06
+
+### Porównanie powierzchni z dwoma programami geodezyjnymi
+
+Sprawdzono działkę `100102_2.0026.477/4` na podstawie WKT przekazanego
+przez użytkownika w układzie EPSG:2177. Poligon zawiera jeden otwór
+i 83 unikalne punkty graniczne. QGIS potwierdził poprawność geometrii.
+
+Test wywoływał funkcje geometrii i obliczeń wtyczki z katalogów `adapters/`
+i `core/`, których zawartość była zgodna z tagiem `v1.1.0`. Uruchomiono go
+lokalnie na Linuxie w QGIS 3.40.15 i 4.2.2; oba środowiska dały identyczne
+wyniki. Zastosowanie `makeValid()` nie zmieniło powierzchni ani wyniku
+poprawki. Niezależne obliczenie pola wzorem Gaussa z użyciem `Decimal`
+dało 616 289,5481 m², zgodnie z wynikiem QGIS do pokazanych czterech
+miejsc po przecinku.
+
+Wyniki porównano ze zrzutami `1.png` i `2.png`, przekazanymi przez
+użytkownika jako wyniki dwóch zewnętrznych specjalistycznych programów
+geodezyjnych. Nazw i wersji tych programów nie podano.
+
+| Wielkość | Wtyczka | Program ze zrzutu `1.png` | Program ze zrzutu `2.png` |
+| --- | ---: | ---: | ---: |
+| Powierzchnia przed poprawką | 616 289,5481 m² | 61,6290 ha | 616 290 m² |
+| Odejmowana poprawka odwzorowawcza | 36,6371 m² | 0,0037 ha | Nie pokazano osobno |
+| Powierzchnia po poprawce | 616 252,9110 m² | 61,6253 ha | 616 253 m² |
+
+Potwierdzono zgodność powierzchni przed i po poprawce z oboma programami,
+z dokładnością prezentowaną na zrzutach (1 m², czyli 0,0001 ha).
+Poprawka jest również zgodna z wartością pokazaną w `1.png`.
+Wniosek dotyczy tej jednej geometrii i wymienionych wartości powierzchni;
+nie obejmuje obwodu, dopuszczalnych odchyłek ani identyczności algorytmów
+zewnętrznych programów. Było to porównanie ze zrzutami użytkownika,
+bez uruchamiania tych programów przez autora testu.
+
+### Ręczny test paczki na Windows 11
+
+6 września 2026 r. użytkownik potwierdził pomyślny ręczny test paczki ZIP
+wydania 1.1.0 na innym komputerze z Windows 11 i QGIS
+3.40.15-Bratislava. Potwierdzenie dotyczy działania paczki w tym
+środowisku w zakresie ręcznego testu użytkownika. Nie przekazano
+szczegółowej listy wykonanych czynności; nie jest to wynik pełnego
+zestawu testów automatycznych ani CI na Windows.
+
+## Weryfikacja lokalnego kandydata 1.1.1 — 2026-10-28
+
+Wersja 1.1.1 jest przygotowana lokalnie. Użytkownik zlecił zapis zmian
+w commicie, bez tagu, pushu ani publikacji. Wydanie 1.1.0 i jego paczka pozostają
+niezmienione. Powyższe wyniki dotyczą 1.1.0.
+
+Zmiany obejmują ochronę zapisu Processing, zachowanie źródłowego fid,
+kolizje nazw, kontrolę bufora zapisu i ostrzeżenie o ograniczeniach SHP.
+Wynik ma rzeczywiste nazwy wszystkich 27 dodawanych pól z prefiksem PO_,
+m.in. PO_P0_m2, PO_dP_m2, PO_P_m2, PO_P_ha, PO_QGIS_m2, PO_status
+i PO_uwagi. Polskie aliasy zaczynają się nazwą pola. Układ tabeli
+zapisuje się w GeoPackage; dodano podsumowanie i informację o anulowaniu.
+Starsze modele i wyrażenia odwołujące się do egib_* wymagają aktualizacji;
+identyfikator algorytmu egib_area:calculate_egib_area pozostaje bez zmian.
+Raport MD zawiera czas z offsetem, wersję i etykietę obiektu QGIS.
+Transformacja zastępcza jest oznaczana również dla wcześniejszych części
+wielopoligonu; po naprawie ponownie sprawdzane są limity geometrii.
+Wzór, osie, P_GK i zaokrąglenia pozostają bez zmian.
+
+| Lokalne środowisko Linux, Python 3.14.4 | Wynik |
+| --- | --- |
+| QGIS 3.40.15 / Qt 5.15.18 | 280/280 testów, kod 0 |
+| QGIS 4.2.2 / Qt 6.10.2 | 280/280 testów, kod 0 |
+
+Nowe przypadki sprawdzają rzeczywisty zapis i niezmienność źródeł, wybór
+zaznaczonych obiektów, URI, dowiązania i rozszerzenia dopisywane przez QGIS,
+nową tabelę w tej samej bazie, fid, błędy zapisu, oba tryby geometrii,
+raport oraz ponowne otwarcie GeoPackage z rzeczywistymi nazwami PO_*,
+aliasami i układem tabeli. Algorytm nie dodaje nowych pól egib_*;
+istniejące źródłowe atrybuty egib_* są zachowywane jak pozostałe dane.
+Testy nie wymagają rozluźnienia tolerancji istniejących referencji.
+
+Ruff 0.16.0 (lint i format), Flake8 7.3.0, Bandit 1.9.4,
+detect-secrets 1.5.0, pip-audit 2.10.1 i kompilacja zakończyły się poprawnie.
+pip-audit nie wykrył znanych podatności w zależnościach developerskich.
+Bandit, Flake8 i detect-secrets objęły również rozpakowany ZIP;
+pełny skan sekretów wszystkich 25 plików nie wykrył zgłoszeń.
+Workflow Quality wykonuje te kontrole także na gotowej paczce.
+Oficjalny skrypt pyqgis4-checker uruchomiony w Qt6 w trybie dry_run
+nie zgłosił zmian; nie zastępuje to powyższych testów rzeczywistego QGIS 4.
+
+Paczka: `Poprawka odwzorowawcza PL-2000-1.1.1.zip`, 25 plików,
+63 067 bajtów. SHA-256:
+`aa35fd2b39e59b52ddf08dfb3482f29492c445bc83e1c1bbba0a315996dd5df6`.
+Dwa buildy są identyczne; CRC i suma kontrolna poprawne. Do runtime
+nie dodano zależności, narzędzi developerskich ani materiałów agentów.
+
+Ostrzeżenia QGIS 3 o codecs.open i komunikaty zamykania QThreadStorage
+w QGIS 4 pochodzą z bibliotek środowiska; oba procesy zakończyły się
+kodem 0. QGIS 4 i jego zależności rozpakowano wyłącznie do /tmp,
+bez zmiany systemowej instalacji i profilu QGIS.
+
+Nie wykonano testów 1.1.1 na Windows/macOS ani na rzeczywistym serwerze
+PostGIS. Kontrola PostGIS obejmuje porównanie URI, port domyślny i schemat;
+równoważne aliasy adresu serwera mogą wymagać dodatkowej weryfikacji.
+Nie wykonano CI nowego commitu ani skanowania na plugins.qgis.org.

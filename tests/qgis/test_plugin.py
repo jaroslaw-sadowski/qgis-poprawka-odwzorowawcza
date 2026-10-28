@@ -193,7 +193,7 @@ def test_metadata_enables_processing_and_supports_qgis3_and_qgis4() -> None:
 
     metadata = parser["general"]
     assert metadata["name"] == "Poprawka odwzorowawcza PL-2000"
-    assert metadata["version"] == "1.1.0"
+    assert metadata["version"] == "1.1.1"
     assert metadata["qgisminimumversion"] == "3.40"
     assert metadata["qgismaximumversion"] == "4.99"
     assert metadata["hasprocessingprovider"] == "yes"
@@ -233,7 +233,7 @@ def test_metadata_enables_processing_and_supports_qgis3_and_qgis4() -> None:
     assert "The author accepts no responsibility" in metadata["about"]
     assert "category" not in metadata
     assert metadata["icon"] == "resources/icon.png"
-    assert metadata["changelog"].startswith("1.1.0\nPOLSKI\n• ")
+    assert metadata["changelog"].startswith("1.1.1\nPOLSKI\n• ")
     assert metadata["experimental"] == "False"
     assert metadata["deprecated"] == "False"
     assert "supportsQt6" not in metadata_path.read_text(encoding="utf-8")
@@ -314,6 +314,6 @@ def test_native_qgis_installer_reads_both_languages_from_zip(
     assert "pole działki,parcel area" in installed["tags"]
     assert "powierzchnia,area" in installed["tags"]
     assert installed["description"].startswith("PL: Oblicza")
-    assert installed["changelog"].startswith("1.1.0\nPOLSKI\n• ")
-    assert "\nENGLISH\n• QGIS 4 and Qt6 support." in installed["changelog"]
+    assert installed["changelog"].startswith("1.1.1\nPOLSKI\n• ")
+    assert "\nENGLISH\n• New PO_* field names" in installed["changelog"]
     assert installed["changelog"].count("\n• ") == 12

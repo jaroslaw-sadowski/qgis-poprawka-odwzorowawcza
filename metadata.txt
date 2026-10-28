@@ -13,7 +13,7 @@ about=PL
     Developed with vibe coding and AI. Does not send data outside QGIS; uses only libraries supplied with QGIS and standard Python.
     Passed local security and quality checks (Bandit, detect-secrets, Flake8, Ruff, ZIP analysis). The author accepts no responsibility for the plugin's operation or results.
     More info at GitHub repo.
-version=1.1.0
+version=1.1.1
 qgisMinimumVersion=3.40
 qgisMaximumVersion=4.99
 author=Jarosław Sadowski
@@ -23,22 +23,22 @@ repository=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza
 tracker=https://github.com/jaroslaw-sadowski/qgis-poprawka-odwzorowawcza/issues
 tags=kataster,cadastre,egib,land and building register,geodezja,geodesy,pole działki,parcel area,powierzchnia,area,odwzorowanie,projection,poprawka odwzorowawcza,projection correction,rozporządzenie egib,land and building register regulation,polska,poland,pl-2000
 icon=resources/icon.png
-changelog=1.1.0
+changelog=1.1.1
     POLSKI
-    • Obsługa QGIS 4 i Qt6.
-    • Eksport raportu do Markdown.
-    • Kontrola geometrii w obu trybach; pole i punkt średni z tej samej geometrii.
-    • Pełna precyzja parametrów w GeoPackage.
-    • Bezpośredni wpis w menu Wtyczki i ujednolicona nazwa.
-    • Polskie i angielskie opisy oraz tagi.
+    • Nowe nazwy pól PO_* i polskie opisy; odwołania do egib_* wymagają aktualizacji.
+    • Ochrona danych źródłowych przed nadpisaniem przez Processing.
+    • Obsługa pola fid w GeoPackage i ostrzeżenie o ograniczeniach Shapefile.
+    • Podsumowanie obliczeń oraz czytelniejszy układ tabeli.
+    • Ostrzeżenie o transformacji zastępczej i kontrola limitów po naprawie.
+    • Data, wersja wtyczki i etykieta działki w raporcie Markdown.
 
     ENGLISH
-    • QGIS 4 and Qt6 support.
-    • Markdown report export.
-    • Geometry checks in both modes; area and mean point from the same geometry.
-    • Full parameter precision in GeoPackage.
-    • Direct Plugins menu entry and consistent naming.
-    • Polish and English descriptions and tags.
+    • New PO_* field names and Polish descriptions; egib_* references need updating.
+    • Protection against overwriting source data in Processing.
+    • GeoPackage fid handling and warnings about Shapefile limitations.
+    • Calculation summary and a clearer result table layout.
+    • Fallback transformation warnings and geometry limits after repair.
+    • Date, plugin version and parcel display label in Markdown reports.
 hasProcessingProvider=yes
 experimental=False
 deprecated=False

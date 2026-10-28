@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from html import escape
 from pathlib import Path
 from typing import Optional, Tuple
@@ -9,7 +10,9 @@ from typing import Optional, Tuple
 from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransformContext,
+    QgsExpression,
     QgsFeature,
+    QgsVariantUtils,
     QgsVectorLayer,
 )
 from qgis.PyQt.QtCore import QEvent, QIODevice, QSaveFile
@@ -31,7 +34,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
-from .about_dialog import AboutDialog
+from .about_dialog import AboutDialog, read_plugin_metadata
 from .theme import MONOSPACE_FONT_STACK, technical_font, theme_colors
 
 if "." in __package__:
@@ -53,6 +56,7 @@ if "." in __package__:
         calculate_area,
     )
     from ..user_messages import (
+        COORDINATE_TRANSFORM_WARNING,
         GEODESIC_MEASUREMENT_WARNING,
         safe_calculation_error_message,
     )
@@ -75,6 +79,7 @@ else:
         calculate_area,
     )
     from user_messages import (
+        COORDINATE_TRANSFORM_WARNING,
         GEODESIC_MEASUREMENT_WARNING,
         safe_calculation_error_message,
     )
@@ -83,6 +88,7 @@ else:
 _PL2000_ZONE_BY_EPSG = {2176: 5, 2177: 6, 2178: 7, 2179: 8}
 
 _WARNING_LABELS = {
+    "coordinate_transform_fallback": COORDINATE_TRANSFORM_WARNING,
     "geodesic_measurement_failed": GEODESIC_MEASUREMENT_WARNING,
     "geometry_not_repaired": (
         "Geometria jest niepoprawna i nie została naprawiona. "
@@ -128,6 +134,12 @@ _EVENT_TYPE_ENUM = getattr(QEvent, "Type", QEvent)
 _TOOLTIP_EVENT_TYPE = _EVENT_TYPE_ENUM.ToolTip
 
 _WARNING_DETAILS = {
+    "coordinate_transform_fallback": (
+        "Wybrana transformacja współrzędnych nie mogła zostać wykonana. "
+        "QGIS zastosował inną dostępną transformację, która może mieć "
+        "mniejszą dokładność. Sprawdź konfigurację transformacji "
+        "i dostępność wymaganych siatek przed wykorzystaniem wyniku."
+    ),
     "geodesic_measurement_failed": (
         "QGIS nie mógł wykonać pomocniczego pomiaru na elipsoidzie GRS 80. "
         "P₀, P_GK, poprawka i pole według wzoru PL-2000 są wyznaczane "
@@ -716,15 +728,40 @@ class SelectedParcelDialog(QDialog):
             document.setHtml(
                 _format_result_html(result, self._colors, for_export=True)
             )
+            metadata = read_plugin_metadata(
+                Path(__file__).resolve().parents[1]
+            )
+            expression = QgsExpression(self._layer.displayExpression())
+            expression_context = self._layer.createExpressionContext()
+            expression_context.setFeature(self._feature)
+            expression.prepare(expression_context)
+            feature_label = expression.evaluate(expression_context)
+            if (
+                expression.hasParserError()
+                or expression.hasEvalError()
+                or QgsVariantUtils.isNull(feature_label)
+                or not str(feature_label).strip()
+            ):
+                feature_label = (
+                    "niedostępna (brak poprawnej etykiety podglądu w QGIS)"
+                )
+            else:
+                feature_label = " ".join(str(feature_label).split())
+            calculated_at = (
+                datetime.now().astimezone().isoformat(timespec="seconds")
+            )
             context = (
+                f"Data obliczenia: {calculated_at}\n\n"
+                f"Wersja wtyczki: {metadata['version']}\n\n"
                 f"Warstwa: {self._layer.name()}\n\n"
+                f"Etykieta obiektu (QGIS): {feature_label}\n\n"
                 f"Obiekt (FID): {self._feature.id()}\n\n"
                 f"CRS źródłowy: {source_crs.authid()} "
                 f"{source_crs.description()}\n\n"
                 "Obsługa geometrii: "
                 f"{self.repair_mode_combo.currentText()}"
             )
-            # Qt 5 does not escape literal Markdown in arbitrary layer names.
+            # Qt 5 does not escape literal Markdown in context values.
             context = re.sub(r"([\\`*_{}\[\]<>()#+.!|~-])", r"\\\1", context)
             self._report_markdown = (
                 "# Poprawka odwzorowawcza PL-2000\n\n"
@@ -739,6 +776,12 @@ class SelectedParcelDialog(QDialog):
         elif not result.preparation.report.validity_after:
             self._set_status(
                 "Wynik diagnostyczny — geometria niepoprawna, bez naprawy.",
+                "warning",
+            )
+        elif "coordinate_transform_fallback" in result.warnings:
+            self._set_status(
+                "Obliczono powierzchnię z zastępczą transformacją. "
+                "Sprawdź uwagi.",
                 "warning",
             )
         elif result.measurement_warnings:

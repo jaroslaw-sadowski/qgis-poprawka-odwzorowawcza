@@ -75,6 +75,14 @@ jobs:
           cmp /tmp/plugin-first.zip /tmp/plugin-second.zip
           python -m zipfile -t /tmp/plugin-first.zip
 
+      - name: Scan installable plugin package
+        run: |
+          python -m zipfile -e /tmp/plugin-first.zip /tmp/plugin-scan
+          bandit -q -r /tmp/plugin-scan
+          flake8 /tmp/plugin-scan --jobs 1
+          find /tmp/plugin-scan -type f -print0 | \
+            xargs -0 detect-secrets-hook --baseline .secrets.baseline
+
   qgis-tests:
     name: QGIS ${{ matrix.version }} / Qt ${{ matrix.qt }}
     runs-on: ubuntu-24.04

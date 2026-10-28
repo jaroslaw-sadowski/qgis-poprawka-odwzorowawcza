@@ -23,6 +23,7 @@ from .geometry import (
     extract_boundary_points,
     geometry_snapshot,
     transform_geometry_to_pl2000,
+    validate_geometry_budget,
 )
 
 
@@ -115,7 +116,11 @@ def prepare_geometry(
     for point in original_boundary_points:
         validate_easting_zone(point.easting_y, transformed.zone)
 
-    repair_result = _repair_geometry(transformed.geometry, repair_mode)
+    repair_result = _repair_geometry(
+        transformed.geometry,
+        repair_mode,
+        transform_warnings=transformed.warnings,
+    )
     # Area and PGK must describe the same boundary, including any vertices
     # introduced or removed by makeValid. Never mutate the source geometry.
     boundary_points = extract_boundary_points(repair_result.geometry)
@@ -133,14 +138,19 @@ def prepare_geometry(
 
 
 def _repair_geometry(
-    geometry: QgsGeometry, repair_mode: RepairMode
+    geometry: QgsGeometry,
+    repair_mode: RepairMode,
+    *,
+    transform_warnings: Tuple[str, ...] = (),
 ) -> _RepairResult:
     if not isinstance(repair_mode, RepairMode):
         raise TypeError("repair_mode must be a RepairMode value")
 
     original_geometry = QgsGeometry(geometry)
     original_snapshot = geometry_snapshot(original_geometry)
-    input_warnings = _geometry_input_warnings(original_snapshot)
+    input_warnings = transform_warnings + _geometry_input_warnings(
+        original_snapshot
+    )
     validity_before = original_geometry.isGeosValid()
 
     if repair_mode is RepairMode.SOURCE_GEOMETRY:
@@ -245,6 +255,7 @@ def _candidate_rejection_reason(candidate: QgsGeometry) -> Optional[str]:
         return "makeValid returned an empty geometry"
     if candidate.type() != Qgis.GeometryType.Polygon:
         return "makeValid returned a non-polygonal geometry"
+    validate_geometry_budget(candidate)
     if not candidate.isGeosValid():
         error_detail = candidate.lastError()
         return error_detail or "makeValid result is still GEOS-invalid"

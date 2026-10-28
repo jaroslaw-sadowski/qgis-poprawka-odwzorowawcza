@@ -59,6 +59,7 @@ class TransformedGeometry:
     target_crs: QgsCoordinateReferenceSystem
     target_epsg: int
     zone: int
+    warnings: Tuple[str, ...] = ()
 
 
 def measure_geodesic_area_m2(
@@ -105,6 +106,7 @@ def transform_geometry_to_pl2000(
         selected_zone=selected_zone,
     )
     transformed = QgsGeometry(geometry)
+    warnings = ()
 
     if source_crs != selection.crs:
         coordinate_transform = QgsCoordinateTransform(
@@ -112,8 +114,24 @@ def transform_geometry_to_pl2000(
             selection.crs,
             transform_context,
         )
+        allow_fallback = coordinate_transform.allowFallbackTransforms()
+        coordinate_transform.setAllowFallbackTransforms(False)
         try:
-            operation_result = transformed.transform(coordinate_transform)
+            try:
+                operation_result = transformed.transform(coordinate_transform)
+                if not transformed.boundingBox().isFinite():
+                    raise QgsCsException(
+                        "transformation returned non-finite coordinates"
+                    )
+            except QgsCsException:
+                if not allow_fallback:
+                    raise
+                # The fallback flag only covers the last ring/part, so retry
+                # the whole original copy after detecting any failed part.
+                coordinate_transform.setAllowFallbackTransforms(True)
+                transformed = QgsGeometry(geometry)
+                operation_result = transformed.transform(coordinate_transform)
+                warnings = ("coordinate_transform_fallback",)
         except QgsCsException as error:
             raise GeometryTransformError(
                 "failed to transform geometry to "
@@ -125,6 +143,10 @@ def transform_geometry_to_pl2000(
                 "geometry transform returned a non-success result: "
                 f"{operation_result}"
             )
+        if not transformed.boundingBox().isFinite():
+            raise GeometryTransformError(
+                "transformation returned non-finite coordinates"
+            )
 
     _validate_polygon_geometry(transformed)
     return TransformedGeometry(
@@ -132,6 +154,7 @@ def transform_geometry_to_pl2000(
         target_crs=selection.crs,
         target_epsg=selection.epsg,
         zone=selection.zone,
+        warnings=warnings,
     )
 
 

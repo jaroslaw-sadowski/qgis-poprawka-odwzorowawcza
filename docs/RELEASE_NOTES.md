@@ -1,4 +1,6 @@
-# Poprawka odwzorowawcza PL-2000 1.1.0
+# Poprawka odwzorowawcza PL-2000 1.1.1
+
+Projekt opisu — wydanie nieopublikowane. / Draft — not yet published.
 
 ## Polski
 
@@ -11,13 +13,21 @@ bezpłatna i otwartoźródłowa, na licencji GNU GPL v2.
 
 W tym wydaniu:
 
-- Obsługa QGIS 4.x obok QGIS 3.40–3.x.
-- Zapis raportu pojedynczej działki do Markdown.
-- Kontrola geometrii w obu trybach; opcjonalna naprawa kopii. Pole
-  i punkt średni pochodzą z tej samej geometrii użytej w obliczeniu.
-- Pełna precyzja parametrów zapisywanych w GeoPackage.
-- Bezpośredni wpis w menu **Wtyczki → Poprawka odwzorowawcza PL-2000**.
-- Opisy i tagi po polsku oraz angielsku; polski interfejs.
+- Rzeczywiste nazwy pól wynikowych z prefiksem `PO_`: `PO_P0_m2`,
+  `PO_dP_m2`, `PO_P_m2`, `PO_P_ha`, `PO_QGIS_m2`, `PO_status`,
+  `PO_uwagi` i pozostałe pola diagnostyczne. Polskie nagłówki zawierają
+  nazwę i opis z jednostkami, np. `PO_P_m2 — Powierzchnia po poprawce P [m²]`.
+- Ochrona danych źródłowych przed nadpisaniem w Processing.
+- Obsługa źródłowego `fid` w GeoPackage i ostrzeżenie o skracaniu pól SHP.
+- Podsumowanie obliczeń oraz czytelniejszy układ tabeli, zapisywany w GPKG.
+- Ostrzeżenie o transformacji zastępczej i kontrola limitów po naprawie.
+- Data, wersja wtyczki i etykieta obiektu QGIS w raporcie Markdown.
+
+Identyfikator algorytmu `egib_area:calculate_egib_area` pozostaje bez zmian.
+Modele i wyrażenia odwołujące się do dawnych pól `egib_*` wymagają
+aktualizacji do nowych nazw `PO_*`.
+
+Zachowano obsługę QGIS 3.40–3.x i 4.x oraz dotychczasowy wzór obliczeń.
 
 Wtyczka działa lokalnie, używa bibliotek QGIS i standardowego Pythona,
 nie wysyła danych na zewnątrz i nie zmienia warstwy źródłowej. Powstała
@@ -39,13 +49,21 @@ is free and open source under GNU GPL v2.
 
 This release adds:
 
-- QGIS 4.x support alongside QGIS 3.40–3.x.
-- Single-parcel report export to Markdown.
-- Geometry validation in both modes, with optional repair of a copy.
-  Area and mean boundary point use the same calculation geometry.
-- Full precision for calculation parameters saved to GeoPackage.
-- A direct **Plugins → Poprawka odwzorowawcza PL-2000** menu entry.
-- Polish and English descriptions and tags; a Polish interface.
+- Actual result field names prefixed with `PO_`: `PO_P0_m2`, `PO_dP_m2`,
+  `PO_P_m2`, `PO_P_ha`, `PO_QGIS_m2`, `PO_status`, `PO_uwagi` and the
+  other diagnostic fields. Polish headings include each field name
+  and a description with units, e.g. `PO_P_m2 — Powierzchnia po poprawce P [m²]`.
+- Protection against overwriting source data in Processing.
+- Source `fid` handling in GeoPackage and warnings about SHP truncation.
+- Calculation summary and a clearer table layout stored in GeoPackage.
+- Fallback transformation warnings and geometry limits after repair.
+- Date, plugin version and QGIS feature display label in Markdown reports.
+
+The algorithm ID `egib_area:calculate_egib_area` remains unchanged.
+Models and expressions referring to the former `egib_*` fields need
+updating to the new `PO_*` names.
+
+QGIS 3.40–3.x and 4.x support and the calculation formula are retained.
 
 The plugin runs locally using QGIS libraries and standard Python. It
 sends no data outside QGIS and does not modify the source layer. It was

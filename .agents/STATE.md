@@ -1,4 +1,45 @@
-# Stan prac — 2026-09-05
+# Stan prac — 2026-10-28
+
+## Bieżąca praca — lokalny kandydat 1.1.1
+
+- Na zlecenie użytkownika wdrożono poprawki z audytu: ochrona źródeł
+  przed nadpisaniem w Processing, obsługa fid i kolizji nazw, kontrola
+  końcowego zapisu, ostrzeżenie SHP, polskie opisy pól i układ tabeli
+  zapisany w GPKG, podsumowanie oraz oznaczenie wyniku po anulowaniu.
+- Użytkownik doprecyzował, że mają się zmienić rzeczywiste nazwy pól,
+  nie tylko aliasy: wszystkie 27 dodawanych pól ma teraz prefiks PO_,
+  m.in. PO_P0_m2, PO_dP_m2, PO_P_m2 i PO_P_ha. Nagłówki zaczynają się
+  nazwą PO_* i zawierają polski opis. Bez duplikatów i trybu legacy.
+  Modele i wyrażenia odnoszące się do egib_* wymagają aktualizacji.
+  Zachowano identyfikator algorytmu, wzór i zaokrąglenia.
+  Nie dodano zależności runtime. Raport MD ma czas z offsetem, wersję
+  i etykietę QGIS. Jest ostrzeżenie o transformacji zastępczej oraz
+  kontrola limitów po naprawie, także dla wielopoligonów.
+- Nowe testy obejmują m.in. wrappery zaznaczenia, dowiązania, rozszerzenia
+  dopisywane przez writer, zapis nowej tabeli GPKG oraz ponowny odczyt
+  rzeczywistych nazw PO_* i aliasów. Zachowano też źródłowe atrybuty
+  egib_*, jeśli istniały na wejściu; wtyczka nie generuje nowych egib_*.
+  Pełny suite: 280/280 na QGIS 3.40.15/Qt5.15.18 i 280/280
+  na rzeczywistym QGIS 4.2.2/Qt6.10.2, lokalnie Linux/Python 3.14.4.
+- Ruff 0.16.0, formatowanie, Flake8 7.3.0, Bandit, detect-secrets,
+  pip-audit, kompilacja i oficjalny checker Qt6 poprawne; skanery
+  sprawdziły też ZIP.
+  Workflow Quality skanuje teraz również rozpakowaną paczkę.
+- ZIP 1.1.1 i suma w dist/, 25 plików, 63 067 B; SHA-256
+  aa35fd2b39e59b52ddf08dfb3482f29492c445bc83e1c1bbba0a315996dd5df6.
+  Zastępuje wcześniejszy lokalny kandydat z samymi aliasami egib_*.
+  Dwa buildy identyczne. Starej paczki 1.1.0 nie zastępowano.
+- QGIS 4 rozpakowano do /tmp/pl2000-qgis4; env:
+  /tmp/pl2000-qgis4-env.sh, narzędzia: /tmp/pl2000-audit-20261028.
+  Nie zmieniano systemowego QGIS ani profilu użytkownika.
+- Weryfikacja PostGIS obejmuje URI, nie serwer; aliasy hostów pozostają
+  granicą rozpoznawania tego samego celu. Windows/macOS nie testowano
+  dla 1.1.1. To wyniki lokalne, nie CI ani skan portalu QGIS.
+- Użytkownik zlecił lokalny commit obejmujący powyższe zmiany.
+  Bez pushu, tagu i publikacji.
+  Zachowano wcześniejsze zmiany użytkownika w tym pliku i raporcie
+  RELEASE_VALIDATION. Przed publikacją wymagane osobne zlecenie,
+  CI commitu wydania i ręczny test paczki. Poniżej historia 1.1.0.
 
 ## Punkt zatrzymania
 
@@ -80,8 +121,9 @@ projektu. Nazwy metod API QGIS/Qt mają celowe wyjątki `N802`; nazwa katalogu
 repozytorium `N999`. Nie zmieniaj wymaganych nazw API na snake_case.
 
 CI finalnego commitu `6dc50de` przeszło także w oficjalnych obrazach
-QGIS 3.44.11/Qt5 i 4.2.2/Qt6 oraz w zadaniu Source quality. Windows
-ani macOS nie były testowane. Ostrzeżenia QGIS/Qt opisuje raport walidacji.
+QGIS 3.44.11/Qt5 i 4.2.2/Qt6 oraz w zadaniu Source quality. Na etapie
+walidacji z 5 września Windows ani macOS nie były testowane. Późniejszy
+test ręczny Windows opisano w uzupełnieniu poniżej. Ostrzeżenia QGIS/Qt opisuje raport walidacji.
 
 ## Wznowienie
 
@@ -125,3 +167,22 @@ nowe linie krótkiego opisu; sprawdzono źródła menedżera i renderowanie
 Qt5/Qt6. HTML w metadanych jest niedozwolony, więc zachowano PL przed EN
 z separatorem. Opis szczegółowy i changelog zachowują osobne wiersze.
 Nie dodawać obejść zmieniających działanie menedżera QGIS.
+
+## Uzupełnienie lokalne — 2026-09-06
+
+- PR #5 zamknięto bez scalania z uzasadnieniem PL/EN na zlecenie
+  użytkownika: zachowujemy spójną nazwę. PR #1 i #6 pozostają otwarte
+  do kolejnej iteracji prac.
+- Działka `100102_2.0026.477/4`, WKT EPSG:2177: lokalny test funkcji
+  wtyczki na QGIS 3.40.15 i 4.2.2 dał identyczne wyniki: P₀
+  616 289,5481 m², poprawka 36,6371 m², wynik 61,6253 ha.
+  Potwierdzono zgodność powierzchni z dwoma programami geodezyjnymi
+  na zrzutach użytkownika, do ich precyzji wyświetlania.
+- Użytkownik potwierdził ręczny test ZIP-a 1.1.0 na innym komputerze:
+  Windows 11, QGIS 3.40.15-Bratislava. Nie przypisywać temu testowi
+  zakresu pełnej automatycznej walidacji Windows.
+- Fakty zapisano w `docs/RELEASE_VALIDATION.md`; bez hipotez dotyczących
+  trzeciego programu. Skrypt testu i WKT pozostają poza repo, w `/tmp`.
+- Użytkownik zlecił wyłącznie lokalne zmiany dokumentacji do przyszłego
+  commitu. Nie commitować, nie pushować i nie zmieniać tagu ani wydania:
+  paczka oczekuje na weryfikację plugins.qgis.org.

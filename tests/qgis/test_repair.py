@@ -7,8 +7,10 @@ from qgis.core import (
     QgsNotSupportedException,
 )
 
+import adapters.geometry as geometry_module
 import adapters.repair as repair_module
 from adapters import (
+    GeometryInputError,
     GeometryRepairError,
     RepairMethod,
     RepairMode,
@@ -191,3 +193,78 @@ def test_multipart_and_interior_rings_are_reported() -> None:
     assert result.report.validity_before is True
     assert "multipart_geometry" in result.report.warnings
     assert "interior_rings_included" in result.report.warnings
+
+
+@pytest.mark.parametrize("repair_mode", list(RepairMode))
+def test_fallback_transform_warning_reaches_geometry_report(repair_mode):
+    source = QgsGeometry.fromWkt(
+        "POLYGON ((21 52,21.001 52,21.001 52.001,21 52.001,21 52))"
+    )
+    source_wkb = bytes(source.asWkb())
+    source_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+    target_crs = QgsCoordinateReferenceSystem("EPSG:2178")
+    context = QgsCoordinateTransformContext()
+    # This valid operation cannot project Poland from the South Pole;
+    # QGIS must fall back without requiring any external grid files.
+    assert context.addCoordinateOperation(
+        source_crs,
+        target_crs,
+        "+proj=pipeline +step +proj=unitconvert +xy_in=deg +xy_out=rad "
+        "+step +proj=gnom +lat_0=-90 +lon_0=0 +ellps=WGS84",
+        True,
+    )
+
+    result = prepare_geometry(
+        source,
+        source_crs,
+        context,
+        selected_zone=7,
+        repair_mode=repair_mode,
+    )
+
+    assert result.report.warnings == ("coordinate_transform_fallback",)
+    assert result.report.validity_after is True
+    assert bytes(source.asWkb()) == source_wkb
+
+
+@pytest.mark.parametrize(
+    ("budget_name", "limit"),
+    [
+        ("MAX_BOUNDARY_COORDINATES", 5),
+        ("MAX_POLYGON_PARTS", 1),
+        ("MAX_POLYGON_RINGS", 1),
+    ],
+)
+def test_repair_budget_checked_before_snapshot_or_extract(
+    monkeypatch, budget_name, limit
+):
+    source = _bow_tie()
+    source_wkb = bytes(source.asWkb())
+    monkeypatch.setattr(geometry_module, budget_name, limit)
+    real_snapshot = repair_module.geometry_snapshot
+    real_extract = repair_module.extract_boundary_points
+
+    def snapshot_within_budget(geometry):
+        assert geometry.constGet().nCoordinates() == 5
+        return real_snapshot(geometry)
+
+    def extract_within_budget(geometry):
+        assert geometry.constGet().nCoordinates() == 5
+        return real_extract(geometry)
+
+    monkeypatch.setattr(
+        repair_module, "geometry_snapshot", snapshot_within_budget
+    )
+    monkeypatch.setattr(
+        repair_module, "extract_boundary_points", extract_within_budget
+    )
+
+    with pytest.raises(GeometryInputError, match="Geometria przekracza limit"):
+        prepare_geometry(
+            source,
+            QgsCoordinateReferenceSystem("EPSG:2178"),
+            QgsCoordinateTransformContext(),
+            repair_mode=RepairMode.AUTO_REPAIR,
+        )
+
+    assert bytes(source.asWkb()) == source_wkb

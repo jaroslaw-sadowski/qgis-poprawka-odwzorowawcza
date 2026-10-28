@@ -1,8 +1,16 @@
+from dataclasses import replace
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
-from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
+from qgis.core import (
+    QgsFeature,
+    QgsField,
+    QgsGeometry,
+    QgsProject,
+    QgsVectorLayer,
+)
 from qgis.PyQt.QtCore import QPoint, Qt
 from qgis.PyQt.QtTest import QTest
 from qgis.PyQt.QtWidgets import (
@@ -17,6 +25,7 @@ from qgis.PyQt.QtWidgets import (
 import adapters.geometry as geometry_module
 import gui.dialog as dialog_module
 from adapters import GeometryTransformError, RepairMethod
+from compat import FIELD_TYPE_STRING
 from gui import AboutDialog, SelectedParcelDialog, read_plugin_metadata
 
 
@@ -444,6 +453,37 @@ def test_auxiliary_failure_preserves_main_gui_result(
     )
 
 
+def test_fallback_transformation_warning_is_visible_in_gui_and_report(
+    calculated_dialog, monkeypatch
+):
+    dialog = calculated_dialog
+    result = dialog.last_result
+    preparation = result.preparation
+    fallback_result = replace(
+        result,
+        preparation=replace(
+            preparation,
+            report=replace(
+                preparation.report,
+                warnings=("coordinate_transform_fallback",),
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        dialog_module,
+        "calculate_selected_parcel",
+        lambda *args, **kwargs: fallback_result,
+    )
+    dialog.calculate()
+    assert dialog.last_result.calculation == result.calculation
+    assert dialog.status_card.property("state") == "warning"
+    assert "zastępczą transformacją" in dialog.status_label.text()
+    warning = "QGIS użył zastępczej transformacji współrzędnych."
+    assert warning in dialog.result_text.toPlainText()
+    assert warning in " ".join(dialog._report_markdown.split())
+    assert "coordinate_transform_fallback" not in dialog._report_markdown
+
+
 def test_failed_recalculation_clears_display_and_export(
     calculated_dialog, monkeypatch
 ):
@@ -699,6 +739,88 @@ def test_markdown_escapes_layer_name_and_keeps_calculation_context(layer_name):
     assert layer.name() in " ".join(document.toPlainText().split())
     layer.setName("Nowa nazwa")
     assert dialog._report_markdown == before
+
+
+def test_markdown_records_plugin_version_and_local_calculation_time():
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    dialog = _dialog(layer)
+    before = datetime.now().astimezone().replace(microsecond=0)
+    dialog.calculate()
+    after = datetime.now().astimezone()
+    document = dialog_module.QTextDocument()
+    document.setMarkdown(dialog._report_markdown)
+    rendered = document.toPlainText()
+    timestamp = next(
+        line.removeprefix("Data obliczenia: ")
+        for line in rendered.splitlines()
+        if line.startswith("Data obliczenia: ")
+    )
+    calculated_at = datetime.fromisoformat(timestamp)
+    assert calculated_at.tzinfo is not None
+    assert calculated_at.utcoffset() == before.utcoffset()
+    assert before <= calculated_at <= after
+    root = Path(__file__).resolve().parents[2]
+    version = read_plugin_metadata(root)["version"]
+    assert f"Wersja wtyczki: {version}" in rendered
+
+
+@pytest.mark.parametrize(
+    "parcel_id",
+    [
+        "100102_2.0026.477/4",
+        "<b>źródło</b> & [opis](https://example.invalid)",
+        "`nazwa` **2026** _archiwum_\n# nowa linia | pole",
+    ],
+)
+def test_markdown_uses_qgis_display_expression_and_escapes_feature_label(
+    parcel_id,
+):
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    layer.dataProvider().addAttributes(
+        [QgsField("parcel_id", FIELD_TYPE_STRING)]
+    )
+    layer.updateFields()
+    feature = next(layer.getFeatures())
+    layer.dataProvider().changeAttributeValues({feature.id(): {0: parcel_id}})
+    layer.setDisplayExpression("concat('działka ', \"parcel_id\")")
+    dialog = _dialog(layer)
+    dialog.calculate()
+    document = dialog_module.QTextDocument()
+    document.setMarkdown(dialog._report_markdown)
+    rendered = document.toPlainText()
+    expected_label = " ".join(f"działka {parcel_id}".split())
+    assert f"Etykieta obiektu (QGIS): {expected_label}" in rendered
+    assert f"Obiekt (FID): {feature.id()}" in rendered
+    assert "10001,54 m²" in rendered
+
+
+@pytest.mark.parametrize(
+    "expression",
+    ["", "NULL", "''", "'  '", '"missing_field"', "1 +"],
+)
+def test_missing_or_invalid_qgis_display_expression_preserves_report(
+    expression,
+):
+    layer = _layer_with_geometry(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    layer.setDisplayExpression(expression)
+    dialog = _dialog(layer)
+    dialog.calculate()
+    document = dialog_module.QTextDocument()
+    document.setMarkdown(dialog._report_markdown)
+    rendered = document.toPlainText()
+    assert "Etykieta obiektu (QGIS): niedostępna" in rendered
+    assert f"Obiekt (FID): {next(layer.getFeatures()).id()}" in rendered
+    assert "10001,54 m²" in rendered
+    assert dialog.export_button.isEnabled()
 
 
 def test_about_information_opens_from_calculator(

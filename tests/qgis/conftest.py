@@ -1,3 +1,4 @@
+import gc
 import os
 
 import pytest
@@ -20,4 +21,5 @@ def qgis_application():
     yield application
 
     if owns_application:
+        gc.collect()
         application.exitQgis()

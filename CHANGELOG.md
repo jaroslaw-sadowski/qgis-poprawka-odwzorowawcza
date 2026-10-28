@@ -3,6 +3,37 @@
 Wszystkie istotne zmiany projektu są dokumentowane w tym pliku. Projekt
 stosuje [Semantic Versioning](https://semver.org/).
 
+## 1.1.1 - niewydane
+
+### Changed
+
+- Rzeczywiste nazwy pól wynikowych Processing z prefiksem `PO_`, m.in.
+  `PO_P0_m2`, `PO_dP_m2`, `PO_P_m2`, `PO_P_ha`, `PO_QGIS_m2`,
+  `PO_status` i `PO_uwagi`. Polskie aliasy zawierają nazwę pola i opis
+  z jednostkami.
+- Zachowano identyfikator `egib_area:calculate_egib_area`; modele
+  i wyrażenia odwołujące się do dawnych pól `egib_*` wymagają aktualizacji.
+- Domyślnie ukryte szczegóły diagnostyczne; GeoPackage zapisuje układ
+  tabeli wewnątrz pliku.
+- Raport Markdown zawiera datę, wersję wtyczki i etykietę obiektu QGIS.
+- Processing podsumowuje wyniki i wyraźnie oznacza wynik po anulowaniu.
+
+### Fixed
+
+- Blokada nadpisania pliku lub istniejącej tabeli danych źródłowych;
+  nowa tabela w tym samym GeoPackage pozostaje dozwolona.
+- Zachowanie źródłowego `fid` pod niekolidującą nazwą w GeoPackage,
+  kontrola wielkości liter w nazwach oraz błędów buforowanego zapisu.
+- Ostrzeżenie o skracaniu nazw i uwag przy zapisie do Shapefile.
+- Informacja o zastępczej transformacji współrzędnych, także wtedy,
+  gdy wymaga jej wcześniejsza część wielopoligonu.
+- Sprawdzanie limitów złożoności również po naprawie geometrii.
+
+### Added
+
+- Testy regresyjne zapisu, ochrony źródeł, raportu i polskich nagłówków.
+- Automatyczne skanowanie gotowej paczki w workflow Quality.
+
 ## [1.1.0] - 2026-09-05
 
 ### Changed

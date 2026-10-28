@@ -22,8 +22,10 @@
   a nie miejscem na pamięć sesji lub instrukcje dla agentów.
 - Kod obliczeń: `core/`; integracja i geometria: `adapters/`; GUI: `gui/`;
   przetwarzanie seryjne: `processing_provider/`. Używaj `qgis.PyQt`.
-- Zachowaj identyfikatory `egib_area:calculate_egib_area` i pola `egib_*`
-  używane przez istniejące modele i dane.
+- Zachowaj identyfikator `egib_area:calculate_egib_area`. Pola wynikowe
+  Processing mają rzeczywiste nazwy `PO_*`, zgodnie z decyzją użytkownika
+  z 2026-10-28; same aliasy pól `egib_*` nie spełniają tej decyzji.
+  Starsze modele odwołujące się do `egib_*` wymagają aktualizacji nazw.
 - Dane źródłowe są niemodyfikowalne. Brak komunikacji sieciowej w runtime;
   wyłącznie biblioteki QGIS i standardowego Pythona.
 - Zmiana wzoru, osi, stref, P_GK, doboru geometrii lub zaokrągleń wymaga

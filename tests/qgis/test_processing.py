@@ -1,16 +1,24 @@
+import os
+from unittest.mock import Mock
+
 import pytest
 from qgis.core import (
     NULL,
     QgsApplication,
+    QgsDataSourceUri,
     QgsFeature,
+    QgsFeatureSink,
     QgsField,
     QgsGeometry,
     QgsProcessing,
     QgsProcessingContext,
     QgsProcessingException,
+    QgsProcessingFeatureSourceDefinition,
     QgsProcessingFeedback,
+    QgsProcessingOutputLayerDefinition,
     QgsProcessingRegistry,
     QgsProcessingUtils,
+    QgsVectorFileWriter,
     QgsVectorLayer,
 )
 from qgis.gui import QgsProcessingToolboxModel
@@ -42,15 +50,18 @@ def _run_algorithm(
     *,
     zone_index: int = 0,
     repair_mode_index: int = 0,
+    destination=QgsProcessing.TEMPORARY_OUTPUT,
+    feedback=None,
 ):
     algorithm = CalculateEgibAreaAlgorithm()
     context = QgsProcessingContext()
-    feedback = QgsProcessingFeedback()
+    if feedback is None:
+        feedback = QgsProcessingFeedback()
     parameters = {
         algorithm.INPUT: layer,
         algorithm.ZONE: zone_index,
         algorithm.REPAIR_MODE: repair_mode_index,
-        algorithm.OUTPUT: QgsProcessing.TEMPORARY_OUTPUT,
+        algorithm.OUTPUT: destination,
     }
 
     results, ok = algorithm.run(
@@ -112,34 +123,37 @@ def test_batch_creates_new_layer_and_leaves_input_unchanged() -> None:
     assert set(CalculateEgibAreaAlgorithm.OUTPUT_FIELD_NAMES).issubset(
         output.fields().names()
     )
+    assert not any(
+        name.startswith("egib_") for name in output.fields().names()
+    )
     for field_name in (
-        "egib_po_m2",
-        "egib_qgis_m2",
-        "egib_corr_m2",
-        "egib_area_m2",
-        "egib_orig_area_m2",
-        "egib_repaired_area_m2",
-        "egib_area_diff_m2",
+        "PO_P0_m2",
+        "PO_QGIS_m2",
+        "PO_dP_m2",
+        "PO_P_m2",
+        "PO_pole_przed_m2",
+        "PO_pole_po_m2",
+        "PO_zmiana_m2",
     ):
         assert output.fields().field(field_name).precision() == 2
-    assert output.fields().field("egib_area_ha").precision() == 4
+    assert output.fields().field("PO_P_ha").precision() == 4
     assert layer.fields().names() == input_fields
     assert [
         bytes(feature.geometry().asWkb()) for feature in layer.getFeatures()
     ] == input_wkbs
-    assert "egib_status" not in layer.fields().names()
+    assert "PO_status" not in layer.fields().names()
 
     first = next(output.getFeatures())
     assert first["parcel_id"] == 1
-    assert first["egib_status"] == "source_geometry"
-    assert first["egib_po_m2"] == 10_000.00
-    assert first["egib_qgis_m2"] == 10_001.54
-    assert first["egib_corr_m2"] == -1.54
-    assert first["egib_area_m2"] == 10_001.54
-    assert first["egib_area_ha"] == pytest.approx(1.0002)
-    assert first["egib_zone"] == 7
-    assert first["egib_epsg"] == 2178
-    assert first["egib_repair_method"] == "none"
+    assert first["PO_status"] == "source_geometry"
+    assert first["PO_P0_m2"] == 10_000.00
+    assert first["PO_QGIS_m2"] == 10_001.54
+    assert first["PO_dP_m2"] == -1.54
+    assert first["PO_P_m2"] == 10_001.54
+    assert first["PO_P_ha"] == pytest.approx(1.0002)
+    assert first["PO_strefa"] == 7
+    assert first["PO_EPSG"] == 2178
+    assert first["PO_naprawa"] == "none"
     assert first.geometry().isMultipart() is True
 
 
@@ -153,13 +167,13 @@ def test_source_mode_reports_invalid_geometry_without_repair() -> None:
     output, _context = _run_algorithm(layer, repair_mode_index=0)
     result = next(output.getFeatures())
 
-    assert result["egib_status"] == "invalid_source_geometry"
-    assert "geometry_not_repaired" in result["egib_warnings"]
-    assert result["egib_repair_method"] == "none"
-    assert result["egib_valid_before"] is False
-    assert result["egib_valid_after"] is False
-    assert result["egib_po_m2"] == 10_000.00
-    assert result["egib_area_m2"] is not NULL
+    assert result["PO_status"] == "invalid_source_geometry"
+    assert "geometry_not_repaired" in result["PO_uwagi"]
+    assert result["PO_naprawa"] == "none"
+    assert result["PO_poprawna_przed"] is False
+    assert result["PO_poprawna_po"] is False
+    assert result["PO_P0_m2"] == 10_000.00
+    assert result["PO_P_m2"] is not NULL
     assert bytes(result.geometry().asWkb()) == source_wkb
 
 
@@ -173,10 +187,10 @@ def test_auto_repair_calculates_area_in_new_layer() -> None:
     output, _context = _run_algorithm(layer, repair_mode_index=1)
     result = next(output.getFeatures())
 
-    assert result["egib_status"] == "repaired"
-    assert result["egib_po_m2"] == pytest.approx(5_000.0)
-    assert result["egib_area_m2"] is not None
-    assert "repair_changed_boundary_vertices" in result["egib_warnings"]
+    assert result["PO_status"] == "repaired"
+    assert result["PO_P0_m2"] == pytest.approx(5_000.0)
+    assert result["PO_P_m2"] is not None
+    assert "repair_changed_boundary_vertices" in result["PO_uwagi"]
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
 
@@ -195,12 +209,12 @@ def test_feature_without_geometry_is_reported_and_batch_continues() -> None:
     }
 
     assert output.featureCount() == 2
-    assert results[1]["egib_status"] == "source_geometry"
-    assert results[2]["egib_status"] == "error"
-    assert results[2]["egib_zone"] == 7
-    assert results[2]["egib_epsg"] == 2178
+    assert results[1]["PO_status"] == "source_geometry"
+    assert results[2]["PO_status"] == "error"
+    assert results[2]["PO_strefa"] == 7
+    assert results[2]["PO_EPSG"] == 2178
     assert results[2].hasGeometry() is False
-    assert "Geometria wejściowa jest pusta" in results[2]["egib_warnings"]
+    assert "Geometria wejściowa jest pusta" in results[2]["PO_uwagi"]
 
 
 def test_feature_over_geometry_budget_is_reported_without_processing(
@@ -219,9 +233,9 @@ def test_feature_over_geometry_budget_is_reported_without_processing(
     output, _context = _run_algorithm(layer)
     result = next(output.getFeatures())
 
-    assert result["egib_status"] == "error"
-    assert result["egib_area_m2"] == NULL
-    assert "limit liczby współrzędnych: 5 > 4" in result["egib_warnings"]
+    assert result["PO_status"] == "error"
+    assert result["PO_P_m2"] == NULL
+    assert "limit liczby współrzędnych: 5 > 4" in result["PO_uwagi"]
     assert result.hasGeometry() is False
 
 
@@ -246,24 +260,373 @@ def test_processing_hides_raw_transform_error_details(monkeypatch) -> None:
     output, _context = _run_algorithm(layer)
     result = next(output.getFeatures())
 
-    assert result["egib_status"] == "error"
-    assert "Sprawdź CRS warstwy" in result["egib_warnings"]
-    assert "/home/private-user" not in result["egib_warnings"]
-    assert "grid missing" not in result["egib_warnings"]
+    assert result["PO_status"] == "error"
+    assert "Sprawdź CRS warstwy" in result["PO_uwagi"]
+    assert "/home/private-user" not in result["PO_uwagi"]
+    assert "grid missing" not in result["PO_uwagi"]
 
 
-def test_reserved_output_field_collision_is_rejected() -> None:
+@pytest.mark.parametrize("field_name", ["PO_status", "PO_STATUS"])
+def test_reserved_output_field_collision_is_rejected(field_name) -> None:
     layer = _polygon_layer(
         "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
         "7500050 5800050,7499950 5800050,7499950 5799950)))"
     )
     layer.dataProvider().addAttributes(
-        [QgsField("egib_status", FIELD_TYPE_STRING)]
+        [QgsField(field_name, FIELD_TYPE_STRING)]
     )
     layer.updateFields()
 
-    with pytest.raises(QgsProcessingException, match="egib_status"):
+    with pytest.raises(QgsProcessingException, match=field_name):
         _run_algorithm(layer)
+
+
+@pytest.mark.parametrize("destination", ["memory:", "result.gpkg"])
+def test_existing_source_attribute_with_old_prefix_is_preserved(
+    tmp_path, destination
+):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    layer.dataProvider().addAttributes(
+        [QgsField("egib_area_m2", FIELD_TYPE_STRING)]
+    )
+    layer.updateFields()
+    feature = next(layer.getFeatures())
+    layer.dataProvider().changeAttributeValues(
+        {
+            feature.id(): {
+                layer.fields().indexFromName("egib_area_m2"): "źródło"
+            }
+        }
+    )
+    before = [feature.attributes() for feature in layer.getFeatures()]
+
+    if destination != "memory:":
+        destination = str(tmp_path / destination)
+    output, _context = _run_algorithm(layer, destination=destination)
+    if destination.endswith(".gpkg"):
+        output = QgsVectorLayer(destination, "Ponownie otwarty wynik", "ogr")
+        assert output.isValid()
+    result = next(output.getFeatures())
+
+    assert result["egib_area_m2"] == "źródło"
+    assert result["PO_P_m2"] == 10_001.54
+    assert [feature.attributes() for feature in layer.getFeatures()] == before
+    assert [
+        name for name in output.fields().names() if name.startswith("egib_")
+    ] == ["egib_area_m2"]
+
+
+@pytest.fixture
+def saved_parcels(tmp_path):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    path = tmp_path / "source.gpkg"
+    options = QgsVectorFileWriter.SaveVectorOptions()
+    options.driverName = "GPKG"
+    options.layerName = "parcels"
+    result = QgsVectorFileWriter.writeAsVectorFormatV3(
+        layer, str(path), QgsProcessingContext().transformContext(), options
+    )
+    assert result[0] == QgsVectorFileWriter.WriterError.NoError
+    options.layerName = "other"
+    options.actionOnExistingFile = (
+        QgsVectorFileWriter.ActionOnExistingFile.CreateOrOverwriteLayer
+    )
+    result = QgsVectorFileWriter.writeAsVectorFormatV3(
+        layer, str(path), QgsProcessingContext().transformContext(), options
+    )
+    assert result[0] == QgsVectorFileWriter.WriterError.NoError
+    return path
+
+
+def _geopackage_destination(path, table):
+    uri = QgsDataSourceUri()
+    uri.setDatabase(str(path))
+    uri.setTable(table)
+    uri.setGeometryColumn("geom")
+    return "ogr:" + uri.uri(False)
+
+
+@pytest.mark.parametrize(
+    "destination_kind",
+    [
+        "file",
+        "wrapped",
+        "table",
+        "other_table",
+        "symlink",
+        "hardlink",
+        "source_definition",
+        "encoded_table",
+        "default_extension",
+    ],
+)
+def test_output_cannot_overwrite_source_database(
+    saved_parcels, tmp_path, destination_kind
+):
+    path = saved_parcels
+    source = str(path)
+    before = path.read_bytes()
+    destination = str(path)
+    if destination_kind == "wrapped":
+        destination = QgsProcessingOutputLayerDefinition(destination)
+    elif destination_kind == "source_definition":
+        source = QgsProcessingFeatureSourceDefinition(str(path))
+    elif destination_kind == "encoded_table":
+        destination = QgsProcessingUtils.encodeProviderKeyAndUri(
+            "ogr", f"{path}|layername=parcels"
+        )
+    elif destination_kind == "default_extension":
+        destination = str(path.with_suffix(""))
+    elif destination_kind in ("table", "other_table"):
+        destination = _geopackage_destination(
+            path, "PARCELS" if destination_kind == "table" else "other"
+        )
+    elif destination_kind in ("symlink", "hardlink"):
+        link = tmp_path / "link.gpkg"
+        try:
+            if destination_kind == "symlink":
+                link.symlink_to(path)
+            else:
+                os.link(path, link)
+        except OSError as error:
+            pytest.skip(f"System nie pozwala utworzyć dowiązania: {error}")
+        destination = str(link)
+
+    with pytest.raises(QgsProcessingException, match="nie może nadpisać"):
+        _run_algorithm(source, destination=destination)
+
+    assert path.read_bytes() == before
+    for table in ("parcels", "other"):
+        reopened = QgsVectorLayer(f"{path}|layername={table}", table, "ogr")
+        assert reopened.isValid()
+        assert reopened.featureCount() == 1
+        assert "PO_P_m2" not in reopened.fields().names()
+
+
+def test_output_can_add_new_table_to_source_geopackage(saved_parcels):
+    path = saved_parcels
+    source = QgsVectorLayer(str(path), "parcels", "ogr")
+    assert source.isValid()
+    source_wkb = bytes(next(source.getFeatures()).geometry().asWkb())
+    output, _context = _run_algorithm(
+        source, destination=_geopackage_destination(path, "result")
+    )
+
+    assert output.featureCount() == 1
+    assert next(output.getFeatures())["PO_P_ha"] == pytest.approx(1.0002)
+    for table in ("parcels", "other"):
+        reopened = QgsVectorLayer(f"{path}|layername={table}", table, "ogr")
+        assert reopened.featureCount() == 1
+        assert "PO_P_m2" not in reopened.fields().names()
+        assert bytes(next(reopened.getFeatures()).geometry().asWkb()) == (
+            source_wkb
+        )
+
+
+@pytest.mark.parametrize(
+    ("driver", "source_name", "output_name"),
+    [
+        ("ESRI Shapefile", "source.dbf.shp", "source.dbf"),
+        ("GeoJSON", "source.json.geojson", "source.json"),
+        ("SQLite", "source.db.sqlite", "source.db"),
+        ("MapInfo File", "source.mif.tab", "source.mif"),
+    ],
+)
+def test_writer_extension_normalization_cannot_overwrite_source(
+    tmp_path, driver, source_name, output_name
+):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    path = tmp_path / source_name
+    options = QgsVectorFileWriter.SaveVectorOptions()
+    options.driverName = driver
+    result = QgsVectorFileWriter.writeAsVectorFormatV3(
+        layer, str(path), QgsProcessingContext().transformContext(), options
+    )
+    assert result[0] == QgsVectorFileWriter.WriterError.NoError
+    before = path.read_bytes()
+
+    with pytest.raises(QgsProcessingException, match="nie może nadpisać"):
+        _run_algorithm(str(path), destination=str(tmp_path / output_name))
+
+    assert path.read_bytes() == before
+    reopened = QgsVectorLayer(str(path), "source", "ogr")
+    assert reopened.featureCount() == 1
+    assert "PO_P_m2" not in reopened.fields().names()
+    del reopened
+
+
+def test_spatialite_destination_cannot_overwrite_source(tmp_path):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    path = tmp_path / "source.sqlite"
+    options = QgsVectorFileWriter.SaveVectorOptions()
+    options.driverName = "SQLite"
+    options.datasourceOptions = ["SPATIALITE=YES"]
+    options.layerName = "parcels"
+    result = QgsVectorFileWriter.writeAsVectorFormatV3(
+        layer, str(path), QgsProcessingContext().transformContext(), options
+    )
+    assert result[0] == QgsVectorFileWriter.WriterError.NoError
+    uri = QgsDataSourceUri()
+    uri.setDatabase(str(path))
+    uri.setDataSource("", "parcels", "GEOMETRY")
+    source = QgsProcessingUtils.encodeProviderKeyAndUri(
+        "spatialite", uri.uri(False)
+    )
+    before = path.read_bytes()
+
+    with pytest.raises(QgsProcessingException, match="nie może nadpisać"):
+        _run_algorithm(source, destination=source)
+
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize("port", ["5432", ""])
+@pytest.mark.parametrize("schema", ["public", ""])
+def test_postgres_destination_checks_table_without_using_credentials(
+    monkeypatch, port, schema
+):
+    algorithm = CalculateEgibAreaAlgorithm()
+    algorithm.initAlgorithm()
+    source_uri = QgsDataSourceUri()
+    source_uri.setConnection("host", "5432", "database", "reader", "secret")
+    source_uri.setDataSource("public", "parcels", "geom")
+    source = QgsVectorLayer("Polygon?crs=EPSG:2178", "mock", "memory")
+    monkeypatch.setattr(source, "providerType", lambda: "postgres")
+    monkeypatch.setattr(source, "source", lambda: source_uri.uri(False))
+    monkeypatch.setattr(
+        algorithm, "parameterAsVectorLayer", lambda *args: source
+    )
+    output_uri = QgsDataSourceUri(source_uri.uri(False))
+    output_uri.setConnection("HOST", port, "database", "writer", "other")
+    output_uri.setDataSource(schema, "parcels", "geom")
+    context = QgsProcessingContext()
+    parameters = {
+        "INPUT": "mock",
+        "OUTPUT": "postgres:" + output_uri.uri(False),
+    }
+
+    with pytest.raises(QgsProcessingException, match="nie może nadpisać"):
+        algorithm._check_output_destination(parameters, context)
+
+    output_uri.setDataSource("public", "new_table", "geom")
+    parameters["OUTPUT"] = QgsProcessingUtils.encodeProviderKeyAndUri(
+        "postgres", output_uri.uri(False)
+    )
+    assert algorithm._check_output_destination(parameters, context) == ""
+
+
+def test_buffer_write_failure_is_not_reported_as_success(monkeypatch):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    algorithm = CalculateEgibAreaAlgorithm()
+    algorithm.initAlgorithm()
+    sink = Mock(spec=QgsFeatureSink)
+    sink.addFeature.return_value = True
+    sink.flushBuffer.return_value = False
+    monkeypatch.setattr(
+        algorithm, "parameterAsSink", lambda *args, **kwargs: (sink, "failed")
+    )
+    context = QgsProcessingContext()
+    with pytest.raises(QgsProcessingException, match="zakończyć zapisu"):
+        algorithm.processAlgorithm(
+            {"INPUT": layer, "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT},
+            context,
+            QgsProcessingFeedback(),
+        )
+    sink.addFeature.assert_called_once()
+    sink.flushBuffer.assert_called_once_with()
+    assert sink.addFeature.call_args.args[0]["PO_P_m2"] == 10_001.54
+
+
+@pytest.mark.parametrize("table_destination", [False, True])
+@pytest.mark.parametrize(
+    ("field_name", "field_type", "values", "existing_name"),
+    [
+        ("fid", FIELD_TYPE_STRING, ["parcel-A", "parcel-B"], None),
+        ("FID", FIELD_TYPE_STRING, ["parcel-A", "parcel-B"], None),
+        ("fid", FIELD_TYPE_INT, [1, 1], None),
+        ("fid", FIELD_TYPE_STRING, ["A", "B"], "FID_ZRODLOWY"),
+    ],
+)
+def test_geopackage_preserves_source_fid_as_ordinary_attribute(
+    tmp_path, table_destination, field_name, field_type, values, existing_name
+):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))",
+        "MULTIPOLYGON (((7500200 5800200,7500250 5800200,"
+        "7500250 5800250,7500200 5800250,7500200 5800200)))",
+    )
+    fields = [QgsField(field_name, field_type)]
+    if existing_name:
+        fields.append(QgsField(existing_name, FIELD_TYPE_INT))
+    layer.dataProvider().addAttributes(fields)
+    layer.updateFields()
+    changes = {}
+    for feature, value in zip(layer.getFeatures(), values):
+        changes[feature.id()] = {1: value}
+        if existing_name:
+            changes[feature.id()][2] = 123
+    layer.dataProvider().changeAttributeValues(changes)
+    before = [feature.attributes() for feature in layer.getFeatures()]
+
+    path = tmp_path / "result.gpkg"
+    destination = (
+        _geopackage_destination(path, "result")
+        if table_destination
+        else str(path)
+    )
+    output, _context = _run_algorithm(layer, destination=destination)
+    assert output.featureCount() == 2
+    renamed = "fid_zrodlowy_2" if existing_name else "fid_zrodlowy"
+    results = list(output.getFeatures())
+    assert [feature[renamed] for feature in results] == values
+    assert len({feature["fid"] for feature in results}) == 2
+    if existing_name:
+        assert [feature[existing_name] for feature in results] == [123, 123]
+    assert [feature.attributes() for feature in layer.getFeatures()] == before
+
+
+def test_shapefile_output_warns_about_truncated_schema(tmp_path, monkeypatch):
+    layer = _polygon_layer(
+        "MULTIPOLYGON (((7499950 5799950,7500050 5799950,"
+        "7500050 5800050,7499950 5800050,7499950 5799950)))"
+    )
+    feedback = QgsProcessingFeedback()
+    warnings = []
+    monkeypatch.setattr(feedback, "pushWarning", warnings.append)
+
+    output, _context = _run_algorithm(
+        layer,
+        destination=str(tmp_path / "result.shp"),
+        feedback=feedback,
+    )
+
+    assert output.featureCount() == 1
+    assert "PO_P_m2" in output.fields().names()
+    assert "PO_P_ha" in output.fields().names()
+    assert "PO_poprawna_przed" not in output.fields().names()
+    assert any(
+        "Shapefile" in warning
+        and "10 znaków" in warning
+        and "254 znaków" in warning
+        and "GeoPackage" in warning
+        for warning in warnings
+    )
 
 
 def test_non_pl2000_input_requires_explicit_zone() -> None:
@@ -288,10 +651,10 @@ def test_explicit_zone_transforms_non_pl2000_input_in_output_copy() -> None:
     result = next(output.getFeatures())
 
     assert output.crs().authid() == "EPSG:2178"
-    assert result["egib_status"] == "source_geometry"
-    assert result["egib_zone"] == 7
-    assert result["egib_epsg"] == 2178
-    assert result["egib_area_m2"] > 0
+    assert result["PO_status"] == "source_geometry"
+    assert result["PO_strefa"] == 7
+    assert result["PO_EPSG"] == 2178
+    assert result["PO_P_m2"] > 0
     assert bytes(next(layer.getFeatures()).geometry().asWkb()) == source_wkb
 
 
@@ -337,14 +700,14 @@ def test_auxiliary_failure_keeps_main_fields_status_and_next_feature(
             expected.geometry().asWkb()
         )
         for field in output.fields().names():
-            if field not in ("egib_qgis_m2", "egib_warnings"):
+            if field not in ("PO_QGIS_m2", "PO_uwagi"):
                 assert actual[field] == expected[field], field
         if index < 2:
-            assert actual["egib_qgis_m2"] == NULL
-            assert "geodesic_measurement_failed" in actual["egib_warnings"]
-            assert "private/path" not in actual["egib_warnings"]
-            if expected["egib_warnings"] != NULL:
-                assert expected["egib_warnings"] in actual["egib_warnings"]
+            assert actual["PO_QGIS_m2"] == NULL
+            assert "geodesic_measurement_failed" in actual["PO_uwagi"]
+            assert "private/path" not in actual["PO_uwagi"]
+            if expected["PO_uwagi"] != NULL:
+                assert expected["PO_uwagi"] in actual["PO_uwagi"]
         else:
             assert actual.attributes() == expected.attributes()
 

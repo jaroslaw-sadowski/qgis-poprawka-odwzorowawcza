@@ -120,23 +120,23 @@ def _assert_reference(gui, batch, case, area_tolerance=1e-6):
             float(expected[field]), rel=0, abs=1e-6
         ), field
     assert result.legal_area_ha_rounded == Decimal(case["rounded_ha"])
-    assert batch["egib_area_ha"] == float(Decimal(case["rounded_ha"]))
+    assert batch["PO_P_ha"] == float(Decimal(case["rounded_ha"]))
     for output_field, expected_field in (
-        ("egib_po_m2", "po_m2"),
-        ("egib_corr_m2", "correction_m2"),
-        ("egib_area_m2", "legal_area_m2_raw"),
+        ("PO_P0_m2", "po_m2"),
+        ("PO_dP_m2", "correction_m2"),
+        ("PO_P_m2", "legal_area_m2_raw"),
     ):
         assert batch[output_field] == round(float(expected[expected_field]), 2)
     for output_field, result_field in (
-        ("egib_pgk_x", "pgk_x_northing"),
-        ("egib_pgk_y", "pgk_y_easting"),
-        ("egib_sigma", "sigma_cm_per_km"),
-        ("egib_scale", "scale_m"),
+        ("PO_PGK_X", "pgk_x_northing"),
+        ("PO_PGK_Y", "pgk_y_easting"),
+        ("PO_sigma", "sigma_cm_per_km"),
+        ("PO_skala", "scale_m"),
     ):
         assert batch[output_field] == getattr(result, result_field)
-    assert batch["egib_qgis_m2"] == round(gui.qgis_geodesic_area_m2, 2)
-    assert batch["egib_valid_before"] == gui.preparation.report.validity_before
-    assert batch["egib_valid_after"] == gui.preparation.report.validity_after
+    assert batch["PO_QGIS_m2"] == round(gui.qgis_geodesic_area_m2, 2)
+    assert batch["PO_poprawna_przed"] == gui.preparation.report.validity_before
+    assert batch["PO_poprawna_po"] == gui.preparation.report.validity_after
 
 
 @pytest.mark.parametrize("mode", list(RepairMode))
@@ -217,7 +217,7 @@ def test_mean_of_transformed_vertices_is_not_transformed_mean_or_centroid():
     assert gui.calculation.pgk_x_northing == pytest.approx(
         expected_n, rel=0, abs=1e-8
     )
-    assert batch["egib_pgk_y"] == pytest.approx(expected_e, rel=0, abs=1e-8)
+    assert batch["PO_PGK_Y"] == pytest.approx(expected_e, rel=0, abs=1e-8)
     centroid = gui.preparation.geometry_for_area.centroid().asPoint()
     assert abs(centroid.x() - expected_e) > 1
 
@@ -244,9 +244,9 @@ def test_repair_changes_area_and_pgk_in_both_entry_points(
         RepairMode.AUTO_REPAIR,
     )
     _assert_reference(gui, batch, REFERENCES["repaired_bow_tie"])
-    assert batch["egib_status"] == "repaired"
-    assert batch["egib_vertices_added"] == 1
-    assert batch["egib_repair_method"] == (
+    assert batch["PO_status"] == "repaired"
+    assert batch["PO_pkt_dodane"] == 1
+    assert batch["PO_naprawa"] == (
         "linework" if force_linework else "structure"
     )
     assert batch.geometry().isGeosValid()
@@ -272,7 +272,7 @@ def test_source_mode_never_calls_make_valid_and_keeps_original_pgk(
     valid = name != "source_bow_tie"
     assert gui.preparation.report.validity_before is valid
     assert gui.preparation.report.validity_after is valid
-    assert batch["egib_status"] == (
+    assert batch["PO_status"] == (
         "source_geometry" if valid else "invalid_source_geometry"
     )
     assert bytes(batch.geometry().asWkb()) == before
@@ -339,6 +339,9 @@ def test_geopackage_preserves_results_after_reopening(tmp_path, mode):
     assert reopened.isValid()
     assert reopened.featureCount() == 1
     assert reopened.crs().authid() == "EPSG:2178"
+    assert not any(
+        name.startswith("egib_") for name in reopened.fields().names()
+    )
     _assert_reference(gui, next(reopened.getFeatures()), expected)
 
 

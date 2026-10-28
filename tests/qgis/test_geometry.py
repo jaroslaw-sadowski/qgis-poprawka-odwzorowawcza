@@ -9,6 +9,7 @@ import adapters.geometry as geometry_module
 from adapters import (
     CurvedGeometryError,
     GeometryInputError,
+    GeometryTransformError,
     extract_boundary_points,
     geometry_snapshot,
     measure_geodesic_area_m2,
@@ -34,6 +35,7 @@ def test_transform_to_selected_pl2000_zone_does_not_modify_source() -> None:
     assert result.geometry is not source
     assert result.target_epsg == 2178
     assert result.zone == 7
+    assert result.warnings == ()
     assert all(
         int(point.easting_y // 1_000_000) == 7
         for point in extract_boundary_points(result.geometry)
@@ -54,6 +56,40 @@ def test_geometry_already_in_pl2000_is_still_copied() -> None:
 
     assert result.geometry is not source
     assert bytes(result.geometry.asWkb()) == bytes(source.asWkb())
+    assert result.warnings == ()
+
+
+@pytest.mark.parametrize("allow_fallback", [True, False])
+def test_fallback_in_earlier_part_is_reported_or_rejected(allow_fallback):
+    source = QgsGeometry.fromWkt(
+        "MULTIPOLYGON (((21 52,21.001 52,21.001 52.001,21 52)),"
+        "((21 -52,21.001 -52,21.001 -52.001,21 -52)))"
+    )
+    source_wkb = bytes(source.asWkb())
+    source_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+    context = QgsCoordinateTransformContext()
+    # The first part needs fallback; the last part can use this operation
+    # and clears QGIS's flag for the most recent transform call.
+    assert context.addCoordinateOperation(
+        source_crs,
+        QgsCoordinateReferenceSystem("EPSG:2178"),
+        "+proj=pipeline +step +proj=unitconvert +xy_in=deg +xy_out=rad "
+        "+step +proj=gnom +lat_0=-90 +lon_0=0 +ellps=WGS84",
+        allow_fallback,
+    )
+
+    if allow_fallback:
+        result = transform_geometry_to_pl2000(
+            source, source_crs, context, selected_zone=7
+        )
+        assert result.warnings == ("coordinate_transform_fallback",)
+    else:
+        with pytest.raises(GeometryTransformError):
+            transform_geometry_to_pl2000(
+                source, source_crs, context, selected_zone=7
+            )
+
+    assert bytes(source.asWkb()) == source_wkb
 
 
 def test_geodesic_area_uses_qgis_engine_with_grs80() -> None:

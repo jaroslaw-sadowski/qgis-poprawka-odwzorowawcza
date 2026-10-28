@@ -23,6 +23,11 @@ GEODESIC_MEASUREMENT_WARNING = (
     "Nie wpływa to na wynik obliczenia według wzoru PL-2000."
 )
 
+COORDINATE_TRANSFORM_WARNING = (
+    "QGIS użył zastępczej transformacji współrzędnych. Sprawdź "
+    "dostępność siatek i dokładność transformacji."
+)
+
 
 def safe_calculation_error_message(error: Exception) -> str:
     """Translate expected failures without exposing implementation details."""
@@ -64,6 +69,7 @@ def safe_calculation_error_message(error: Exception) -> str:
 
 
 __all__ = [
+    "COORDINATE_TRANSFORM_WARNING",
     "GEODESIC_MEASUREMENT_WARNING",
     "safe_calculation_error_message",
 ]

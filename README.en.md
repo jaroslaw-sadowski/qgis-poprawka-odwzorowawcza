@@ -36,6 +36,22 @@ and the plugin's **O wtyczce…** (About) window.
   the Processing toolbox. Save the result to a new layer, preferably
   GeoPackage.
 
+New Processing results use actual field names prefixed with `PO_`:
+`PO_P0_m2` (area before correction), `PO_dP_m2` (correction), `PO_P_m2`
+and `PO_P_ha` (result), `PO_QGIS_m2` (comparison measurement), `PO_status`
+and `PO_uwagi` (warnings). Other diagnostic fields also use `PO_`.
+Polish headings include the field name and a description with units, e.g.
+`PO_P_m2 — Powierzchnia po poprawce P [m²]`. Repair details are hidden
+by default and can be shown through the QGIS table configuration.
+GeoPackage preserves the headings and table layout when reopened.
+Processing summarizes results and prevents overwriting source data.
+Shapefile shortens field names and longer warnings; use GeoPackage
+to retain the complete result.
+
+The algorithm ID `egib_area:calculate_egib_area` remains unchanged.
+Models and expressions referring to the former `egib_*` fields need
+updating to the new `PO_*` names.
+
 By default, geometry is checked without repair. Optional repair works
 on a copy. Results for invalid geometry without repair are diagnostic only.
 

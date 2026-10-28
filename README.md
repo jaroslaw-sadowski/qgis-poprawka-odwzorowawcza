@@ -35,6 +35,22 @@ Opisy po polsku i angielsku są dostępne w menedżerze wtyczek i oknie
 - **Wiele działek:** wyszukaj **Poprawka odwzorowawcza PL-2000** w panelu
   Processing. Wynik zapisz do nowej warstwy, najlepiej GeoPackage.
 
+Nowe wyniki Processing mają rzeczywiste nazwy pól z prefiksem `PO_`:
+`PO_P0_m2` (pole przed poprawką), `PO_dP_m2` (poprawka), `PO_P_m2`
+i `PO_P_ha` (wynik), `PO_QGIS_m2` (pomiar porównawczy), `PO_status`
+i `PO_uwagi`. Pozostałe pola diagnostyczne również mają prefiks `PO_`.
+Polskie nagłówki zawierają nazwę pola i opis z jednostkami, np.
+`PO_P_m2 — Powierzchnia po poprawce P [m²]`. Szczegóły naprawy są
+domyślnie ukryte i można je pokazać w konfiguracji tabeli QGIS.
+GeoPackage zachowuje nagłówki i układ tabeli po ponownym otwarciu.
+Processing podsumowuje wyniki i blokuje nadpisanie danych źródłowych.
+Shapefile skraca nazwy pól oraz dłuższe ostrzeżenia — do pełnego wyniku
+użyj GeoPackage.
+
+Identyfikator algorytmu `egib_area:calculate_egib_area` pozostaje bez zmian.
+Modele i wyrażenia odwołujące się do dawnych pól `egib_*` wymagają
+aktualizacji do nowych nazw `PO_*`.
+
 Domyślnie sprawdza geometrię bez naprawiania. Opcjonalna naprawa działa
 na kopii. Wynik dla błędnej geometrii bez naprawy jest tylko diagnostyczny.
 

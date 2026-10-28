@@ -1,7 +1,7 @@
 # Przygotowanie i publikacja wydania
 
-Aktualny kandydat: **1.1.0**. Nazwa publiczna: **Poprawka odwzorowawcza
-PL-2000**. Wydanie obejmuje QGIS 3.40–3.x i 4.x.
+Aktualny kandydat: **1.1.1** (lokalny, nieopublikowany). Nazwa publiczna:
+**Poprawka odwzorowawcza PL-2000**. Wydanie obejmuje QGIS 3.40–3.x i 4.x.
 
 ## Paczka
 
@@ -10,11 +10,11 @@ powstanie tag wydania:
 
 ```bash
 python scripts/build_plugin_zip.py
-python -m zipfile -t "dist/Poprawka odwzorowawcza PL-2000-1.1.0.zip"
+python -m zipfile -t "dist/Poprawka odwzorowawcza PL-2000-1.1.1.zip"
 cd dist
-sha256sum "Poprawka odwzorowawcza PL-2000-1.1.0.zip" > \
-  "Poprawka odwzorowawcza PL-2000-1.1.0.zip.sha256"
-sha256sum -c "Poprawka odwzorowawcza PL-2000-1.1.0.zip.sha256"
+sha256sum "Poprawka odwzorowawcza PL-2000-1.1.1.zip" > \
+  "Poprawka odwzorowawcza PL-2000-1.1.1.zip.sha256"
+sha256sum -c "Poprawka odwzorowawcza PL-2000-1.1.1.zip.sha256"
 ```
 
 Do instalacji służy ten ZIP, zawierający jeden katalog Pythona
@@ -30,17 +30,17 @@ zawierają repozytorium, a nie paczkę instalacyjną QGIS.
   i instalowanie wtyczek → Instaluj z ZIP**. Sprawdź obliczenie jednej
   działki w obu trybach, raport MD, Processing do GeoPackage oraz
   wyłączenie i ponowne włączenie wtyczki.
-- Sprawdź nazwę, wersję 1.1.0, oba języki opisu i pary tagów PL/EN.
+- Sprawdź nazwę, wersję 1.1.1, oba języki opisu i pary tagów PL/EN.
 - Test na Linuxie nie potwierdza działania na Windows i macOS. Przy
   sprawdzaniu tych platform dopisz rzeczywiste wyniki do raportu.
 
 ## GitHub Release
 
 1. Zatwierdź sprawdzone zmiany i wyślij commit do GitHuba.
-2. Po poprawnym CI utwórz tag `v1.1.0` na tym commicie.
-3. Utwórz release z tytułem **Poprawka odwzorowawcza PL-2000 1.1.0**.
+2. Po poprawnym CI utwórz tag `v1.1.1` na tym commicie.
+3. Utwórz release z tytułem **Poprawka odwzorowawcza PL-2000 1.1.1**.
 4. Użyj przygotowanego [opisu wydania PL/EN](RELEASE_NOTES.md).
-5. Dołącz `Poprawka odwzorowawcza PL-2000-1.1.0.zip` i odpowiadający mu
+5. Dołącz `Poprawka odwzorowawcza PL-2000-1.1.1.zip` i odpowiadający mu
    plik `.zip.sha256`; sprawdź sumę odbudowanej paczki, następnie opublikuj.
 
 ## Repozytorium QGIS
